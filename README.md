@@ -1,2 +1,2 @@
 # DustONE-project-docs
-this space is for project documemtation 
+This is space is for project documemtation 
