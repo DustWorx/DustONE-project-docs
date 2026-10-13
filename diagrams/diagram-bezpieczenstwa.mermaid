@@ -1,0 +1,73 @@
+%% DOC-008 — Diagram bezpieczenstwa: lancuch odciecia zaplonu i wtrysku
+%% Wersja 1.2 | Status: roboczy | Wlasciciel: Pawel | Opracowanie: Claude | 2026-09-29
+%% Dokument nadrzedny: proces-rozwoju-ecu.md (DOC-001)
+%% Zrodlo: faza2-fw-specyfikacja.md punkt B (B.1.1 zamknieta lista zdarzen, B.2 macierz usterek)
+%% Odpowiada na pozycje audytu F-031 (1 z 3 wymaganych diagramow)
+%% LEGENDA: strzalka gruba = sciezka sprzetowa, dziala przy zawieszonym firmware.
+%%          strzalka cienka = sciezka programowa, nadzorowana watchdogiem.
+%% Objasnienia i uzasadnienia kazdej sciezki: faza2-fw-specyfikacja.md punkt B.
+%% Zmiana 1.2 (29.09.2026): pokazany mechanizm wykrycia szyny 5 V (ADC + Power Good)
+%%   oraz rezystory sciagajace na linii bramkujacej EN (ECU-SAF-016).
+
+flowchart TB
+
+    subgraph HW["1. Zrodla sprzetowe - dzialaja bez firmware"]
+        direction LR
+        KS_PRESS["Kill switch<br/>nacisniety"]
+        KS_BREAK["Przerwa przewodu<br/>kill switcha"]
+        WDG["Watchdog<br/>TPS3430-Q1"]
+        BOR["Brown-out<br/>w STM32G474"]
+    end
+
+    subgraph FWS["2. Zrodla programowe - wymagaja dzialajacego firmware"]
+        direction LR
+        IMU_F["Wywrotka IMU<br/>ponad 65 st. przez 3 s"]
+        SYNC["Utrata<br/>synchronizacji"]
+        INJ_S["Wtryskiwacz<br/>zwarty"]
+        RAIL["Szyna 5 V ponizej 4,50 V<br/>wykryte przez ADC<br/>+ sygnal Power Good"]
+        REV["Ogranicznik<br/>obrotow"]
+    end
+
+    subgraph MECH["3. Mechanizm"]
+        direction LR
+        CMP["Komparator kill switcha<br/>+ rezystory sciagajace<br/>na linii bramkujacej EN"]
+        RST["Reset MCU<br/>+ rezystory sciagajace"]
+        FWT["Zadanie<br/>bezpieczenstwa K4"]
+    end
+
+    subgraph OUT["4. Skutek"]
+        direction LR
+        CUT_L["ODCIECIE + ZATRZASK<br/>wymaga swiadomego<br/>odblokowania"]
+        CUT_T["ODCIECIE chwilowe<br/>bez zatrzasku"]
+    end
+
+    KS_PRESS ==> CMP
+    KS_BREAK ==> CMP
+    WDG ==> RST
+    BOR ==> RST
+
+    RAIL --> SYNC
+    IMU_F --> FWT
+    SYNC --> FWT
+    INJ_S --> FWT
+
+    CMP ==> CUT_T
+    KS_BREAK ==> CUT_L
+    RST ==> CUT_L
+    FWT --> CUT_L
+    REV --> CUT_T
+
+    HRT["Rejestr okresu HRTIM<br/>sufit czasu ladowania cewki<br/>i dlugosci impulsu<br/>NIE gasi silnika"]
+    HRT ==> LIMIT["Ograniczenie<br/>dlugosci impulsu"]
+
+    classDef hw fill:#1f6feb,stroke:#0b3d91,color:#ffffff,stroke-width:2px
+    classDef fw fill:#8957e5,stroke:#4c2889,color:#ffffff
+    classDef mech fill:#57606a,stroke:#24292f,color:#ffffff
+    classDef latch fill:#cf222e,stroke:#82071e,color:#ffffff,stroke-width:2px
+    classDef soft fill:#bf8700,stroke:#7d4e00,color:#ffffff
+
+    class KS_PRESS,KS_BREAK,WDG,BOR,HRT hw
+    class IMU_F,SYNC,INJ_S,RAIL,REV fw
+    class CMP,RST,FWT mech
+    class CUT_L latch
+    class CUT_T,LIMIT soft

@@ -1,0 +1,90 @@
+%% DOC-003 — Architektura systemu (diagram blokowy)
+%% Wersja 1.2 | Status: roboczy | Właściciel: Paweł | Opracowanie: Claude | 2026-09-29
+%% Dokument nadrzędny: proces-rozwoju-ecu.md (DOC-001)
+%% Historia: 1.2 (2026-09-29) usuniety blok Quickshifter - funkcja poza zakresem produktu
+%%           1.0 (2026-08-31) przebudowa diagramu — wszystkie czujniki, architektura zasilania,
+%%           6 kanałów PROFET, przyciski kierownicy jako osobny blok
+%%           1.1 (2026-09-20) aktualizacja oznaczeń: BMI088 -> BMI090L, L9960 -> TLE9104SH
+
+flowchart LR
+
+    subgraph MOTO["Motocykl"]
+        BAT["Akumulator 12V<br/>(stale, brak stacyjki)"]
+        VR["Czujnik obrotow walu<br/>VR lub Hall"]
+        TPS["TPS"]
+        TW["Temp. cieczy"]
+        TA["Temp. powietrza"]
+        GEAR["Pozycja biegu<br/>MLX90316"]
+        WS["Predkosc kola"]
+        BTNM["Przycisk START<br/>+ kill switch"]
+        COIL["Cewka zaplonowa"]
+        INJ["Wtryskiwacze 1-2<br/>TPI / TBI"]
+        FAN["Wentylator"]
+        PUMP["Pompa paliwa"]
+        LIGHT["Swiatla"]
+        STR["Przekaznik rozrusznika"]
+    end
+
+    subgraph ECU["ECU - STM32G474RET6"]
+        PWR["Zasilanie<br/>LM5164-Q1 -> 5V<br/>TLE4276 (5V, wyl. w sleep)<br/>NCV8705 (3,3V, zawsze wl.)"]
+        COND["MAX9926<br/>kondycjoner VR"]
+        CORE["Rdzen real-time<br/>zaplon + wtrysk<br/>HRTIM"]
+        WD["Watchdog TPS3430-Q1<br/>okienkowy"]
+        IMU["BMI090L<br/>wypadek"]
+        BARO["BMP390<br/>cisnienie atm."]
+        NVM["W25Q64 8MB<br/>czarna skrzynka"]
+        PROF["3x BTS7008-2EPA<br/>6 kanalow PROFET"]
+        IGN["VBG08H-E"]
+        IDRV["TLE9104SH"]
+        CAN1["TJA1043"]
+        USB["USB-C"]
+    end
+
+    subgraph HMIBOX["HMI"]
+        MCU2["STM32G0B1"]
+        EVE["Riverdi RVT35<br/>EVE4 BT817Q<br/>1000 cd/m2"]
+        FL2["Flash SPI<br/>zasoby graficzne"]
+        TEMP2["Czujnik temp.<br/>ochrona LCD"]
+        CAN2["TJA1043"]
+    end
+
+    BTNH["4 przyciski na kierownicy<br/>drabinka rezystorowa"]
+
+    subgraph PC["Aplikacja desktop - Windows / .NET WPF"]
+        APP["Mapy offline - live tuning<br/>logi - aktualizacja FW<br/>diagnostyka - wyglad HMI"]
+    end
+
+    BAT --> PWR
+    VR --> COND
+    COND --> CORE
+    VR -.->|"zworka: Hall<br/>z pominieciem MAX9926"| CORE
+    TPS --> CORE
+    TW --> CORE
+    TA --> CORE
+    GEAR --> CORE
+    WS --> CORE
+    BTNM --> CORE
+
+    IMU --> CORE
+    BARO --> CORE
+    CORE <--> NVM
+    CORE <--> WD
+
+    CORE --> IGN --> COIL
+    CORE --> IDRV --> INJ
+    CORE --> PROF
+    PROF --> FAN
+    PROF --> PUMP
+    PROF --> LIGHT
+    PROF --> STR
+
+    CORE <--> CAN1
+    CAN1 <-->|"CAN bus"| CAN2
+    CAN2 <--> MCU2
+    MCU2 <--> EVE
+    MCU2 <--> FL2
+    TEMP2 --> MCU2
+    BTNH -->|"DTM04-3P"| MCU2
+
+    CORE <--> USB
+    USB <-->|"USB-C"| APP

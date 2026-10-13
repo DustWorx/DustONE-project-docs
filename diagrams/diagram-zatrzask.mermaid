@@ -1,0 +1,80 @@
+%% DOC-009 — Diagram bezpieczenstwa: zatrzask, odblokowanie i licznik resetow
+%% Wersja 1.0 | Status: roboczy | Wlasciciel: Pawel | Opracowanie: Claude | 2026-09-29
+%% Dokument nadrzedny: proces-rozwoju-ecu.md (DOC-001)
+%% Zrodlo: faza2-fw-specyfikacja.md B.4 (zatrzask i odblokowanie), B.2.5.3 (migawka), ECU-SAF-003/004/006/006a
+%% Odpowiada na pozycje audytu F-005 (automatyczny restart po watchdogu) i F-031
+%%
+%% ISTOTA: z zatrzasku nie ma drogi automatycznej. Kazde wyjscie wymaga
+%% zatrzymania walu ORAZ swiadomego dzialania kierowcy.
+
+stateDiagram-v2
+    direction TB
+
+    [*] --> GOTOWOSC : podanie zasilania<br/>+ autotest
+
+    GOTOWOSC --> PRACA : obroty > progu<br/>pracy samodzielnej
+    PRACA --> GOTOWOSC : normalne gaszenie<br/>(kill switch nacisniety)
+
+    PRACA --> ZATRZASK : zdarzenie klasy K4
+    GOTOWOSC --> ZATRZASK : zdarzenie klasy K4
+
+    state ZATRZASK {
+        direction TB
+        [*] --> WYJSCIA_OFF
+        WYJSCIA_OFF : Wyjscia mocy wylaczone
+        WYJSCIA_OFF : Zaplon i wtrysk odciete
+        WYJSCIA_OFF : Migawka stanu zapisana do W25Q64
+        WYJSCIA_OFF : Komunikat P3 na calym ekranie HMI
+        WYJSCIA_OFF --> CZEKA_NA_WAL
+        CZEKA_NA_WAL : Warunek konieczny
+        CZEKA_NA_WAL : WAL ZATRZYMANY
+        CZEKA_NA_WAL : (brak sygnalu obrotow, z histereza)
+        CZEKA_NA_WAL --> ODBLOKOWANIE_MOZLIWE
+        ODBLOKOWANIE_MOZLIWE : Dwie rownowazne drogi
+        ODBLOKOWANIE_MOZLIWE : 1) kill switch STOP - RUN
+        ODBLOKOWANIE_MOZLIWE : 2) potwierdzenie na HMI
+    }
+
+    ZATRZASK --> GOTOWOSC : odblokowanie<br/>(wal zatrzymany<br/>+ dzialanie kierowcy)
+
+    ZATRZASK --> AWARIA_TRWALA : trzeci reset watchdoga<br/>licznik w W25Q64
+
+    state AWARIA_TRWALA {
+        direction TB
+        [*] --> BLOKADA
+        BLOKADA : Koniec prob startu
+        BLOKADA : Kasowanie WYLACZNIE
+        BLOKADA : aplikacja desktop
+        BLOKADA : Trzy ostatnie migawki
+        BLOKADA : dostepne do odczytu
+    }
+
+    AWARIA_TRWALA --> GOTOWOSC : skasowanie<br/>aplikacja desktop
+
+    PRACA --> PRACA_OGRANICZONA : usterka klasy K3
+    state PRACA_OGRANICZONA {
+        direction TB
+        [*] --> DERATING
+        DERATING : Limit obrotow — zjazd w 3 s
+        DERATING : Cofniety zaplon
+        DERATING : Wzbogacona mieszanka
+        DERATING : Pas P2 na HMI, nie do schowania
+        DERATING : Kilka usterek - obowiazuje najnizszy limit
+    }
+    PRACA_OGRANICZONA --> PRACA : ustapienie wszystkich<br/>usterek K3 z histereza<br/>limit wraca narastajaco
+    PRACA_OGRANICZONA --> ZATRZASK : eskalacja do K4
+
+    note right of ZATRZASK
+        Licznik resetow watchdoga zerowany
+        dopiero po 60 s bezawaryjnej pracy
+        silnika — nie po samym uplywie czasu.
+        Dowodem sprawnosci jest dzialanie.
+    end note
+
+    note right of PRACA_OGRANICZONA
+        Klasa K3 NIE tworzy zatrzasku.
+        Silnik ma dalej jechac — decyzje
+        o zatrzymaniu motocykla podejmuje
+        kierowca, ktory widzi sytuacje,
+        ktorej ECU nie widzi.
+    end note
