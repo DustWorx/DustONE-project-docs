@@ -1,0 +1,46 @@
+# System operacyjny
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Edytory i IDE
+.vscode/
+.idea/
+*.swp
+*~
+
+# STM32CubeIDE / STM32CubeMX
+Debug/
+Release/
+.settings/
+.cproject
+.project
+*.launch
+
+# Wyniki budowania firmware
+build/
+*.o
+*.d
+*.su
+*.elf
+*.bin
+*.hex
+*.map
+*.list
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Aplikacja desktop (.NET / Visual Studio)
+bin/
+obj/
+*.user
+*.suo
+
+# Pliki tymczasowe dokumentacji
+~$*.docx
+~$*.xlsx
+*.tmp

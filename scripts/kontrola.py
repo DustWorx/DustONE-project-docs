@@ -4,17 +4,18 @@
 Kontrola spójności dokumentacji ECU "Dust ONE".
 
 Uruchomienie z katalogu głównego repozytorium:
-    python3 skrypty/kontrola.py
+    python3 scripts/kontrola.py
 
 Sprawdza:
   1. Pokrycie wymagań — każde wymaganie ma wiersz w tabeli traceability i odwrotnie
-  2. Liczniki — wymagania, DTC, testy, pozycje rejestrów (do wstawiania do dokumentów)
-  3. Osierocone odwołania do identyfikatorów wycofanych
-  4. Zgodność wersji w spisie dokumentów z metrykami plików
+  2. Liczniki — wartości do wstawiania do dokumentów, zamiast zliczania ręcznego
+  3. Odwołania do pozycji otwartych — każde O-nnn użyte w dokumentach istnieje w otwarte.md
+  4. Osierocone odwołania do identyfikatorów wycofanych
 
 Kod wyjścia: 0 = spójne, 1 = znalezione rozbieżności.
-Powód istnienia: ustalenie A50 drugiego audytu — liczniki w dokumentach
-rozjechały się z rejestrami, bo były wpisywane ręcznie.
+
+Powód istnienia: liczniki wpisywane ręcznie rozjechały się z rejestrami
+(dokumenty podawały 51 kodów usterek i 107 testów przy rzeczywistych 49 i 99).
 """
 
 import io
@@ -22,24 +23,28 @@ import os
 import re
 import sys
 
-DOK = 'dokumentacja'
-PROCES = os.path.join(DOK, 'proces-rozwoju-ecu.md')
-WYMAGANIA = os.path.join(DOK, 'wymagania.md')
-FIRMWARE = os.path.join(DOK, 'faza2-fw-specyfikacja.md')
+WYMAGANIA = 'wymagania.md'
+FIRMWARE = 'firmware.md'
+OTWARTE = 'otwarte.md'
+PRODUKT = 'produkt.md'
+PROCES = 'proces.md'
+
+KATALOGI = ('.', 'diagrams', 'measurements')
+ROZSZERZENIA = ('.md', '.mermaid')
 
 # Identyfikator wymagania na początku wiersza tabeli, z opcjonalnym pogrubieniem
 RE_WYMAGANIE = r'^\|\s*\*{0,2}((?:ECU|HMI|APP|SYS)-[A-Z]{2,3}-\d{3}[a-z]?)\*{0,2}'
+
+# Pozycja otwarta w wierszu rejestru. Rejestr ma 8 kolumn, więc wymagamy
+# co najmniej 5 kresek — inaczej wpis z dwukolumnowego indeksu "Co blokuje
+# bramkę G0" na początku pliku zostałby policzony jako druga definicja.
+RE_POZYCJA = r'^\|\s*\*{0,2}(O-\d{3})\*{0,2}\s*\|(?:[^|\n]*\|){5,}'
 
 # Identyfikatory wycofane — nie mogą występować poza zapisem o ich usunięciu.
 # DTC-SEN-04 NIE jest wycofany: został przeniesiony do wariantów B/C, bo
 # czujnik przepustnicy w nich istnieje. Nie wpisywać go tutaj.
 WYCOFANE = ['ECU-IGN-008']
 KONTEKST_USUNIECIA = ('usunięt', 'Usunięt', 'wycofan', 'Wycofan', 'OBALONE', 'nieaktualn')
-
-# Wiersz historii zmian: "| 2.7 | 2026-09-22 | ...". Historia jest zapisem
-# tego, co było, więc odwołania do wycofanych identyfikatorów są w niej
-# prawidłowe i nie podlegają kontroli.
-RE_HISTORIA = r'^\|\s*\*{0,2}\d+\.\d+\*{0,2}\s*\|\s*\*{0,2}\d{4}-\d{2}-\d{2}'
 
 bledy = []
 
@@ -51,20 +56,28 @@ def czytaj(sciezka):
     return io.open(sciezka, encoding='utf-8').read()
 
 
+def pliki_tekstowe():
+    for katalog in KATALOGI:
+        if not os.path.isdir(katalog):
+            continue
+        for nazwa in sorted(os.listdir(katalog)):
+            if nazwa.endswith(ROZSZERZENIA):
+                yield os.path.join(katalog, nazwa) if katalog != '.' else nazwa
+
+
 def unikalne(wzorzec, tekst, flagi=re.M):
     return set(re.findall(wzorzec, tekst, flagi))
 
 
 # --------------------------------------------------------------- 1. pokrycie
-def pokrycie(wymagania, proces):
-    zdefiniowane = unikalne(RE_WYMAGANIE, wymagania)
+def pokrycie(wymagania):
+    if '## 20.' not in wymagania:
+        bledy.append('Nie znaleziono rozdziału 20 (tabela pokrycia) w %s' % WYMAGANIA)
+        return set(), set()
 
-    if '## 14' not in proces:
-        bledy.append('Nie znaleziono rozdziału 14 (tabela pokrycia) w %s' % PROCES)
-        return zdefiniowane, set()
-
-    tabela = proces[proces.index('## 14'):]
-    pokryte = unikalne(RE_WYMAGANIE, tabela)
+    i = wymagania.index('## 20.')
+    zdefiniowane = unikalne(RE_WYMAGANIE, wymagania[:i])
+    pokryte = unikalne(RE_WYMAGANIE, wymagania[i:])
 
     bez_pokrycia = sorted(zdefiniowane - pokryte)
     nadmiarowe = sorted(pokryte - zdefiniowane)
@@ -78,93 +91,86 @@ def pokrycie(wymagania, proces):
 
 
 # --------------------------------------------------------------- 2. liczniki
-def liczniki(wymagania, proces, firmware):
-    otwarte = set()
-    for linia in wymagania.split('\n'):
+def liczniki(wymagania, firmware, otwarte):
+    i = wymagania.index('## 20.') if '## 20.' in wymagania else len(wymagania)
+    czesc_wymagan = wymagania[:i]
+
+    otwarte_wymagania = set()
+    for linia in czesc_wymagan.split('\n'):
         if 'DO USTALENIA' in linia:
             m = re.match(RE_WYMAGANIE, linia)
             if m:
-                otwarte.add(m.group(1))
+                otwarte_wymagania.add(m.group(1))
+
+    pozycje = unikalne(RE_POZYCJA, otwarte)
+    zalozenia = unikalne(r'\|\s*\*{0,2}(Z\d{1,3})\*{0,2}\s*\|', otwarte)
 
     return {
-        'wymagania': len(unikalne(RE_WYMAGANIE, wymagania)),
-        'wymagania otwarte (DO USTALENIA)': len(otwarte),
+        'wymagania': len(unikalne(RE_WYMAGANIE, czesc_wymagan)),
+        'wymagania otwarte (DO USTALENIA)': len(otwarte_wymagania),
         'kody usterek DTC': len(unikalne(r'\bDTC-[A-Z]{3}-\d{2}\b', firmware, 0)),
-        'identyfikatory testów': len(unikalne(r'\bT-[A-Z]{3}-\d{3}[a-z]?\b', proces, 0)),
-        'luki L': len(unikalne(r'\|\s*\*{0,2}(L\d{1,3})\*{0,2}\s*\|', proces)),
-        'ryzyka R': len(unikalne(r'\|\s*\*{0,2}(R\d{1,3})\*{0,2}\s*\|', proces)),
-        'założenia Z': len(unikalne(r'\|\s*\*{0,2}(Z\d{1,3})\*{0,2}\s*\|', proces)),
-    }, sorted(otwarte)
+        'identyfikatory testów': len(unikalne(r'\bT-[A-Z]{3}-\d{3}[a-z]?\b', wymagania, 0)),
+        'pozycje otwarte': len(pozycje),
+        'założenia': len(zalozenia),
+    }, sorted(otwarte_wymagania), pozycje
 
 
-# ------------------------------------------------- 3. osierocone odwołania
+# ------------------------------------------- 3. odwołania do pozycji otwartych
+def odwolania(pozycje):
+    uzyte = set()
+    for sciezka in pliki_tekstowe():
+        if os.path.basename(sciezka) == OTWARTE:
+            continue
+        tekst = io.open(sciezka, encoding='utf-8').read()
+        for ident in re.findall(r'\bO-\d{3}\b', tekst):
+            uzyte.add(ident)
+
+    wiszace = sorted(uzyte - pozycje)
+    if wiszace:
+        bledy.append('Odwołania do pozycji, których nie ma w %s: %s'
+                     % (OTWARTE, ', '.join(wiszace)))
+
+    tekst_otwarte = io.open(OTWARTE, encoding='utf-8').read()
+    duplikaty = [p for p in sorted(pozycje)
+                 if len(re.findall(RE_POZYCJA.replace('(O-\\d{3})', p),
+                                   tekst_otwarte, re.M)) > 1]
+    if duplikaty:
+        bledy.append('Identyfikatory użyte więcej niż raz: %s' % ', '.join(duplikaty))
+
+    return uzyte
+
+
+# ------------------------------------------------- 4. osierocone odwołania
 def osierocone():
-    for katalog in (DOK, 'diagramy', 'pomiary'):
-        if not os.path.isdir(katalog):
-            continue
-        for nazwa in sorted(os.listdir(katalog)):
-            if not nazwa.endswith(('.md', '.mermaid')):
-                continue
-            sciezka = os.path.join(katalog, nazwa)
-            for nr, linia in enumerate(io.open(sciezka, encoding='utf-8'), 1):
-                if re.match(RE_HISTORIA, linia):
-                    continue
-                for ident in WYCOFANE:
-                    if ident in linia and not any(k in linia for k in KONTEKST_USUNIECIA):
-                        bledy.append('%s:%d — odwołanie do wycofanego %s' % (sciezka, nr, ident))
-
-
-# ------------------------------------------------------------- 4. wersje
-def wersje(proces):
-    """Wersja w spisie dokumentów musi zgadzać się z metryką pliku."""
-    metryki = {}
-    for katalog in (DOK, 'archiwum'):
-        if not os.path.isdir(katalog):
-            continue
-        for nazwa in sorted(os.listdir(katalog)):
-            if not nazwa.endswith('.md'):
-                continue
-            tekst = io.open(os.path.join(katalog, nazwa), encoding='utf-8').read(2000)
-            m = re.search(r'\*\*Wersja\*\*\s*\|\s*\*{0,2}([0-9]+\.[0-9]+)', tekst)
-            if m:
-                metryki[nazwa] = m.group(1)
-
-    for nazwa, wersja_pliku in sorted(metryki.items()):
-        wzor = r'`%s`[^|]*\|\s*\*{0,2}([0-9]+\.[0-9]+)' % re.escape(nazwa)
-        m = re.search(wzor, proces)
-        if not m:
-            bledy.append('%s — brak wpisu w spisie dokumentów' % nazwa)
-        elif m.group(1) != wersja_pliku:
-            bledy.append('%s — spis podaje %s, metryka pliku %s'
-                         % (nazwa, m.group(1), wersja_pliku))
-    return metryki
+    for sciezka in pliki_tekstowe():
+        for nr, linia in enumerate(io.open(sciezka, encoding='utf-8'), 1):
+            for ident in WYCOFANE:
+                if ident in linia and not any(k in linia for k in KONTEKST_USUNIECIA):
+                    bledy.append('%s:%d — odwołanie do wycofanego %s' % (sciezka, nr, ident))
 
 
 def main():
-    if not os.path.isdir(DOK):
-        print('Uruchom z katalogu głównego repozytorium (brak katalogu %s/).' % DOK)
+    if not os.path.exists(WYMAGANIA):
+        print('Uruchom z katalogu głównego repozytorium (nie znaleziono %s).' % WYMAGANIA)
         return 1
 
     wymagania = czytaj(WYMAGANIA)
-    proces = czytaj(PROCES)
     firmware = czytaj(FIRMWARE)
+    otwarte = czytaj(OTWARTE)
 
-    zdefiniowane, pokryte = pokrycie(wymagania, proces)
-    licz, otwarte = liczniki(wymagania, proces, firmware)
+    zdefiniowane, pokryte = pokrycie(wymagania)
+    licz, otwarte_wym, pozycje = liczniki(wymagania, firmware, otwarte)
+    uzyte = odwolania(pozycje)
     osierocone()
-    metryki = wersje(proces)
 
     print('LICZNIKI — wartości do wstawienia do dokumentów')
     for k, v in licz.items():
         print('  %-36s %d' % (k, v))
     print('  %-36s %d / %d' % ('pokrycie traceability', len(pokryte), len(zdefiniowane)))
-
-    print('\nWERSJE DOKUMENTÓW')
-    for nazwa, w in sorted(metryki.items()):
-        print('  %-34s %s' % (nazwa, w))
+    print('  %-36s %d' % ('pozycje otwarte przywołane w tekście', len(uzyte)))
 
     print('\nWYMAGANIA OTWARTE (blokują bramkę G0)')
-    print('  ' + (', '.join(otwarte) if otwarte else 'brak'))
+    print('  ' + (', '.join(otwarte_wym) if otwarte_wym else 'brak'))
 
     if bledy:
         print('\nROZBIEŻNOŚCI — %d' % len(bledy))

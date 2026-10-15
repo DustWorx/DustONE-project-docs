@@ -6,7 +6,7 @@ Samodzielna, programowalna jednostka sterująca silnika do motocykli enduro i ad
 
 ---
 
-## Stan projektu — 13.10.2026
+## Stan projektu
 
 | | |
 |---|---|
@@ -16,69 +16,56 @@ Samodzielna, programowalna jednostka sterująca silnika do motocykli enduro i ad
 | Wykonane testy | **zero** |
 | Zbudowany sprzęt | **brak** |
 
-**Czego ten stan nie oznacza.** Zero wykonanych testów jest stanem oczekiwanym — nie zbudowano jeszcze żadnej płytki. 99 identyfikatorów testów w dokumentacji to **miejsca na dowód, nie wykonane próby**. Żadne wymaganie nie jest zamknięte dowodem.
+Zero wykonanych testów jest stanem oczekiwanym — nie zbudowano jeszcze żadnej płytki. 100 identyfikatorów testów to **miejsca na dowód, nie wykonane próby**. Żadne wymaganie nie jest zamknięte dowodem.
 
 ### Liczby
 
-Generowane skryptem `skrypty/kontrola.py`, nie wpisywane ręcznie.
+Generowane przez `scripts/kontrola.py`, nie wpisywane ręcznie.
 
 | Pozycja | Stan |
 |---|---|
-| Wymagania z identyfikatorem | 105 |
-| Pokrycie w tabeli traceability | 105 / 105 |
+| Wymagania z identyfikatorem | 107 |
+| Pokrycie w tabeli traceability | 107 / 107 |
 | Wymagania bez ustalonej wartości — **blokują G0** | **17** |
-| Kody usterek w macierzy | 49 |
-| Identyfikatory testów | 99 |
-| Luki w rejestrze | 40 |
-| Ryzyka w rejestrze | 18 |
-| Założenia w rejestrze | 10 |
-
-### Co blokuje bramkę G0
-
-1. 17 wymagań bez ustalonej wartości
-2. Brak wymagań bootloadera
-3. **Nierozstrzygnięty typ zapłonu fabrycznego** — patrz niżej
+| Kody usterek w macierzy | 47 |
+| Identyfikatory testów | 100 |
+| Pozycje otwarte | 63 |
+| Założenia (1 obalone, 1 potwierdzone, 11 niepotwierdzonych) | 13 |
 
 ---
 
 ## Pozycja o najwyższym priorytecie
 
-Audyt AUD-ECU-002 wskazał, że nie ustalono, czy Beta 300 RR 2015 ma **DC-CDI czy zapłon indukcyjny**. Instrukcja fabryczna wskazuje DC-CDI, a projekt przyjął driver cewki indukcyjnej (VBG08H-E) bez zapisania tego wniosku.
+**Nie jest ustalone, czy Beta 300 RR 2015 ma DC-CDI czy zapłon indukcyjny.** Instrukcja fabryczna wskazuje DC-CDI, a projekt przyjął driver cewki indukcyjnej (VBG08H-E) bez zapisania tego wniosku.
 
 Jeśli motocykl ma CDI, przeprojektowania wymagają: dobór drivera zapłonu, architektura ładowania cewki, analiza termiczna i wybór obudowy.
 
-**Rozstrzyga pomiar: `pomiary/triaz-zaplonu.md`** — multimetr, 30 minut.
+**Rozstrzyga pomiar: [`measurements/triaz-zaplonu.md`](measurements/triaz-zaplonu.md)** — multimetr, 30 minut.
 
 ---
 
-## Struktura repozytorium
+## Dokumentacja
+
+Pięć plików. Każdy odpowiada na jedno pytanie.
+
+| Plik | Odpowiada na pytanie |
+|---|---|
+| [`produkt.md`](produkt.md) | **Co budujemy i jak to jest zbudowane?** Zakres, warianty, decyzje sprzętowe z uzasadnieniami i odrzuconymi alternatywami, komponenty, zasilanie, złącze, uśpienie, HMI, budżety, obudowy, obwiednia środowiskowa |
+| [`wymagania.md`](wymagania.md) | **Co musi być spełnione i czym to udowodnimy?** 105 wymagań z wartościami i metodą weryfikacji + tabela pokrycia od wymagania do dowodu |
+| [`firmware.md`](firmware.md) | **Jak firmware ma się zachowywać?** Maszyna stanów, bezpieczeństwo i macierz usterek, trigger i synchronizacja, punkty C.2–J otwarte |
+| [`otwarte.md`](otwarte.md) | **Czego jeszcze nie wiemy i co może być fałszywe?** Jedyny rejestr pozycji otwartych, założenia, ryzyka zaakceptowane świadomie |
+| [`proces.md`](proces.md) | **W jakiej kolejności i kiedy można przejść dalej?** Fazy, bramki, kryteria odbioru wyrobu, plan prac |
+| [`HISTORIA.md`](HISTORIA.md) | **Co się zmieniło i dlaczego?** Jedna linia na zmianę merytoryczną, najnowsze u góry |
 
 | Katalog | Zawartość |
 |---|---|
-| `dokumentacja/` | Dokumenty projektu — patrz tabela niżej |
-| `diagramy/` | Diagramy w źródle Mermaid (`.mermaid`) i renderze (`.png`) |
-| `pomiary/` | Procedury pomiarowe do wykonania na sprzęcie i ich wyniki |
-| `audyty/` | Otrzymane raporty audytowe, w formie dostarczonej |
-| `skrypty/` | Kontrola spójności dokumentacji |
-| `archiwum/` | Dokumenty nieaktualne, zachowane jako materiał źródłowy |
+| `diagrams/` | Architektura systemu, łańcuch odcięcia zapłonu, zatrzask K4 — źródło Mermaid i render PNG |
+| `measurements/` | Procedury pomiarowe do wykonania na sprzęcie i ich wyniki |
+| `audit/` | Otrzymane raporty audytowe w formie dostarczonej |
+| `scripts/` | Kontrola spójności i generowanie liczników |
 
-### Dokumenty
 
-| ID | Plik | Wersja | Zawartość |
-|---|---|---|---|
-| DOC-001 | `dokumentacja/proces-rozwoju-ecu.md` | 3.9 | Dokument główny: proces, fazy, bramki, zasady, decyzje sprzętowe, budżety, rejestry luk, ryzyk i założeń, tabela pokrycia wymagań |
-| DOC-002 | `dokumentacja/wymagania.md` | 1.5 | 105 wymagań z wartościami i metodą weryfikacji |
-| DOC-003 | `diagramy/architektura-systemu.mermaid` | 1.2 | Diagram blokowy systemu |
-| DOC-004 | `dokumentacja/faza2-fw-specyfikacja.md` | 1.7 | Specyfikacja firmware: punkt A maszyna stanów, B bezpieczeństwo i macierz usterek, C.1 trigger |
-| DOC-005 | `dokumentacja/przeglad-komponentow.md` | 1.6 | Cykl życia i dostępność komponentów, rejestr wzorców błędów |
-| DOC-006 | `dokumentacja/plan-naprawczy-audyt.md` | 1.7 | Odpowiedź na pierwszy audyt, 36 pozycji |
-| DOC-007 | `archiwum/faza3-specyfikacja-fw.md` | 0.1 | **Nieaktualny** — do napisania od nowa po zamknięciu Fazy 2-FW |
-| DOC-008 | `diagramy/diagram-bezpieczenstwa.mermaid` | 1.2 | Łańcuch odcięcia zapłonu z podziałem na ścieżki sprzętowe i programowe |
-| DOC-009 | `diagramy/diagram-zatrzask.mermaid` | 1.0 | Zatrzask klasy K4, odblokowanie, licznik resetów |
-| DOC-010 | `dokumentacja/dossier-audytowe.md` | 1.1 | Pakiet wejściowy do drugiego audytu |
-| DOC-011 | `dokumentacja/plan-naprawczy-audyt2.md` | 1.0 | **Plan naprawczy po drugim audycie** — diagnoza wzorców pomijania, zakres zapożyczeń z automotive, plan na 6 etapów, triaż 50 ustaleń |
-
-**Od czego zacząć czytanie:** DOC-011 rozdz. 6 (plan prac) i rozdz. 8 (triaż ustaleń audytu). Dają aktualny obraz stanu w kilku stronach, zamiast lektury dokumentu głównego.
+**Od czego zacząć:** `otwarte.md` rozdz. „Co blokuje bramkę G0" i `proces.md` rozdz. 5. Dają aktualny obraz stanu na dwóch stronach.
 
 ---
 
@@ -86,45 +73,38 @@ Jeśli motocykl ma CDI, przeprojektowania wymagają: dobór drivera zapłonu, ar
 
 | Wariant | Motocykl odniesienia | Zakres sterowania |
 |---|---|---|
-| **MVP-A** — gaźnik | **Beta 300 RR 2015** | Zapłon (mapa jednowymiarowa, kąt w funkcji obrotów), ogranicznik obrotów, wskaźnik biegu, prędkość i przebieg, motogodziny, wyjścia mocy, diagnostyka |
+| **MVP-A** — gaźnik | **Beta 300 RR 2015**, 1-cyl. 2T, **bez TPS** | Zapłon (mapa jednowymiarowa), ogranicznik obrotów, wskaźnik biegu, prędkość i przebieg, motogodziny, wyjścia mocy, diagnostyka |
 | B — TPI | KTM EXC TPI | Dodatkowo wtrysk paliwa |
 | C — TBI | KTM 890 Adventure | Dodatkowo przepustnica sterowana elektronicznie |
 
-**Projektowany jest wyłącznie MVP-A.** Warianty B i C mają zarezerwowane zdolności sprzętowe (wymagania oznaczone `[HW]` i `[B/C]`), ale nie mają własnych specyfikacji.
+**Projektowany jest wyłącznie MVP-A.** Warianty B i C mają zarezerwowane zdolności sprzętowe, ale nie mają własnych specyfikacji.
 
-Motocykl MVP-A **nie ma czujnika położenia przepustnicy** i nie będzie on dokładany — stwierdzone 11.10.2026.
-
-### Czego produkt świadomie nie robi
-
-- **Quickshifter i czujnik sprzęgła** — usunięte 29.09.2026
-- Pełne logowanie sesji jazdy — zawężone do czarnej skrzynki
-- Blokada rozrusznika na biegu — odpowiedzialność po stronie kierowcy
-- Regulacja napięcia szyn przez mikrokontroler
+Świadomie usunięte z produktu: **quickshifter i czujnik sprzęgła**, blokada rozrusznika na biegu, automatyczne ograniczenie mocy przy przegrzaniu, regulacja napięcia szyn przez mikrokontroler. Uzasadnienia w `produkt.md` rozdz. 1.1.
 
 ---
 
 ## Kontrola spójności
 
 ```bash
-python3 skrypty/kontrola.py
+python3 scripts/kontrola.py
 ```
 
-Sprawdza pokrycie wymagań, generuje liczniki, wykrywa osierocone odwołania i porównuje wersje w spisie dokumentów z metrykami plików. Kod wyjścia 1 oznacza znalezione rozbieżności.
+Sprawdza pokrycie wymagań, generuje liczniki, weryfikuje odwołania do pozycji otwartych i wykrywa osierocone identyfikatory. Kod wyjścia 1 oznacza znalezione rozbieżności.
 
-Istnieje dlatego, że liczniki wpisywane ręcznie rozjechały się z rejestrami — ustalenie A50 drugiego audytu.
+Istnieje dlatego, że liczniki wpisywane ręcznie rozjechały się z rejestrami — dokumenty podawały 51 kodów usterek i 107 testów przy rzeczywistych 47 i 100.
 
 ---
 
-## Planowana zmiana struktury
+## Dokumentacja przed konsolidacją
 
-Dokumentacja liczy ~3900 linii, z czego inżynierii jest ~1200. **Ten commit utrwala stan przed konsolidacją**, żeby przebudowa była czytelnym diffem, a nie nadpisaniem.
+Stan dokumentacji sprzed 13.10.2026 — dawny dokument główny, odpowiedzi na oba audyty, przegląd komponentów i nieaktualna specyfikacja Fazy 3 — został na gałęzi **[`Old-docs`](https://github.com/DustWorx/DustONE-project-docs/tree/Old-docs)**, z tagiem `baseline-2026-10-13`. Ta gałąź jest kopią bezpieczeństwa: **nie jest rozwijana i nie należy jej traktować jako źródła aktualnego stanu.**
 
-Cel: 8 plików dokumentacji → 4 (`produkt.md`, `wymagania.md`, `firmware.md`, `otwarte.md`), pięć równoległych rejestrów → jeden z jedną przestrzenią identyfikatorów, tabele historii zmian usunięte na rzecz historii repozytorium.
+Aktualna dokumentacja żyje na gałęzi **`Actual-documentation`** i to ona jest jedynym źródłem obowiązującego stanu projektu.
 
 ---
 
 ## Ograniczenia, o których trzeba wiedzieć przy czytaniu
 
-- **Nie było niezależnego przeglądu ludzkiego.** Oba audyty i cała dokumentacja powstały jako analiza wspierana modelem językowym. Przed uruchomieniem toru energii, odcięcia i synchronizacji potrzebny jest punktowy przegląd przez drugiego inżyniera.
-- Część założeń technicznych nie jest potwierdzona pomiarem — rejestr założeń w DOC-001 rozdz. 11.2 wymienia je wraz z tym, co się zawali, jeśli są fałszywe.
+- **Nie było niezależnego przeglądu ludzkiego.** Oba audyty i cała dokumentacja powstały jako analiza wspierana modelem językowym. Przed uruchomieniem toru energii, odcięcia i synchronizacji potrzebny jest punktowy przegląd przez drugiego inżyniera — pozycja O-057.
+- **Trzynaście założeń nie jest potwierdzonych pomiarem.** `otwarte.md` rozdz. 8 wymienia je wraz z tym, co się zawali, jeśli są fałszywe. Jedno już się zawaliło.
 - Dokumenty opisują stan projektowy, nie zweryfikowany sprzętowo.

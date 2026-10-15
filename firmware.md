@@ -1,36 +1,8 @@
-# Faza 2-FW — Specyfikacja funkcjonalna firmware
+# Firmware — specyfikacja funkcjonalna
 
-| | |
-|---|---|
-| **Identyfikator** | DOC-004 |
-| **Wersja** | **1.7** |
-| **Status** | roboczy — punkt A zamknięty, punkty B–J do opracowania |
-| **Właściciel** | Paweł |
-| **Opracowanie** | Claude |
-| **Data wersji** | 2026-09-20 |
-| **Dokument nadrzędny** | `proces-rozwoju-ecu.md` (DOC-001) |
+Specyfikacja zachowania firmware ECU. Punkt A (maszyna stanów) i B (bezpieczeństwo, macierz usterek) zamknięte; C.1 (trigger) zamknięty i **wymaga ponownego przeglądu** po rozstrzygnięciu pozycji O-001 i O-005. Punkty C.2–J otwarte.
 
-**Historia zmian**
-
-| Wersja | Data | Zakres zmiany |
-|---|---|---|
-| 0.1 | 2026-08-31 | Utworzenie: maszyna stanów (A.1–A.4), decyzje A.1–A.8, źródła wybudzenia; szkice punktów B–J |
-| 0.2 | 2026-09-12 | Korekta A.3b (sterowanie rozrusznikiem — audyt F-006); korekta opisu uśpienia: wyłączana jest wyłącznie przetwornica 5 V |
-| 0.3 | 2026-09-20 | Aktualizacja oznaczeń komponentów (BMI088 → BMI090L); metryka dokumentu |
-| 0.4 | 2026-09-20 | Punkt B: klasyfikacja usterek K0–K4, zamknięta lista zdarzeń odcinających, macierz grup 1 i 2, ustalenia o wyjściu C.F. w VBG08H-E, sufit czasu ładowania w rejestrze okresu HRTIM, zatrzask i odblokowanie |
-| **0.5** | **2026-09-20** | Korekta opisu uśpienia (obie przetwornice pracują, odcinany jest przełącznik obciążenia); **macierz usterek grupa 3** — komunikacja i zasilanie, 11 kodów DTC; decyzje o niezgodności wersji protokołu i kolejności diagnozowania przy awarii szyny 5 V |
-| 0.6 | 2026-09-20 | **Wycofanie propozycji zasilania MAX9926 poza przełącznikiem obciążenia** po sprawdzeniu karty katalogowej (brak wejścia shutdown, pobór 4,7 mA typ.); zagrożenie przeniesione na ECU-PWR-010 / DTC-PWR-10 |
-| 0.7 | 2026-09-22 | **Macierz usterek grupa 4** — bezpieczeństwo, autotest i pamięć, 15 kodów DTC; **macierz kompletna (40 DTC), F-023 domknięte**. Decyzje: trzypoziomowe rozpoznanie kill switcha z bramkowaniem komparatorem zewnętrznym, blokada startu przy uszkodzonych mapach sterowania z rozdzieleniem od konfiguracji użytkownika, migawka stanu przy resecie watchdoga, próg wywrotki 65°/3 s. Domknięty zakres autotestu skróconego (ECU-PWR-003a); doprecyzowane zachowanie licznika resetów w B.4 |
-| 0.8 | 2026-09-22 | **B.3 tryb pracy zastępczej** (trzy grupy deratingu wg utraconej informacji, mapa awaryjna na pełne obciążenie, zjazd limitu w 3 s, czterostopniowa prezentacja usterek) i **B.5 interlocki live tuningu** (zakres dozwolonych zmian, blokada przy obrotach i obciążeniu łącznie, limity szybkości, automatyczne przerwanie sesji). Rozdzielenie DTC-PWR-08 na 08a/08b po uwadze Pawła o zasilaniu MAX9926; rozdzielenie DTC-SEN-04 na warianty [A] i [B/C]. Odtworzone B.4, usunięte odniesienie do wycofanego zdarzenia 8 |
-| 0.9 | 2026-09-29 | **B.6 quickshifter** — zamknięcie pozycji P0 z rozdz. 14.11. Zmiana decyzji 2.6: gotowy czujnik prętowy 0–5 V zamiast surowego tensometru ze wzmacniaczem w G474. Czas odcięcia zależny od obrotów z sufitem sprzętowym 150 ms, samoczynne wyłączenie przy zablokowanej dźwigni, warunek otwarcia przepustnicy 20% jako główny filtr fałszywych wyzwoleń. Nowe DTC-SEN-11 i DTC-SEN-12. Blipper formalnie poza zakresem |
-| **1.0** | **2026-09-29** | **B.6.8 czujnik sprzęgła** — luka wykryta przez Pawła: warunki dopuszczenia nie sprawdzały intencji kierowcy. Mikroprzełącznik w klamce blokuje cięcie przy wciśniętym sprzęgle; kontrola wiarygodności stanu (DTC-SEN-13). Decyzja L2 utrzymana — brak blokady rozrusznika; w zamian wskazanie informacyjne włączonego biegu na HMI z czujnika bębna, bez zapisu do logu. Wykryty warunek konieczny: wybudzenie ECU musi pociągać wybudzenie HMI (SYS-COM-007). Pin zwolniony w B.6.2 przypadł czujnikowi sprzęgła, luka L33 odłożona |
-| **1.1** | **2026-09-29** | Korekta wskazania włączonego biegu (HMI-UI-009): dodany **trzeci warunek — sprzęgło nie wciśnięte**. Wcześniejszy zapis pomijał go i błędnie twierdził, że czujnik sprzęgła nie jest do tego potrzebny |
-| **1.2** | **2026-09-29** | **Poprawione kryterium DTC-SEN-13** po uwadze Pawła: kryterium czasowe (60 s przy prędkości powyżej 10 km/h) dawało fałszywy alarm przy zjeździe z góry na wciśniętym sprzęgle. Nowe kryterium — 3 potwierdzone zmiany biegu bez ani jednego odczytu stanu puszczonego. Dopisana jawna informacja, że awaria przeciwna (przełącznik rozwarty) jest niewykrywalna |
-| 1.3 | 2026-09-29 | **Wycofane drugie kryterium DTC-SEN-13** — Paweł wskazał, że podczas zjazdu z góry na wciśniętym sprzęgle wykonuje się wiele redukcji bez puszczania klamki (5→1, potem 1→2). Kryterium oparte na liczbie zdarzeń zawodzi tak samo jak czasowe. Pozycja **otwarta**, trzy warianty przedstawione do decyzji; kryterium nie będzie zapisane bez zatwierdzenia (nowa zasada procesu #15) |
-| 1.4 | 2026-09-29 | **Quickshifter i czujnik sprzęgła usunięte z produktu** decyzją Pawła. Sekcja B.6 zastąpiona zapisem zmiany zakresu z powodami i konsekwencjami; usunięte DTC-SEN-11/12/13; skorygowane stan PRACA, lista zabroniona w B.5, zakres kalibracji w punkcie G i podsumowanie w B.7. Zwolnione dwa piny złącza |
-| 1.5 | 2026-09-29 | **Diagram bezpieczeństwa gotowy** (DOC-008 i DOC-009). **Punkt B zamknięty** — wszystkie podpunkty B.1–B.7 domknięte |
-| 1.6 | 2026-10-11 | **C.1 trigger i synchronizacja** na podstawie pomiarów koła impulsowego (1 wypust, 30°, krawedź spływu w GMP, pick-up 95,7 Ω, szczelina 0,18 mm). Ciągły model kąta, estymata z interwału wypustu z korektą przyspieszenia, **bramkowanie kątowe odrzucające fałszywe zbocza**, dwa limity wyprzedzenia (28° geometryczny + termodynamiczny w mapie), iskra od drugiego przejścia wypustu. **Przebudowane DTC-IGN-02 i 03** — dawny zapis opisywał wzór zębów koła 60-2, którego ten silnik nie ma; dodane DTC-IGN-03a. Przemianowane zdarzenie 6 w B.1.1. Domyka F-013 |
-| **1.7** | **2026-10-11** | **Skutki obalenia założenia Z1 — Beta 300 RR nie ma TPS.** Usunięte DTC-SEN-04 [A]; skorygowane grupa G3 w B.3.1, tabela wariantów w B.3.2, zakres kalibracji w punkcie G. **Interlock live tuningu dla MVP-A pozostawiony jako pozycja otwarta** — bez TPS nie da się ocenić warunku obciążenia |
+Wymagania w `wymagania.md`, sprzęt w `produkt.md`, pozycje nierozstrzygnięte w `otwarte.md`.
 
 ---
 
@@ -209,7 +181,7 @@ Uzasadnienie: w enduro silnik pełni również funkcję hamulca silnikowego i st
 | DTC-SEN-01 | Temperatura cieczy — przerwa | napięcie > 97% zakresu | 500 ms | **K2** | Wartość zastępcza (niżej) + **wentylator załączony na stałe** | Kreski `---` + komunikat „CZUJNIK TEMP. — AWARIA" |
 | DTC-SEN-02 | Temperatura cieczy — zwarcie do masy | napięcie < 3% zakresu | 500 ms | **K2** | jw. | jw. |
 | DTC-SEN-03 | Temperatura powietrza — przerwa lub zwarcie | jw. | 500 ms | **K2** | Wartość zastępcza 20 °C | Kreski + komunikat |
-| DTC-SEN-04 **[B/C]** | Położenie przepustnicy — poza zakresem, **warianty z wtryskiem** *(MVP-A nie ma TPS — założenie Z1 obalone 11.10.2026)* | napięcie < 3% lub > 97% | **100 ms** | **K3** | **Mapa awaryjna liczona na pełne obciążenie** (bogata w całym zakresie) + ograniczenie do **3500 obr/min**. Szczegóły i uzasadnienie: B.3.2 | Poziom P2 — komunikat musi wyjaśniać, że silnik pracuje na bogato celowo |
+| DTC-SEN-04 **[B/C]** | Położenie przepustnicy — **kod nie został usunięty, obowiązuje wyłącznie w wariantach B/C**, w których czujnik przepustnicy istnieje; w MVP-A nie ma go czym wywołać. Pierwotnie opisany jako usunięty — to była nieścisłość zapisu *(MVP-A nie ma TPS — założenie Z1 obalone 11.10.2026)* | napięcie < 3% lub > 97% | **100 ms** | **K3** | **Mapa awaryjna liczona na pełne obciążenie** (bogata w całym zakresie) + ograniczenie do **3500 obr/min**. Szczegóły i uzasadnienie: B.3.2 | Poziom P2 — komunikat musi wyjaśniać, że silnik pracuje na bogato celowo |
 | DTC-SEN-05 | Napięcie akumulatora — odczyt niemożliwy | poza 5–20 V (uszkodzenie dzielnika lub ADC) | 1000 ms | **K1** | Korekty napięciowe na wartościach nominalnych | Kreski + komunikat |
 | DTC-SEN-06 | Prędkość koła — brak sygnału | brak impulsów przy obrotach silnika > 2000 obr/min | 3 s | **K1** | Bez wpływu na sterowanie silnikiem | Wskazanie wygaszone + komunikat |
 | DTC-SEN-07 | Pozycja biegu — odczyt poza zakresem lub brak odpowiedzi | błąd transmisji SPI lub kąt poza zakresem kalibracji | 200 ms | **K1** | Bez wpływu na sterowanie silnikiem | Wskazanie biegu wygaszone |

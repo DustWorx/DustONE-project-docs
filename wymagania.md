@@ -1,34 +1,8 @@
-# Specyfikacja wymagań — ECU + HMI + Aplikacja desktop
+# Wymagania — ECU „Dust ONE"
 
-| | |
-|---|---|
-| **Identyfikator** | DOC-002 |
-| **Wersja** | **1.5** |
-| **Status** | roboczy — pozycje `[DO USTALENIA]` blokują bramkę G0 |
-| **Właściciel** | Paweł |
-| **Opracowanie** | Claude |
-| **Data wersji** | 2026-09-20 |
-| **Dokument nadrzędny** | `proces-rozwoju-ecu.md` (DOC-001) |
+105 wymagań z wartościami i metodą weryfikacji, oraz tabela pokrycia (traceability) od wymagania do dowodu.
 
-**Historia zmian**
-
-| Wersja | Data | Zakres zmiany |
-|---|---|---|
-| 0.1 | 2026-09-12 | Utworzenie dokumentu: schemat identyfikatorów, ok. 60 wymagań, odpowiedź na pozycje audytu F-011 i F-027 |
-| 0.2 | 2026-09-20 | Ustalenie 14 wartości liczbowych (dokładność zapłonu, histereza ogranicznika, filtr pozycji neutralnej, czas gotowości, progi rozrusznika, licznik resetów, parametry CAN i HMI); dopisanie ECU-IGN-006a, ECU-PWR-003a, ECU-SAF-010a, SYS-COM-001a/002a/002b, HMI-UI-002a |
-| 0.3 | 2026-09-20 | Domknięcie ECU-IGN-005 (sufit czasu ładowania w rejestrze okresu HRTIM) i ECU-SEN-007 (progi < 3% i > 97% zakresu) na podstawie punktu B specyfikacji FW |
-| 0.4 | 2026-09-20 | Dopisane ECU-PWR-009 (reakcja na przepięcie), ECU-PWR-010 (kontrola przełącznika obciążenia), SYS-COM-005a (zachowanie HMI przy niezgodności wersji), SYS-COM-005b (wspólny pakiet aktualizacyjny) — wynik macierzy usterek grupa 3 |
-| 0.5 | 2026-09-22 | Domknięte ECU-PWR-003a (zakres autotestu skróconego), ECU-SAF-005 (65°/3 s), ECU-SAF-002 (układ trzypoziomowy); dopisane ECU-SAF-002a, ECU-SAF-006a (migawka stanu), ECU-SAF-006b (punkty kontrolne), ECU-SAF-012 i 012a (rozdzielenie map sterowania od konfiguracji użytkownika) — wynik macierzy usterek grupa 4 |
-| 0.6 | 2026-09-22 | Domknięte ECU-SAF-011 (interlocki live tuningu). Dopisane ECU-INJ-007 i ECU-IGN-008 (mapy awaryjne przy utracie TPS, rozdzielone na warianty), ECU-PWR-008a (rozdzielenie progów szyny 5 V), ECU-SAF-011a (przerwanie sesji strojenia), ECU-SAF-013 (zjazd limitu w 3 s), ECU-SAF-014 (łączenie ograniczeń), HMI-UI-006/007/008 (prezentacja usterek kierowcy) — wynik punktów B.3 i B.5 |
-| 0.7 | 2026-09-29 | **Wymagania quickshiftera — zamknięcie pozycji P0 z rozdz. 14.11:** ECU-SEN-012 (czujnik prętowy, progi), ECU-SEN-013 (usterka czujnika), ECU-IGN-009 (warunki dopuszczenia), ECU-IGN-010 (czas odcięcia od obrotów), ECU-IGN-011 (sufit sprzętowy 150 ms), ECU-SAF-015 (zablokowana dźwignia) — wynik punktu B.6 |
-| **0.8** | **2026-09-29** | Dopisane ECU-SEN-014 (wejście czujnika sprzęgła, blokada cięcia), ECU-SEN-015 (kontrola wiarygodności stanu sprzęgła), HMI-UI-009 (wskazanie włączonego biegu przy zgaszonym silniku, bez zapisu do logu), SYS-COM-007 (wybudzenie ECU pociąga wybudzenie HMI) — wynik punktu B.6.8 |
-| **0.9** | **2026-09-29** | Korekta HMI-UI-009: dodany trzeci warunek **sprzęgło nie wciśnięte**; źródłem jest czujnik bębna **i** czujnik sprzęgła |
-| **1.0** | **2026-09-29** | Poprawione ECU-SEN-015: kryterium wykrycia zwartego czujnika sprzęgła oparte na zmianach biegu, nie na czasie. Kryterium czasowe dawało fałszywy alarm przy zjeździe na wciśniętym sprzęgle |
-| 1.1 | 2026-09-29 | ECU-SEN-015 wróciło do stanu `[DO USTALENIA]` — drugie kryterium też odrzucone (redukcje biegu podczas zjazdu bez puszczania sprzęgła). Oba odrzucone kryteria zapisane wraz z powodami |
-| 1.2 | 2026-09-29 | **Formalna zmiana zakresu — quickshifter i czujnik sprzęgła usunięte z produktu** (decyzja Pawła). Usuniętych 9 wymagań: ECU-SEN-012/013/014/015, ECU-IGN-009/010/011, ECU-SAF-015, HMI-UI-009. Powody i konsekwencje zapisane w rozdz. 8 |
-| 1.3 | 2026-09-29 | Dopisane ECU-SAF-016 (rezystory ściągające na linii bramkującej EN) i ECU-SAF-016a (zasilanie komparatora za przełącznikiem obciążenia). Luka wykryta przy pytaniu Pawła o monitoring szyny 5 V: linia bramkująca nie była objęta ECU-SAF-007 |
-| 1.4 | 2026-10-11 | **Wymagania triggera i synchronizacji** na podstawie pomiarów koła impulsowego: ECU-IGN-012 (geometria jako kalibracja), 013 (model kąta), 014 (estymata prędkości), 015 (limit geometryczny 28°), 016 (limit termodynamiczny w mapie), 017 (bramkowanie kątowe), 018 (wiarygodność sygnału), 019 (iskra od drugiego przejścia). Wynik punktu C.1 — domyka F-013 |
-| **1.5** | **2026-10-11** | **Skutki obalenia założenia Z1 — Beta 300 RR nie ma TPS.** Usunięte ECU-IGN-008 [A]; dodane **ECU-IGN-020** (mapa zapłonu MVP-A jednowymiarowa); ECU-SEN-003 przeniesione do [HW]; skorygowane SYS-COM-002a i ECU-SAF-011 (sposób blokady live tuningu w MVP-A otwarty) |
+Pozycje `[DO USTALENIA]` blokują bramkę G0; ich aktualną listę generuje `scripts/kontrola.py`. Pozycje nierozstrzygnięte opisuje `otwarte.md`, sprzęt `produkt.md`, firmware `firmware.md`.
 
 ---
 
@@ -67,8 +41,10 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 |---|---|---|---|
 | SYS-ENV-001 | Zakres napięcia zasilania, przy którym ECU musi pracować w pełnym zakresie funkcji | 9,0–16,0 V | T |
 | SYS-ENV-002 | Zakres napięcia, przy którym ECU musi zachować sterowanie silnikiem (dopuszczalna ograniczona funkcjonalność) | 7,0–18,0 V | T |
-| SYS-ENV-003 | Zakres temperatury otoczenia pracy ECU | -20…+60 °C | T |
-| SYS-ENV-004 | Zakres temperatury przechowywania | -30…+85 °C | A |
+| SYS-ENV-003 | Zakres temperatury otoczenia pracy **ECU** | **−40…+85 °C** | T |
+| **SYS-ENV-003a** | Zakres temperatury otoczenia pracy **HMI** | **−20…+70 °C** — ograniczone panelem LCD, nie wyborem projektowym: powyżej ~70 °C ciekły kryształ przechodzi w fazę izotropową i ekran czernieje. Dolna granica z karty modułu | T |
+| **SYS-ENV-003b** | Klasa temperaturowa komponentów | Każdy element czynny musi mieć zakres pokrywający **temperaturę wewnątrz obudowy w najgorszym przypadku** — maksimum z SYS-ENV-003 powiększone o przyrost w jego miejscu na PCB — z marginesem **co najmniej 15 °C**. Minimum: **AEC-Q100 Grade 1 (−40…+125 °C)** dla elementów toru mocy i zapłonu; **Grade 2 (−40…+105 °C)** dopuszczalny w sekcji analogowej po wykazaniu lokalnego przyrostu pomiarem; elementy bierne **AEC-Q200**. Element bez kwalifikacji motoryzacyjnej wymaga **odstępstwa zatwierdzonego przez właściciela projektu** z uzasadnieniem i oceną skutków | A, T |
+| SYS-ENV-004 | Zakres temperatury przechowywania | **−40…+105 °C** — musi pokrywać zakres pracy oraz nagrzanie bez zasilania po zgaszeniu silnika | A |
 | SYS-ENV-005 | Klasa szczelności obudowy ECU i HMI | IP67 minimum | T |
 | SYS-ENV-006 | Odporność na wibracje | `[DO USTALENIA]` — profil do przyjęcia z normy lub pomiaru na motocyklu | A, T |
 | SYS-ENV-007 | Zakres obrotów silnika, w którym ECU musi sterować zapłonem | 200–10 000 obr/min | T |
@@ -251,3 +227,211 @@ Wszystkie oznaczenia `[DO USTALENIA]` muszą zostać zamknięte przed przejście
 | Dane wtryskiwaczy | Pomiar na fizycznym wtryskiwaczu (F-014) |
 | Profil wibracji | Przyjęcie z normy lub pomiar na motocyklu |
 | Kryteria czytelności wyświetlacza | Test na słońcu (Faza 6 lub 9) |
+
+---
+
+## 20. Tabela pokrycia wymagań (traceability)
+Łańcuch: **wymaganie → realizacja sprzętowa → moduł firmware → identyfikator testu → dowód**.
+
+Zasady:
+- Punktem wyjścia jest identyfikator wymagania z tego dokumentu. Funkcja, która nie ma wymagania, nie może być prześledzona — takie przypadki zebrano w rozdz. 20.11.
+- **ID testu**: `T-[OBSZAR]-[NUMER]`, numeracja odpowiada wymaganiu (ECU-IGN-002 → T-IGN-002). Jeden test może pokrywać kilka wymagań; wtedy ten sam identyfikator powtarza się w wierszach. Treść testów powstaje w Fazie 3 (plan testów).
+- **Moduł FW**: punkt specyfikacji `firmware.md` (A–J). Kreska oznacza wymaganie realizowane wyłącznie sprzętowo lub poza firmware ECU.
+- **Dowód**: konkretny artefakt zamykający wymaganie. Dopóki nie istnieje, wiersz pozostaje otwarty.
+- **Faza**: faza, w której test jest wykonywany. Wypełnienie kolumny „Dowód" dla wszystkich wierszy przypisanych do danej fazy jest warunkiem wyjścia z jej bramki (`proces.md`).
+
+Status: ⬜ niewykonane · 🔶 częściowo · ✅ zamknięte dowodem.
+
+### 20.1 Warunki pracy
+
+| Wymaganie | Realizacja sprzętowa | Moduł FW | ID testu | Dowód | Faza | Status |
+|---|---|---|---|---|---|---|
+| SYS-ENV-001 | Przetwornice 5,0 V i 3,3 V (6.2b), ochrona wejścia (6.2d) | — | T-ENV-001 | Protokół pomiarowy: przemiatanie 9→16 V z zasilacza laboratoryjnego, kontrola pełnego zestawu funkcji | 6 | ⬜ |
+| SYS-ENV-002 | Jw. + kondensator buforowy | B (degradacja) | T-ENV-002 | Protokół: 7→18 V, potwierdzenie zachowania sterowania silnikiem i zapisu usterki | 6 | ⬜ |
+| SYS-ENV-003 | Obudowa aluminiowa z kontaktem termicznym (rozdz. 10 `produkt.md`) | — | T-ENV-003 | Protokół z komory klimatycznej, przemiatanie −40…+85 °C otoczenia z pomiarem temperatur wewnątrz — **sprzęt do zaplanowania, pozycja O-051** | 6 | ⬜ |
+| **SYS-ENV-003a** | Riverdi RVT35HHBFWN00, czujnik temperatury na PCB HMI, zarządzanie jasnością | B | T-ENV-003a | Protokół: praca przy −20 i +70 °C otoczenia + osobna próba nasłonecznienia (pozycja O-034) | 6, 9 | ⬜ |
+| **SYS-ENV-003b** | Dobór komponentów, arkusze kwalifikacji | — | T-ENV-003b | Zestawienie dla całego BOM: zakres z karty, miejsce na PCB, lokalny przyrost, margines. Odstępstwa wypisane osobno z zatwierdzeniem | 4 | ⬜ |
+| SYS-ENV-004 | Dobór komponentów | — | T-ENV-004 | Zestawienie zakresów przechowywania z kart katalogowych całego BOM (analiza) | 4 | ⬜ |
+| SYS-ENV-005 | Obudowa + Molex CMC 28 + Deutsch DTM | — | T-ENV-005 | Protokół próby zanurzeniowej 1 m / 30 min wg IP67 | 6 | ⬜ |
+| SYS-ENV-006 | Mocowanie PCB, podparcie elementów ciężkich | — | T-ENV-006 | Profil wibracji przyjęty w Fazie 3 + protokół testu na wstrząsarce lub przejazd pomiarowy | 3 (profil), 9 (test) | ⬜ |
+| SYS-ENV-007 | MAX9926UAEE/V+ + HRTIM w STM32G474VET3 | C | T-ENV-007 | Protokół: generator sygnału VR, 200–10 000 obr/min, zliczanie zgubionych zębów | 6 | ⬜ |
+
+### 20.2 Zapłon
+
+| Wymaganie | Realizacja sprzętowa | Moduł FW | ID testu | Dowód | Faza | Status |
+|---|---|---|---|---|---|---|
+| ECU-IGN-001 | VBG08H-E, HRTIM | C | T-IGN-001 | Protokół: kąt zadany z mapy vs zmierzony na wyjściu drivera | 6 | ⬜ |
+| **ECU-IGN-002** | VBG08H-E, HRTIM (**impuls generowany przez peryferium, nie przez program** — spec. FW B.2.3), MAX9926, STM32G474VET3 | C + I (priorytety przerwań) | **T-IGN-002** | **Histogram błędu z min. 10⁵ zapłonów, oscyloskop, przy jednoczesnej pracy logowania, CAN i USB. Test krytyczny dla bramki G2** | 6 | ⬜ |
+| ECU-IGN-003 | Pomiar VBAT (dzielnik + ADC + VREFINT) | C | T-IGN-003 | Protokół: prąd cewki w funkcji napięcia 7–16 V | 6 | ⬜ |
+| ECU-IGN-004 | VBG08H-E (ograniczenie prądu, diagnostyka termiczna) | C | T-IGN-004 | Pomiar temperatury drivera przy maksymalnych obrotach i najwyższym napięciu | 6 | ⬜ |
+| ECU-IGN-005 | **Rejestr okresu HRTIM jako sufit sprzętowy** (kasowanie wyjścia zdarzeniem porównania oraz końcem okresu) + ograniczenie prądu w VBG08H-E | — (niezależne od FW) | T-IGN-005 | Test wstrzykiwania usterki: zawieszenie firmware z wyjściem w stanie aktywnym oraz zapis błędnej wartości porównania; pomiar długości impulsu w obu przypadkach | 6 | ⬜ |
+| ECU-IGN-006 | — | C | T-IGN-006 | Protokół: odcięcie i powrót przy zadanym progu, stanowisko + silnik | 6, 8 | ⬜ |
+| ECU-IGN-006a | — | C + D (walidacja zakresu) + aplikacja | T-IGN-006a | Protokół: odrzucenie wartości spoza 50–500 obr/min po stronie aplikacji **i** po stronie ECU | 7 | ⬜ |
+| **ECU-IGN-020** | — (brak TPS w MVP-A) | C + D | T-IGN-020 | Przegląd struktury mapy: jedna oś, obroty (inspekcja) + protokół na stanowisku potwierdzający, że kąt zależy wyłącznie od obrotów | 5, 6 | ⬜ |
+| **ECU-IGN-012** | **Koło magnesowe Beta 300 RR: 1 wypust, 30°, krawędź spływu w GMP** (zmierzone) + MAX9926 | C.1.1 + G (kalibracja) | T-IGN-012 | Przegląd struktur danych: geometria jako parametr kalibracyjny, nie stała (inspekcja) + test z podmienioną geometrią na stanowisku | 5, 6 | ⬜ |
+| **ECU-IGN-013** | HRTIM + wejście przechwytujące w STM32G474VET3 | C.1.3 | T-IGN-013 | Protokół: generator sygnału VR z wymuszonym przyspieszaniem i zwalnianiem; porównanie modelu kąta z sygnałem odniesienia | 6 | ⬜ |
+| **ECU-IGN-014** | MAX9926 + przechwytywanie obu krawędzi wypustu | C.1.4 | T-IGN-014 | Protokół: porównanie estymaty z interwału wypustu i ze średniej z obrotu wobec sygnału odniesienia, przy niskich obrotach z tętnieniem | 6 | ⬜ |
+| **ECU-IGN-015** | — (niezależne od mapy) | C.1.9 + D (walidacja) | T-IGN-015 | Protokół: mapa zadająca 35° — potwierdzenie ograniczenia do 28° i zapisu zdarzenia | 6 | ⬜ |
+| **ECU-IGN-016** | — | C.2 + D | T-IGN-016 | Protokół strojenia z obserwacją detonacji; kryterium: brak detonacji przy pełnym obciążeniu w całym zakresie | 8 | ⬜ |
+| **ECU-IGN-017** | Filtr cyfrowy wejścia + adaptacyjny próg MAX9926 + bramkowanie programowe | C.1.6 | T-IGN-017 | **Protokół wstrzykiwania zakłóceń:** impulsy imitujące zbocze w fazie, w której wypust nie może wystąpić — potwierdzenie, że są odrzucone **i że iskra nie została utracona**. Osobno test negatywny: brak odrzucania ważnych zboczy przy gwałtownym przyspieszaniu | 6, 8 | ⬜ |
+| **ECU-IGN-018** | Jw. | C.1.7 | T-IGN-018 | Protokół: naruszenie każdego z trzech kryteriów osobno; kontrola klasy reakcji (K0 pojedyncze, K4 powtarzalne) | 6 | ⬜ |
+| **ECU-IGN-019** | — | C.1.8 | T-IGN-019 | Protokół: rozruch z pomiarem, która iskra jest pierwsza; osobno **restart w ruchu** z potwierdzeniem natychmiastowej iskry z mapy | 6, 8 | ⬜ |
+| ECU-IGN-007 | — | D | T-IGN-007 | Przegląd formatu mapy w specyfikacji struktur danych (inspekcja) | 3 | ⬜ |
+
+### 20.3 Wtrysk
+
+| Wymaganie | Realizacja sprzętowa | Moduł FW | ID testu | Dowód | Faza | Status |
+|---|---|---|---|---|---|---|
+| ECU-INJ-001 | TLE9104SHXUMA1 (2 z 4 kanałów) | C | T-INJ-001 | Protokół obciążeniowy: prąd ciągły 1,5 A/kanał, temperatura układu | 6 | ⬜ |
+| ECU-INJ-002 | TLE9104SHXUMA1 | C | T-INJ-002 | Oscylogram prądu na wtryskiwaczu wzorcowym 11,7 Ω oraz skrajnych 10,5 i 13,0 Ω | 6 | ⬜ |
+| ECU-INJ-003 | Timer w STM32G474VET3 | C | T-INJ-003 | Pomiar szerokości impulsu na wyjściu drivera: rozdzielczość i powtarzalność | 6 | ⬜ |
+| ECU-INJ-004 | Pomiar VBAT | C + D (tabela korekt) | T-INJ-004 | Pomiar czasu martwego na fizycznym wtryskiwaczu w funkcji napięcia (F-014) | 6 | ⬜ |
+| **ECU-INJ-007** | — | C + B (B.3.2) | T-INJ-007 | Protokół: wymuszona usterka TPS na stanowisku, pomiar składu mieszanki analizatorem spalin przy otwartej przepustnicy; potwierdzenie, że mieszanka jest bogata, nie uboga | 6, 8 | ⬜ |
+| ECU-INJ-005 | BTS7008-2EPA (kanał pompy) | A.3 | T-INJ-005 | Oscylogram załączenia pompy przy wejściu w stan GOTOWOŚĆ | 6 | ⬜ |
+| ECU-INJ-006 | BTS7008-2EPA | B | T-INJ-006 | Protokół: brak obrotów → wyłączenie pompy w zadanym czasie | 6 | ⬜ |
+
+### 20.4 Czujniki
+
+| Wymaganie | Realizacja sprzętowa | Moduł FW | ID testu | Dowód | Faza | Status |
+|---|---|---|---|---|---|---|
+| ECU-SEN-001 | MAX9926UAEE/V+ + ochrona wejścia | C | T-SEN-001 | Protokół: generator + cewka VR, od 50 mV do 100 V szczytowo, zliczanie błędów detekcji | 6 | ⬜ |
+| ECU-SEN-002 | Osobna ścieżka Hall (zworka), z pominięciem MAX9926 | C + D | T-SEN-002 | Protokół: praca z czujnikiem Halla, weryfikacja przełączenia zworką | 6 | ⬜ |
+| ECU-SEN-003 | ADC + szyna 5,00 V ±2% | C + G (kalibracja) | T-SEN-003 | Protokół: potencjometr wzorcowy, błąd po kalibracji w całym zakresie | 6 | ⬜ |
+| ECU-SEN-004 | ADC + rezystor podciągający | C | T-SEN-004 | Protokół: rezystory wzorcowe odwzorowujące 0–120 °C, porównanie z tabelą czujnika | 6 | ⬜ |
+| ECU-SEN-005 | ADC + rezystor podciągający | C | T-SEN-005 | Jw. dla zakresu −20…+80 °C | 6 | ⬜ |
+| ECU-SEN-006 | Dzielnik + ADC + VREFINT | C | T-SEN-006 | Protokół: porównanie z miernikiem wzorcowym w zakresie 7–16 V | 6 | ⬜ |
+| ECU-SEN-007 | Podciągnięcia/ściągnięcia na wejściach czujnikowych; progi < 3% i > 97% zakresu (spec. FW B.2.1) | E | T-SEN-007 | Protokół wstrzykiwania usterek: rozwarcie i zwarcie każdego wejścia, kontrola zgłoszonego kodu | 6 | ⬜ |
+| ECU-SEN-008 | MLX90316 na bębnie zmiany biegów | G + D | T-SEN-008 | Protokół: 200 zmian biegu na silniku, licznik błędów rozpoznania | 8 | ⬜ |
+| ECU-SEN-009 | MLX90316 | C/G | T-SEN-009 | Oscylogram + log: zmiana 1↔2 z pomiarem czasu, brak zgłoszenia pozycji neutralnej | 8 | ⬜ |
+| ECU-SEN-010 | Wejście z podciągnięciem | C | T-SEN-010 | Protokół: porównanie z odcinkiem pomiarowym o znanej długości | 8 | ⬜ |
+| ECU-SEN-011 | Pomiar szyny 5 V przez ADC | C | T-SEN-011 | Protokół: wymuszona zmiana napięcia szyny, potwierdzenie stałości wskazania TPS | 6 | ⬜ |
+
+### 20.5 Zasilanie i tryb uśpienia
+
+| Wymaganie | Realizacja sprzętowa | Moduł FW | ID testu | Dowód | Faza | Status |
+|---|---|---|---|---|---|---|
+| ECU-PWR-001 | Architektura uśpienia (6.4): przełącznik obciążenia 5 V, TJA1043 w Standby, W25Q64 w deep power-down | A | T-PWR-001 | Protokół pomiaru prądu (miernik z zakresem µA) przy 12,0 V i +25 °C | 6 | ⬜ |
+| SYS-PWR-002 | Jw. + uśpienie HMI (7.1) | A + J | T-PWR-002 | Protokół pomiaru prądu całego zestawu | 6 | ⬜ |
+| ECU-PWR-003 | — | A + A.4 | T-PWR-003 | Oscylogram: zbocze źródła wybudzenia → pierwszy impuls na wyjściu drivera zapłonu | 6 | ⬜ |
+| ECU-PWR-003a | — | A + B (B.2.5) | T-PWR-003a | Protokół: czas i zakres autotestu pełnego vs skróconego, log przyczyny wyboru; pomiar czasu sumy kontrolnej map | 6 | ⬜ |
+| ECU-PWR-004 | — | A | T-PWR-004 | Protokół: pomiar czasu do zaśnięcia, 10 powtórzeń | 6 | ⬜ |
+| HMI-PWR-005 | Sterowanie podświetleniem przez BT817Q | J | T-PWR-005 | Protokół: pomiar czasu wygaszenia | 6 | ⬜ |
+| ECU-PWR-006 | Dzielnik rezystorowy nastawy przetwornic (brak DAC i potencjometru cyfrowego) | — | T-PWR-006 | Przegląd schematu: potwierdzenie braku ścieżki sterowania nastawą z MCU (inspekcja) | 4 | ⬜ |
+| ECU-PWR-007 | ADC na obu szynach + sygnały Power Good | B | T-PWR-007 | Protokół: wymuszone zaniki i przeciążenia szyn, kontrola reakcji | 6 | ⬜ |
+| ECU-PWR-008 | Przetwornica 5,0 V o stałej nastawie | — | T-PWR-008 | Protokół: pomiar napięcia przy skrajnym obciążeniu i w skrajnych temperaturach | 6 | ⬜ |
+| **ECU-PWR-008a** | ADC szyny 5 V + Power Good | B (B.2.4) | T-PWR-008a | Protokół: regulowane zasilanie szyny czujników w zakresie 4,3–5,7 V; potwierdzenie granic obu reakcji i **poprawnej przyczyny w logu** przy zaniku | 6 | ⬜ |
+| **ECU-PWR-009** | Pomiar VBAT + BTS7008-2EPA (kanał wentylatora) | B (DTC-PWR-07) | T-PWR-009 | Protokół: podanie 17 V z zasilacza laboratoryjnego, potwierdzenie ostrzeżenia i załączenia wentylatora; kontrola histerezy przy zejściu poniżej 15,5 V | 6 | ⬜ |
+| **ECU-PWR-010** | Przełącznik obciążenia 5 V + ADC szyny czujników | B (DTC-PWR-10) | T-PWR-010 | Protokół: wymuszone rozwarcie przełącznika, potwierdzenie blokady wyjścia ze stanu GOTOWOŚĆ po 3 próbach | 6 | ⬜ |
+
+### 20.6 Bezpieczeństwo
+
+| Wymaganie | Realizacja sprzętowa | Moduł FW | ID testu | Dowód | Faza | Status |
+|---|---|---|---|---|---|---|
+| **ECU-SAF-001** | Sprzętowe bramkowanie wejść EN driverów (TLE9104 EN/RESN, VBG08H-E) sygnałem kill switcha | B | **T-SAF-001** | **Test wstrzykiwania usterki: zawieszony firmware z aktywnymi wyjściami, rozwarcie kill switcha, pomiar czasu do odcięcia. Test krytyczny dla bramki G2** | 6 | ⬜ |
+| ECU-SAF-002 | **Układ trzypoziomowy: rezystory w wiązce przy przycisku + podciągnięcie w ECU + komparator bramkujący** | B (B.2.5.1) + E | T-SAF-002 | Protokół: trzy przypadki — naciśnięcie przycisku, przecięcie przewodu, rozłączenie wtyczki. W każdym kontrola odcięcia **oraz** poprawności rozróżnienia w logu i komunikacie | 6 | ⬜ |
+| **ECU-SAF-002a** | Jw. | B | T-SAF-002a | Protokół: pomiar czasu od zmiany stanu do zgłoszenia usterki, kontrola odporności na drgania styku | 6 | ⬜ |
+| ECU-SAF-003 | TPS3430-Q1 + rezystory ściągające | B | T-SAF-003a / T-SAF-003b | Protokół: wymuszony reset watchdoga przy pracującym silniku, potwierdzenie braku samoczynnego startu. **Dwa warianty** — odblokowanie kill switchem (a) i odblokowanie z HMI (b); obie drogi muszą przechodzić przez ten sam warunek zatrzymania wału | 6 | ⬜ |
+| ECU-SAF-004 | Detektor brown-out w MCU + Power Good | B | T-SAF-004 | Protokół: zapad napięcia poniżej progu, ten sam zatrzask co T-SAF-003 | 6 | ⬜ |
+| ECU-SAF-005 | BMI090L | B (B.2.5.4) | T-SAF-005 | Protokół: obrót zestawu na stanowisku (próg 65°, czas 3 s) + **rejestracja kąta przechyłu podczas sesji jazdy w terenie**; kryterium zaliczenia: zero fałszywych zadziałań | 6, 8 | ⬜ |
+| ECU-SAF-006 | Licznik w pamięci nieulotnej (W25Q64) | B | T-SAF-006 | Protokół: 3 wymuszone resety → stan awarii; weryfikacja zerowania dopiero po 60 s pracy silnika | 6 | ⬜ |
+| **ECU-SAF-006a** | W25Q64 + rejestry domeny podtrzymywanej (superkondensator) | B (B.2.5.3) | T-SAF-006a | Protokół: wymuszony reset watchdoga, odczyt migawki aplikacją desktop, kontrola kompletu pól; powtórzenie 3× i kontrola, czy zachowane są 3 ostatnie migawki | 6 | ⬜ |
+| **ECU-SAF-006b** | Rejestr domeny podtrzymywanej | I (lista zadań) + B | T-SAF-006b | Przegląd kodu: każde zadanie czasu rzeczywistego zapisuje identyfikator przy wejściu (inspekcja) + test: zawieszenie wybranego zadania i kontrola, czy migawka wskazuje właśnie je | 5, 6 | ⬜ |
+| **ECU-SAF-012** | W25Q64 (suma kontrolna map) | B (B.2.5.2) | T-SAF-012 | Protokół: celowe uszkodzenie bajtu w mapach, kontrola blokady startu i treści komunikatu | 6 | ⬜ |
+| **ECU-SAF-012a** | W25Q64 (suma kontrolna konfiguracji) | B (B.2.5.2) | T-SAF-012a | Protokół: celowe uszkodzenie bajtu w konfiguracji użytkownika, potwierdzenie **uruchomienia silnika** na wartościach domyślnych z ostrzeżeniem | 6 | ⬜ |
+| ECU-SAF-007 | Rezystory ściągające na wszystkich wyjściach mocy | — | T-SAF-007 | Oscylogram stanu wyjść od chwili podania zasilania do końca startu MCU | 6 | ⬜ |
+| **ECU-SAF-016** | **Rezystory ściągające na linii bramkującej EN** driverów | — (niezależne od FW) | T-SAF-016 | Protokół wstrzykiwania usterki: odłączenie zasilania komparatora przy pracującym silniku — potwierdzenie odcięcia, nie załączenia. Osobno: oscylogram stanu linii EN od chwili podania zasilania | 6 | ⬜ |
+| **ECU-SAF-016a** | Komparator zasilany z szyny 5 V za przełącznikiem obciążenia | — | T-SAF-016a | Przegląd schematu (inspekcja) + pomiar prądu spoczynkowego w T-PWR-001 potwierdzający brak wpływu komparatora | 4, 6 | ⬜ |
+| ECU-SAF-008 | BTS7008-2EPA (kanał rozrusznika) | B + A.3b | T-SAF-008 | Protokół: próba załączenia rozrusznika przy obrotach > 400 obr/min, potwierdzenie blokady | 8 | ⬜ |
+| ECU-SAF-009 | BTS7008-2EPA | A.3b | T-SAF-009 | Protokół: pomiar czasu ciągłej pracy rozrusznika | 6 | ⬜ |
+| ECU-SAF-010 | BTS7008-2EPA | A.3b | T-SAF-010 | Protokół: pomiar obrotów w chwili wyłączenia rozrusznika | 8 | ⬜ |
+| ECU-SAF-010a | — | D (walidacja parametrów) | T-SAF-010a | Przegląd kodu i zestawu parametrów: potwierdzenie warunku 700 > 400 (inspekcja) | 5 | ⬜ |
+| ECU-SAF-011 | — | B (B.5) + aplikacja | T-SAF-011 | Protokół: próba zmiany parametru spoza listy dozwolonych; próba zapisu w obszarze zablokowanym (> 5000 obr/min i > 60% przepustnicy jednocześnie) oraz tuż poza nim; próba przekroczenia limitu 2°/5% na zapis. **Weryfikacja odrzucenia po stronie ECU przy pominiętej aplikacji** | 7 | ⬜ |
+| **ECU-SAF-011a** | — | B (B.5.4) | T-SAF-011a | Protokół: wymuszenie każdego z czterech wyzwalaczy przerwania sesji; kontrola powrotu map do wartości trwałych i spójności pamięci nieulotnej | 7 | ⬜ |
+| **ECU-SAF-013** | — | B (B.3.3) | T-SAF-013 | Oscylogram: wymuszenie usterki K3 przy 8000 obr/min, pomiar przebiegu zjazdu limitu w czasie | 6 | ⬜ |
+| **ECU-SAF-014** | — | B (B.3.1) | T-SAF-014 | Protokół: dwie jednoczesne usterki K3 o różnych limitach, potwierdzenie obowiązywania niższego bez sumowania | 6 | ⬜ |
+
+### 20.7 Diagnostyka i logowanie
+
+| Wymaganie | Realizacja sprzętowa | Moduł FW | ID testu | Dowód | Faza | Status |
+|---|---|---|---|---|---|---|
+| ECU-DIA-001 | W25Q64 + RTC w STM32G474VET3 | E | T-DIA-001 | Protokół: wymuszenie każdej usterki z macierzy, kontrola kompletu pól rekordu | 6 | ⬜ |
+| ECU-DIA-002 | — | E | T-DIA-002 | Przegląd macierzy usterek: każda pozycja ma przypisaną klasę (inspekcja) | 5 | ⬜ |
+| ECU-DIA-003 | TJA1043 | E | T-DIA-003 | Protokół: odłączenie HMI, pomiar czasu do zapisania zdarzenia | 6 | ⬜ |
+| ECU-DIA-004 | — | A.4 + F | T-DIA-004 | Protokół: wybudzenie z każdego źródła, kontrola zapisanej przyczyny | 6 | ⬜ |
+| ECU-LOG-005 | W25Q64 (8 MB — zapas na przyszłe rozszerzenie) | F | T-LOG-005 | Przegląd zakresu logowania względem karty MVP (inspekcja) | 5 | ⬜ |
+| ECU-LOG-006 | W25Q64 + BMI090L | F | T-LOG-006 | Protokół: wyzwolenie zdarzenia, odczyt okna przed i po | 6 | ⬜ |
+| ECU-LOG-007 | Kondensator buforowy na szynie 3,3 V | F | T-LOG-007 | Protokół: przerwanie zasilania w losowym momencie zapisu, min. 100 powtórzeń, brak uszkodzonego rekordu | 6 | ⬜ |
+| ECU-LOG-008 | W25Q64 (zapis atomowy) | F | T-LOG-008 | Jw., kontrola licznika motogodzin po każdym przerwaniu | 6 | ⬜ |
+
+### 20.8 Komunikacja
+
+| Wymaganie | Realizacja sprzętowa | Moduł FW | ID testu | Dowód | Faza | Status |
+|---|---|---|---|---|---|---|
+| SYS-COM-001 | TJA1043 ×2, terminacja (6.2c) | A, J | T-COM-001 | Protokół: analizator CAN, jakość sygnału i stopa błędów przy pracującym zapłonie | 6 | ⬜ |
+| SYS-COM-001a | — | H | T-COM-001a | Protokół: pomiar czasu aktualizacji firmware HMI przez CAN | 7 | ⬜ |
+| SYS-COM-002 | — | Protokół (Faza 2-Desktop) | T-COM-002 | Przegląd definicji ramek + test odbioru ramki z błędną sumą kontrolną | 6 | ⬜ |
+| SYS-COM-002a | — | I (harmonogram zadań) | T-COM-002a | Protokół: pomiar odstępów między ramkami analizatorem CAN, histogram | 6 | ⬜ |
+| SYS-COM-002b | — | I | T-COM-002b | Jw. dla ramek wolnozmiennych | 6 | ⬜ |
+| SYS-COM-003 | — | Protokół (Faza 2-Desktop) | T-COM-003 | Protokół wstrzykiwania błędów: ramki zgubione, powtórzone, przekłamane | 6 | ⬜ |
+| SYS-COM-004 | — | Protokół (Faza 2-Desktop) | T-COM-004 | Przegląd specyfikacji protokołu: każda ramka cykliczna ma okres i timeout (inspekcja) | 2-Desktop | ⬜ |
+| **SYS-COM-007** | TJA1043 ×2 | A.4 + J | T-COM-007 | Protokół: wybudzenie ECU każdym ze źródeł, kontrola czy HMI budzi się bez interakcji kierowcy z wyświetlaczem | 6 | ⬜ |
+| SYS-COM-005 | — | H | T-COM-005 | Protokół: połączenie niezgodnych wersji, kontrola wykrycia i komunikatu | 7 | ⬜ |
+| **SYS-COM-005a** | — | J (HMI) | T-COM-005a | Protokół: połączenie wersji różniących się o `minor` **i** o `major`; w obu przypadkach ekran bez danych pomiarowych | 7 | ⬜ |
+| **SYS-COM-005b** | — | H | T-COM-005b | Protokół: aktualizacja pakietem zawierającym oba obrazy; przerwanie w losowym momencie i kontrola, czy zestaw wraca do spójnej pary wersji | 7 | ⬜ |
+| APP-COM-006 | — | D + H + aplikacja | T-COM-006 | Protokół: przerwanie zapisu w losowym momencie, min. 50 powtórzeń, kontrola spójności konfiguracji | 7 | ⬜ |
+
+### 20.9 Interfejs użytkownika
+
+| Wymaganie | Realizacja sprzętowa | Moduł FW | ID testu | Dowód | Faza | Status |
+|---|---|---|---|---|---|---|
+| HMI-UI-001 | Drabinka rezystorowa + ADC w STM32G0B1 | J | T-UI-001 | Oscylogram: zbocze na przycisku vs sygnał z fotodiody przyłożonej do ekranu | 6 | ⬜ |
+| HMI-UI-002 | RVT35HHBFWN00 + BT817Q | J | T-UI-002 | Pomiar częstotliwości odświeżania na sygnałach panelu | 6 | ⬜ |
+| HMI-UI-002a | BT817Q | J | T-UI-002a | Demonstracja: nagranie ruchu wskazań przy skokowej zmianie danych | 6 | ⬜ |
+| HMI-UI-003 | — | J | T-UI-003 | Protokół: przerwanie CAN, pomiar czasu do wygaszenia danych | 6 | ⬜ |
+| **HMI-UI-006** | RVT35HHBFWN00 + BT817Q | J + B (B.3.4) | T-UI-006 | Protokół: wymuszenie usterki z każdej klasy, kontrola poziomu prezentacji; osobno kontrola, że pasa poziomu P2 nie da się schować | 6 | ⬜ |
+| **HMI-UI-007** | — | J | T-UI-007 | Przegląd treści komunikatów: każdy komunikat poziomu P2 zawiera trzy wymagane elementy (inspekcja) | 5 | ⬜ |
+| **HMI-UI-008** | — | J | T-UI-008 | Protokół: trzy jednoczesne usterki różnych klas, kontrola pierwszeństwa na ekranie i licznika w liście | 6 | ⬜ |
+| HMI-UI-004 | TMP112-Q1 *(propozycja, niezweryfikowana)* | J | T-UI-004 | Protokół: nagrzewanie modułu, kontrola charakterystyki ograniczania jasności | 6 | ⬜ |
+| HMI-UI-005 | Panel 1000 cd/m² + obudowa aluminiowa, jasny kolor | J | T-UI-005 | Protokół testu na słońcu wg kryterium przyjętego w Fazie 3 | 9 | ⬜ |
+
+### 20.10 Bilans pokrycia
+
+*Liczby skorygowane 22.09.2026. Wcześniejsze wersje bilansu podawały wartości zaniżone — skrypt kontrolny nie obejmował wymagań obszaru **UI**, bo jego wzorzec zakładał trzyliterowy kod obszaru, a `HMI-UI-xxx` ma dwuliterowy. Same wiersze w tabeli były obecne; błędna była kontrola, nie pokrycie.*
+
+| Pozycja | Liczba |
+|---|---|
+| Wymagań w tego dokumentu | 105 |
+| Wymagań ujętych w tabeli pokrycia | 105 (100%) |
+| Wymagań z przypisanym identyfikatorem testu | 105 (107 identyfikatorów testów — kilka wymagań weryfikowanych dwoma wariantami) |
+| Wymagań zamkniętych dowodem | 0 |
+| Testy w Fazie 3 (inspekcje formatu, przyjęcie profilu wibracji) | 2 |
+| Testy w Fazie 4 (przegląd schematu i BOM) | 2 |
+| Testy w Fazie 5 (przeglądy projektowe) | 5 |
+| Testy w Fazie 6 (stanowisko) | 72 |
+| Testy w Fazie 7 (aplikacja i aktualizacja) | 8 |
+| Testy w Fazie 8 (silnik / motocykl) | 9 |
+| Testy w Fazie 9 (warunki rzeczywiste) | 2 |
+| Testy w Fazie 2-Desktop (przegląd protokołu) | 1 |
+
+### 20.11 Funkcje w zakresie bez wymagania — luka wykryta przy przebudowie tabeli
+
+Przebudowa ujawniła funkcje obecne w zakresie produktu (rozdz. 4.1) i w poprzedniej tabeli pokrycia, które **nie mają żadnego wymagania w tego dokumentu**. Bez wymagania nie da się ich zweryfikować — nie wiadomo, co miałoby zostać udowodnione.
+
+| Funkcja | Źródło zakresu | Brakujące wymagania | Priorytet |
+|---|---|---|---|
+| ~~Quickshifter~~ | Faza 0 | ❌ **USUNIĘTY Z ZAKRESU 29.09.2026** — funkcja wypadła z produktu wraz z wymaganiami i czujnikami. Pozycja przestała istnieć zamiast zostać domknięta | — |
+| **Bootloader i aktualizacja firmware** | Faza 0, zasada procesu #12 | Warunki dopuszczające aktualizację, czas, zachowanie przy przerwaniu, automatyczny powrót do poprzedniej wersji | **P0** — przerwana aktualizacja unieruchamia motocykl |
+| Sterowanie wentylatorem | Faza 0 | Progi załączenia i wyłączenia, histereza, reakcja na usterkę czujnika temperatury, praca po zgaszeniu silnika | P1 |
+| Przełączanie map z HMI | Faza 0 | Liczba profili, warunki dopuszczające zmianę (obroty, praca silnika), czas przełączenia | P1 |
+| Licznik przebiegu (km) | Faza 0 | Rozdzielczość, odporność na zanik zasilania, zakres | P1 |
+| Korekta na wysokość n.p.m. | Faza 0, BMP390 | Zakres korekty, częstotliwość aktualizacji, zachowanie przy usterce czujnika | P1 |
+| Aplikacja desktop (poza APP-COM-006) | Faza 0 | Cały obszar APP-*: edycja map, podgląd na żywo, odczyt kodów usterek, wymagania wydajnościowe | P1 — do ustalenia w Fazie 2-Desktop |
+| Sterowanie światłami | Faza 0 | Obciążalność kanału, zachowanie przy przeciążeniu, sterowanie z HMI | P2 |
+| Zegar czasu rzeczywistego | Faza 0 | Dokładność, podtrzymanie przy odłączonym akumulatorze, źródło synchronizacji | P2 |
+| Konfigurator wyglądu HMI | Faza 0 | Zakres konfigurowalności, format, walidacja | P2 |
+
+**Stan na 29.09.2026:** quickshifter usunięty z zakresu, więc jego pozycja P0 przestała istnieć. **Pozostaje jedna pozycja P0 — bootloader**, do zamknięcia w punkcie H specyfikacji firmware, przed bramką G0.
+
+**Decyzja procesowa:** pozycje P0 muszą uzyskać wymagania **przed bramką G0**, razem z domykaniem pozycji `[DO USTALENIA]`. Pozycje P1 i P2 powstają w naturalnym miejscu procesu — przy punktach B, C, D i H specyfikacji firmware oraz w Fazie 2-Desktop — ale ich brak jest od teraz jawnie śledzony w tej tabeli, zamiast być odkrywanym na końcu.
+
+Ta luka jest dokładnie tym, przed czym ostrzegała pozycja audytu F-012: poprzednia tabela wychodziła od nazw funkcji, więc każda funkcja „miała wiersz" i wyglądała na pokrytą, mimo że nie stało za nią żadne sprawdzalne wymaganie.
