@@ -24,23 +24,22 @@ Generowane przez `scripts/kontrola.py`, nie wpisywane ręcznie.
 
 | Pozycja | Stan |
 |---|---|
-| Wymagania z identyfikatorem | 107 |
-| Pokrycie w tabeli traceability | 107 / 107 |
-| Wymagania bez ustalonej wartości — **blokują G0** | **17** |
+| Wymagania z identyfikatorem | 112 |
+| Pokrycie w tabeli traceability | 112 / 112 |
+| Wymagania bez ustalonej wartości — **blokują G0** | **1** |
+| Wymagania bez ustalonej wartości — wariant B/C, poza G0 | 4 |
 | Kody usterek w macierzy | 47 |
-| Identyfikatory testów | 100 |
+| Identyfikatory testów | 105 |
 | Pozycje otwarte | 63 |
-| Założenia (1 obalone, 1 potwierdzone, 11 niepotwierdzonych) | 13 |
+| Założenia (3 obalone, 1 potwierdzone, 12 niepotwierdzonych) | 16 |
 
 ---
 
 ## Pozycja o najwyższym priorytecie
 
-**Nie jest ustalone, czy Beta 300 RR 2015 ma DC-CDI czy zapłon indukcyjny.** Instrukcja fabryczna wskazuje DC-CDI, a projekt przyjął driver cewki indukcyjnej (VBG08H-E) bez zapisania tego wniosku.
+**Tor zapłonu MVP-A: AC-CDI** (decyzja 18.10.2026). Beta 300 RR 2015 ma osobne uzwojenie wzbudzające w statorze; zachowujemy fabryczną cewkę, a energię iskry bierzemy z tego uzwojenia. Driver VBG08H-E wypadł z projektu.
 
-Jeśli motocykl ma CDI, przeprojektowania wymagają: dobór drivera zapłonu, architektura ładowania cewki, analiza termiczna i wybór obudowy.
-
-**Rozstrzyga pomiar: [`measurements/triaz-zaplonu.md`](measurements/triaz-zaplonu.md)** — multimetr, 30 minut.
+Następny krok: **pomiar przebiegu uzwojenia wzbudzającego względem GMP**, potem projekt bloku CDI. Szczegóły: `otwarte.md` O-001, [`measurements/wynik-triazu-zaplonu.md`](measurements/wynik-triazu-zaplonu.md).
 
 ---
 
@@ -51,7 +50,7 @@ Pięć plików. Każdy odpowiada na jedno pytanie.
 | Plik | Odpowiada na pytanie |
 |---|---|
 | [`produkt.md`](produkt.md) | **Co budujemy i jak to jest zbudowane?** Zakres, warianty, decyzje sprzętowe z uzasadnieniami i odrzuconymi alternatywami, komponenty, zasilanie, złącze, uśpienie, HMI, budżety, obudowy, obwiednia środowiskowa |
-| [`wymagania.md`](wymagania.md) | **Co musi być spełnione i czym to udowodnimy?** 105 wymagań z wartościami i metodą weryfikacji + tabela pokrycia od wymagania do dowodu |
+| [`wymagania.md`](wymagania.md) | **Co musi być spełnione i czym to udowodnimy?** 112 wymagań z wartościami i metodą weryfikacji + tabela pokrycia od wymagania do dowodu |
 | [`firmware.md`](firmware.md) | **Jak firmware ma się zachowywać?** Maszyna stanów, bezpieczeństwo i macierz usterek, trigger i synchronizacja, punkty C.2–J otwarte |
 | [`otwarte.md`](otwarte.md) | **Czego jeszcze nie wiemy i co może być fałszywe?** Jedyny rejestr pozycji otwartych, założenia, ryzyka zaakceptowane świadomie |
 | [`proces.md`](proces.md) | **W jakiej kolejności i kiedy można przejść dalej?** Fazy, bramki, kryteria odbioru wyrobu, plan prac |
@@ -71,11 +70,11 @@ Pięć plików. Każdy odpowiada na jedno pytanie.
 
 ## Zakres produktu
 
-| Wariant | Motocykl odniesienia | Zakres sterowania |
+| Wariant | Motocykl odniesienia / układ paliwowy | Zakres sterowania |
 |---|---|---|
 | **MVP-A** — gaźnik | **Beta 300 RR 2015**, 1-cyl. 2T, **bez TPS** | Zapłon (mapa jednowymiarowa), ogranicznik obrotów, wskaźnik biegu, prędkość i przebieg, motogodziny, wyjścia mocy, diagnostyka |
-| B — TPI | KTM EXC TPI | Dodatkowo wtrysk paliwa |
-| C — TBI | KTM 890 Adventure | Dodatkowo przepustnica sterowana elektronicznie |
+| B — TPI | Wtrysk do kanałów przepłukujących (2 wtryskiwacze) | Dodatkowo wtrysk paliwa |
+| C — TBI | Wtrysk w gardzieli przepustnicy (1 wtryskiwacz) | Dodatkowo wtrysk paliwa |
 
 **Projektowany jest wyłącznie MVP-A.** Warianty B i C mają zarezerwowane zdolności sprzętowe, ale nie mają własnych specyfikacji.
 
@@ -106,5 +105,5 @@ Aktualna dokumentacja żyje na gałęzi **`Actual-documentation`** i to ona jest
 ## Ograniczenia, o których trzeba wiedzieć przy czytaniu
 
 - **Nie było niezależnego przeglądu ludzkiego.** Oba audyty i cała dokumentacja powstały jako analiza wspierana modelem językowym. Przed uruchomieniem toru energii, odcięcia i synchronizacji potrzebny jest punktowy przegląd przez drugiego inżyniera — pozycja O-057.
-- **Trzynaście założeń nie jest potwierdzonych pomiarem.** `otwarte.md` rozdz. 8 wymienia je wraz z tym, co się zawali, jeśli są fałszywe. Jedno już się zawaliło.
+- **Dwanaście założeń nie jest potwierdzonych pomiarem.** `otwarte.md` rozdz. 8 wymienia je wraz z tym, co się zawali, jeśli są fałszywe. Trzy już się zawaliły.
 - Dokumenty opisują stan projektowy, nie zweryfikowany sprzętowo.

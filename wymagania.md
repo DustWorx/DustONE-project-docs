@@ -29,7 +29,7 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 
 **Oznaczenia statusu wartości:**
 - Wartość liczbowa — ustalona
-- `[DO USTALENIA]` — wymaga decyzji projektowej lub pomiaru; **każda taka pozycja blokuje bramkę G0**
+- `[DO USTALENIA]` — wymaga decyzji projektowej lub pomiaru; **każda taka pozycja w MVP-A blokuje bramkę G0.** Wymagania **[B/C]** z `[DO USTALENIA]` blokują dopiero bramkę wariantu B/C — warianty B i C są osobną wariacją projektu, realizowaną po MVP-A (decyzja Pawła 15.10.2026)
 
 **Warianty (za kartą MVP, plan naprawczy rozdz. 8):** wymagania oznaczone **[A]** dotyczą MVP-A (Beta 300RR, gaźnik). **[HW]** oznacza wymagania zdolności sprzętowej weryfikowane na stanowisku. **[B/C]** dotyczą wariantów TPI/TBI.
 
@@ -48,6 +48,9 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 | SYS-ENV-005 | Klasa szczelności obudowy ECU i HMI | IP67 minimum | T |
 | SYS-ENV-006 | Odporność na wibracje | `[DO USTALENIA]` — profil do przyjęcia z normy lub pomiaru na motocyklu | A, T |
 | SYS-ENV-007 | Zakres obrotów silnika, w którym ECU musi sterować zapłonem | 200–10 000 obr/min | T |
+| **SYS-ENV-008** | ECU musi przetrwać **odwrotną polaryzację** zasilania | **−14 V przez 60 s**, bez uszkodzenia i bez przepalenia bezpiecznika (ISO 16750-2) | T |
+| **SYS-ENV-009** | ECU musi przetrwać **zrzut obciążenia ograniczony** (poluzowany zacisk akumulatora przy pracy silnika) | **35 V / 400 ms** — wartość wstępna; korekta po pomiarze napięcia jałowego uzwojenia ładującego. Praca w trakcie nie jest wymagana | A, T |
+| **SYS-ENV-010** | ECU musi być odporne na **impulsy przewodzone na linii zasilania** | Poziomy ISO 7637-2 dla 12 V: impuls 1 (−150 V, 10 Ω, 2 ms), 2a (+112 V, 2 Ω, 50 µs), 3a/3b (−220/+150 V, 50 Ω, 150 ns). Przy 1, 3a, 3b dopuszczalny reset; przy 2a praca bez zakłóceń. **Rozruch z kabli 24 V poza zakresem** — zapis w instrukcji | A, T |
 
 ---
 
@@ -57,8 +60,6 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 |---|---|---|---|
 | ECU-IGN-001 **[A]** | ECU musi wyznaczać moment zapłonu na podstawie mapy kąta wyprzedzenia w funkcji obrotów | — | I, T |
 | ECU-IGN-002 **[A]** | Błąd momentu wyzwolenia zapłonu względem wartości zadanej, mierzony na wyjściu drivera, przy jednoczesnej pracy logowania, CAN i USB | ≤ **1,0°** kąta wału w 99,9 percentylu, w zakresie 1 000–10 000 obr/min i 7,0–16,0 V | T |
-| ECU-IGN-003 **[A]** | Czas ładowania cewki musi być korygowany w funkcji napięcia zasilania | Zakres korekty `[DO USTALENIA]` | T |
-| ECU-IGN-004 **[A]** | Czas ładowania cewki musi być ograniczany przy wysokich obrotach (ochrona termiczna drivera) | Maksymalne wypełnienie `[DO USTALENIA]` % | A, T |
 | ECU-IGN-005 **[A]** | Niezależny od firmware limit czasu ładowania cewki | **Rejestr okresu HRTIM jako sufit sprzętowy** — wyjście kasowane zdarzeniem porównania **oraz** zdarzeniem końca okresu (zweryfikowane w CubeMX 20.09.2026, spec. FW B.2.3). Wartość sufitu do ustalenia przy doborze cewki w Fazie 4; ograniczenie prądu 8,5–10,5 A i miękkie wyłączenie 150–175 °C w VBG08H-E jako warstwa dodatkowa | A, T |
 | ECU-IGN-006 **[A]** | Ogranicznik obrotów musi odcinać zapłon powyżej progu konfigurowalnego przez użytkownika | Zakres nastawy 3 000–12 000 obr/min | T |
 | ECU-IGN-006a **[A]** | Histereza ogranicznika musi być **konfigurowalna z aplikacji desktop** | Domyślnie **200 obr/min**, zakres dopuszczalny **50–500 obr/min**. Aplikacja odrzuca wartości spoza zakresu przed wysłaniem; ECU weryfikuje ponownie po odebraniu | T |
@@ -70,8 +71,9 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 | **ECU-IGN-017** | ECU musi **odrzucać zbocza przychodzące poza oknem kątowym** spodziewanego położenia krawędzi natarcia, bez wpływu na model kąta i bez utraty iskry | Okno wstępnie **±20° poniżej 2000 obr/min, ±10° powyżej** — do wystrojenia w Fazie 8. Zapłon przebiega normalnie z modelu kąta. Bramkowanie nieaktywne przy nieważnym modelu (rozruch, po resecie) | T (wstrzykiwanie zakłóceń) |
 | **ECU-IGN-018** | ECU musi wykrywać **niewiarygodny sygnał obrotów** według trzech kryteriów | Długość wypustu poza **±25%** kalibracji; zbocze poza oknem kątowym; stosunek kolejnych okresów poza **0,5–2,0**. Progi wstępne, do wystrojenia w Fazie 8. Pojedyncze naruszenie = odrzucenie zbocza (K0); powtarzalne = K4 | T |
 | **ECU-IGN-019** | Pierwsza iskra po rozruchu może nastąpić **najwcześniej przy drugim przejściu wypustu** | Pierwsze przejście służy wyłącznie pomiarowi. Kickstarter obraca wał kilkakrotnie w jednym ruchu, więc strata pierwszego obrotu nie kosztuje kopnięcia. **Wyjątek:** przy restarcie w ruchu model kąta i estymata pozostają ważne — iskra musi pójść natychmiast z mapy | T |
+| **ECU-IGN-021** **[A]** | Silnik musi dać się uruchomić **kickstarterem przy napięciu 7 V na złączu ECU** | Scenariusz: akumulator niezdolny do obrócenia rozrusznika. ECU uruchamia się, synchronizuje i daje iskrę przy 7 V. W AC-CDI energia iskry nie pochodzi z akumulatora — wymaganie obciąża zasilanie logiki i kondycjoner VR. Granica spójna z SYS-ENV-002. **Nie obejmuje rozruchu bez akumulatora** — decyzja Pawła 18.10.2026 | T |
 | **ECU-IGN-020** **[A]** | Mapa zapłonu w wariancie gaźnikowym musi być **jednowymiarowa** — kąt wyprzedzenia wyłącznie w funkcji obrotów | **Beta 300 RR 2015 nie ma czujnika położenia przepustnicy i nie będzie dokładany** (założenie Z1 obalone 11.10.2026). Fabryczny układ zapłonowy pracuje tak samo. Wymaganie ECU-IGN-001 od początku mówiło o mapie w funkcji obrotów; dwuwymiarowość weszła bokiem przez wymagania opisujące utratę sygnału, którego w tym wariancie nie ma | I, T |
-| ECU-IGN-007 **[A]** | Rozdzielczość zapisu kąta wyprzedzenia w mapie | `[DO USTALENIA]`° | I |
+| ECU-IGN-007 **[A]** | Rozdzielczość zapisu kąta wyprzedzenia w mapie | **0,25°** | I |
 
 ---
 
@@ -81,8 +83,8 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 |---|---|---|---|
 | ECU-INJ-001 **[HW]** | ECU musi sterować dwoma niezależnymi kanałami wtryskiwaczy | 2 kanały, prąd ciągły ≥ 1,5 A/kanał | T |
 | ECU-INJ-002 **[HW]** | Sterowanie w trybie nasyconym dla wtryskiwaczy o rezystancji | 10,5–13,0 Ω | T |
-| ECU-INJ-003 **[HW]** | Rozdzielczość czasu otwarcia wtryskiwacza | ≤ `[DO USTALENIA]` µs | T |
-| ECU-INJ-004 **[HW]** | Czas martwy wtryskiwacza musi być korygowany w funkcji napięcia zasilania | Na podstawie pomiaru — `[DO USTALENIA]` | T |
+| ECU-INJ-003 **[B/C]** | Rozdzielczość czasu otwarcia wtryskiwacza | ≤ `[DO USTALENIA]` µs | T |
+| ECU-INJ-004 **[B/C]** | Czas martwy wtryskiwacza musi być korygowany w funkcji napięcia zasilania | Na podstawie pomiaru — `[DO USTALENIA]` | T |
 | **ECU-INJ-007** **[B/C]** | Przy utracie sygnału przepustnicy ECU musi przejść na **mapę awaryjną liczoną na pełne obciążenie** (bogatą w całym zakresie obrotów), nie na dawkę z biegu jałowego | Uzasadnienie: dawka z biegu jałowego przy otwartej przepustnicy oznacza skrajnie ubogą mieszankę pod obciążeniem, czyli zatarcie. Mapa bogata daje kiepską pracę na biegu jałowym i bezpieczną pod obciążeniem. Limit obrotów **3500 obr/min** | T |
 | ECU-INJ-005 **[B/C]** | Pompa paliwa musi być załączana na czas wstępnego napełnienia po wybudzeniu | 2,0 s ± 0,2 s | T |
 | ECU-INJ-006 **[B/C]** | Pompa paliwa musi być wyłączana przy braku obrotów przez określony czas | `[DO USTALENIA]` s | T |
@@ -94,15 +96,15 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 | ID | Wymaganie | Wartość | Weryfikacja |
 |---|---|---|---|
 | ECU-SEN-001 | ECU musi obsługiwać czujnik obrotów typu VR (cewka indukcyjna) | Amplituda wejściowa 0,05–100 V szczytowo | T |
-| ECU-SEN-002 | ECU musi obsługiwać czujnik obrotów typu Hall, ścieżką wybieraną zworką | Poziomy logiczne `[DO USTALENIA]` | T |
-| ECU-SEN-003 **[HW]** | Błąd pomiaru położenia przepustnicy (TPS) po kalibracji — **zdolność sprzętowa dla wariantów B/C; MVP-A nie ma TPS** | ≤ `[DO USTALENIA]` % zakresu | T |
+| ECU-SEN-002 | ECU musi obsługiwać czujnik obrotów typu Hall, ścieżką wybieraną zworką | Czujnik zasilany **5 V**, wyjście otwarty kolektor lub push-pull. Poziom niski **≤ 1,0 V**, wysoki **≥ 3,5 V**. Wejście znosi trwałe zwarcie do akumulatora (do 16 V) i do masy bez uszkodzenia | T |
+| ECU-SEN-003 **[B/C]** | Błąd pomiaru położenia przepustnicy (TPS) po kalibracji — **zdolność sprzętowa dla wariantów B/C; MVP-A nie ma TPS** | ≤ `[DO USTALENIA]` % zakresu | T |
 | ECU-SEN-004 | Błąd pomiaru temperatury cieczy chłodzącej | ≤ ±3 °C w zakresie 0…120 °C | T |
 | ECU-SEN-005 | Błąd pomiaru temperatury powietrza dolotowego | ≤ ±3 °C w zakresie -20…+80 °C | T |
 | ECU-SEN-006 | Błąd pomiaru napięcia akumulatora | ≤ ±0,2 V w zakresie 7,0–16,0 V | T |
 | ECU-SEN-007 | ECU musi wykrywać przerwę i zwarcie każdego wejścia czujnikowego | Progi **< 3% i > 97% zakresu przetwornika**, liczone względem rzeczywistego napięcia szyny 5 V. Czasy potwierdzenia wg macierzy usterek (spec. FW B.2.1) | T |
 | ECU-SEN-008 | Rozpoznanie pozycji biegu po kalibracji | 100% poprawnych rozpoznań przy 200 zmianach biegu | T |
 | ECU-SEN-009 | Chwilowe przejście przez pozycję neutralną podczas zmiany 1↔2 nie może być zgłoszone jako bieg neutralny | **Filtr wybiórczy:** wskazanie biegu zgłaszane natychmiast; wskazanie pozycji neutralnej dopiero po **80 ms** stabilnego odczytu. Uzasadnienie: zmiana biegu trwa 30–60 ms, człowiek zauważa zwłokę powyżej ~150 ms | T |
-| ECU-SEN-010 | Błąd pomiaru prędkości koła | ≤ `[DO USTALENIA]` % | T |
+| ECU-SEN-010 | Błąd pomiaru prędkości koła | **≤ 2 %** po kalibracji obwodu koła, **powyżej 10 km/h**. Poniżej 10 km/h wymaganie nie obowiązuje — za mało impulsów na obrót koła | T |
 | ECU-SEN-011 | Pomiary ratiometryczne muszą być kompensowane rzeczywistym napięciem szyny 5 V | — | I, T |
 
 ---
@@ -130,7 +132,7 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 
 | ID | Wymaganie | Wartość | Weryfikacja |
 |---|---|---|---|
-| ECU-SAF-001 | Rozwarcie kill switcha musi odciąć zapłon i wtrysk **niezależnie od stanu firmware** (bramkowanie sprzętowe) | Czas reakcji ≤ `[DO USTALENIA]` ms | T (wstrzykiwanie usterek) |
+| ECU-SAF-001 | Rozwarcie kill switcha musi odciąć zapłon i wtrysk **niezależnie od stanu firmware** (bramkowanie sprzętowe) | Czas reakcji **≤ 10 ms** od rozwarcia do ostatniej możliwej iskry. W AC-CDI oznacza to **zwarcie uzwojenia wzbudzającego oraz sprzętową blokadę wyzwalania tyrystora** — sam brak ładowania nie wystarcza, bo naładowany kondensator może dać jeszcze jedną iskrę. Mechanizm: O-001 | T (wstrzykiwanie usterek) |
 | ECU-SAF-002 | Przerwanie przewodu kill switcha lub rozłączenie wtyczki musi skutkować odcięciem **i zostać odróżnione od naciśnięcia przycisku** w logu oraz w komunikacie dla kierowcy | **Układ trzypoziomowy:** rezystor szeregowy i równoległy w wiązce przy przycisku, podciągnięcie w ECU. RUN = poziom dolny, STOP = środkowy, przerwa = górny. Bramkowanie sprzętowe jednym komparatorem z progiem między RUN a STOP — odcina w obu przypadkach niezależnie od firmware. Rozróżnienie przez ADC, wyłącznie na potrzeby diagnostyki. Wartości rezystorów i analiza najgorszego przypadku — Faza 4 | T (wstrzykiwanie usterek) |
 | **ECU-SAF-002a** | Czas potwierdzenia stanu kill switcha przed zgłoszeniem usterki | **50 ms** — filtruje drgania styku, nie opóźnia odcięcia, bo odcięcie jest sprzętowe i natychmiastowe | T |
 | ECU-SAF-003 | Po resecie watchdoga wyjścia mocy muszą pozostać wyłączone do zatrzymania wału i świadomego odblokowania przez kierowcę | — | T |
@@ -139,6 +141,8 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 | ECU-SAF-006 | **3 resety watchdoga** muszą przenieść ECU w stan awarii bez możliwości automatycznego startu. Licznik zerowany dopiero **po 60 s ciągłej, bezawaryjnej pracy silnika** (nie po samym upływie czasu) | 3 resety; zerowanie po 60 s udanej pracy. Uzasadnienie: dowodem sprawności jest działanie, nie upłynięcie czasu — przy zerowaniu czasowym awaria występująca co 70 s nigdy nie zostałaby wykryta. Licznik przechowywany w pamięci nieulotnej W25Q64. Po trzecim resecie stan awarii kasowany wyłącznie aplikacją desktop | T |
 | ECU-SAF-007 | Wszystkie wyjścia mocy muszą być wyłączone w stanie resetu i podczas startu mikrokontrolera (rezystory ściągające) | — | I, T |
 | **ECU-SAF-016** | Linia bramkująca wejścia EN driverów musi mieć **rezystory ściągające**, tak aby zanik zasilania komparatora, zanik szyny 5 V oraz stan przed startem mikrokontrolera dawały ten sam skutek: **drivery wyłączone** | Rozszerza ECU-SAF-007, które obejmuje wyjścia mocy — **linia bramkująca nie jest wyjściem mocy i nie była nim objęta**. Bez tego zanik zasilania komparatora zostawia na linii decydującej o odcięciu stan nieokreślony | I, T |
+| **ECU-SAF-018** | Przycisk startu naciśnięty przy uśpionym ECU **budzi je i — jeśli jest trzymany nieprzerwanie — uruchamia rozrusznik** | Rozrusznik dopiero po osiągnięciu gotowości (ECU-PWR-003) i tylko przy kill switchu w RUN. Puszczenie przycisku przed gotowością = samo wybudzenie, bez rozrusznika. Przy słabym akumulatorze kierowca budzi ECU przyciskiem na kierownicy i kopie (decyzja Pawła 18.10.2026) | T |
+| **ECU-SAF-017** | Zewnętrzny watchdog musi być zasilany **z tej samej szyny co mikrokontroler** i **nie może mieć programowego wyłącznika** | Nie istnieje stan „procesor zasilony, nadzór wyłączony”. Uśpienie realizowane przez odcięcie zasilania obu (O-013) | I (schemat), T |
 | **ECU-SAF-016a** | Komparator kill switcha musi być zasilany z szyny 5 V **za przełącznikiem obciążenia** | Uzasadnienie: w uśpieniu komparator jest wtedy bez napięcia i nie obciąża budżetu prądu spoczynkowego (ECU-PWR-001), a bramkowanie nie jest wówczas potrzebne — drivery trzymają rezystory ściągające z ECU-SAF-016. Zasilenie z szyny 3,3 V lub wprost z 5 V wymagałoby komparatora nanomocowego albo osobnego wyłączania | I |
 | ECU-SAF-008 | Rozrusznik nie może zostać załączony, gdy obroty przekraczają próg | **400 obr/min**, wartość **stała w firmware, niedostępna dla użytkownika**. Uzasadnienie: bendiks wchodzący w obracające się koło zamachowe to natychmiastowe uszkodzenie mechaniczne. Próg niższy niż obroty samodzielnej pracy daje margines na wybieg po zgaszeniu | T |
 | ECU-SAF-009 | Czas ciągłej pracy rozrusznika | ≤ 5,0 s ± 0,2 s | T |
@@ -150,7 +154,7 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 | **ECU-SAF-012a** | Błędna suma kontrolna **konfiguracji użytkownika** nie może blokować uruchomienia silnika | Zakres: obwód koła, jednostki, układ i wygląd ekranów HMI, jasność. Reakcja: wartości domyślne + ostrzeżenie. Kryterium podziału względem ECU-SAF-012: czy wartość wpływa na to, co ECU robi z silnikiem | T |
 | **ECU-SAF-013** | Ograniczenie obrotów w trybie zastępczym musi być wprowadzane **narastająco, nie skokowo** | Zjazd z wartości bieżącej do docelowej liniowo przez **3 s**. Uzasadnienie: nagłe odcięcie z 8000 do 3500 obr/min w trakcie pokonywania przeszkody to szarpnięcie, które może doprowadzić do wywrotki | T |
 | **ECU-SAF-014** | Przy wielu jednoczesnych usterkach ograniczających obowiązuje **najniższy limit obrotów i największe cofnięcie zapłonu**; ograniczenia nie sumują się | Sumowanie dałoby przy dwóch drobnych usterkach ograniczenie ostrzejsze niż przy jednej poważnej | I, T |
-| ECU-SAF-011 | Zmiana parametrów podczas pracy silnika (live tuning) musi podlegać ograniczeniom | **Blokada w wariantach z TPS:** obroty > 5000 obr/min **i jednocześnie** otwarcie przepustnicy > 60%. **W MVP-A warunku obciążenia nie da się ocenić — sposób blokady `[DO USTALENIA]`, patrz DOC-001 rozdz. 11.3.** — koniunkcja, nie alternatywa. **Limity:** 2° zapłonu i 5% dawki na pojedynczy zapis, ta sama komórka nie częściej niż co 500 ms. **Zakres dozwolony:** komórki map, przesunięcia globalne, progi wentylatora. **Zabronione przy pracującym silniku:** konfiguracja sprzętowa, progi rozrusznika, parametry rozruchu, próg ogranicznika, parametry quickshiftera. ECU weryfikuje każdą zmianę ponownie po odebraniu | I, T |
+| ECU-SAF-011 | Zmiana parametrów podczas pracy silnika (live tuning) musi podlegać ograniczeniom | **Blokada w wariantach z TPS:** obroty > 5000 obr/min **i jednocześnie** otwarcie przepustnicy > 60%. **W MVP-A (bez TPS) — decyzja 12.10.2026, O-020:** zmiany przy pracującym lub uzbrojonym silniku trafiają wyłącznie do bufora edycji; **aktywacja tylko przy rozbrojonym silniku** (wał nieruchomy, zapłon rozbrojony) **i po jawnej komendzie** z aplikacji. Osobny tryb stanowiskowy z fizycznym zezwoleniem dopuszcza aktywację przy pracy na hamowni. — koniunkcja, nie alternatywa. **Limity:** 2° zapłonu i 5% dawki na pojedynczy zapis, ta sama komórka nie częściej niż co 500 ms. **Zakres dozwolony:** komórki map, przesunięcia globalne, progi wentylatora. **Zabronione przy pracującym silniku:** konfiguracja sprzętowa, progi rozrusznika, parametry rozruchu, próg ogranicznika, parametry quickshiftera. ECU weryfikuje każdą zmianę ponownie po odebraniu | I, T |
 | **ECU-SAF-011a** | Sesja strojenia musi zostać przerwana automatycznie, a mapy wrócić do wartości zapisanych trwale | Wyzwalacze: usterka klasy K3 lub K4, zanik komunikacji USB, przekroczenie progu temperatury cieczy, przejście w stan inny niż PRACA. Sesja operuje na kopii roboczej w RAM — przerwanie nie może zostawić w pamięci nieulotnej mapy w stanie pośrednim | T |
 
 ---
@@ -164,7 +168,7 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 | ECU-DIA-003 | ECU musi wykrywać zanik komunikacji z HMI i zapisywać to jako zdarzenie | Timeout **1000 ms** — dłuższy niż HMI-UI-003, bo silnik pracuje dalej mimo zaniku HMI; ECU nie zgłasza usterki przy chwilowym zakłóceniu | T |
 | ECU-DIA-004 | Przyczyna każdego wybudzenia musi być zapisana do logu | — | T |
 | **ECU-LOG-005** | **Zakres logowania on-board ograniczony do zdarzeń krytycznych (czarna skrzynka). Pełne logowanie sesji jazdy NIE jest funkcją tej wersji** — logowanie ciągłe dostępne wyłącznie przez USB na stanowisku | — | I |
-| ECU-LOG-006 | Przy wykryciu wypadku ECU musi zapisać dane z okna przed i po zdarzeniu | Okno `[DO USTALENIA]` s przed / `[DO USTALENIA]` s po | T |
+| ECU-LOG-006 | Przy wykryciu wypadku ECU musi zapisać dane z okna przed i po zdarzeniu | Okno **10 s przed / 5 s po**. Zapis „po” może nie powstać, jeśli zdarzenie odłączy akumulator — O-042 | T |
 | ECU-LOG-007 | Zapis czarnej skrzynki musi zostać dokończony mimo zaniku zasilania | — | T (przerwanie zasilania w trakcie zapisu) |
 | ECU-LOG-008 | Licznik motogodzin musi być odporny na zanik zasilania (zapis atomowy) | — | T |
 
@@ -185,10 +189,11 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 | ID | Wymaganie | Wartość | Weryfikacja |
 |---|---|---|---|
 | SYS-COM-001 | Magistrala ECU↔HMI: **klasyczny CAN, 500 kbit/s** | Standard motoryzacyjny — narzędzia diagnostyczne i analizatory domyślnie na tę prędkość. Wykorzystanie w normalnej pracy: kilka procent przepustowości. CAN FD odrzucony na rzecz prostoty i dostępności narzędzi | I |
-| SYS-COM-001a | **Konsekwencja wyboru klasycznego CAN:** aktualizacja firmware HMI przez ECU jako pośrednika odbywa się ramkami 8-bajtowymi. Przepustowość efektywna ~25-30 kB/s → firmware HMI (~256 KB) ok. 10 s, zasoby graficzne z pamięci zewnętrznej odpowiednio dłużej | Czas aktualizacji do zmierzenia; akceptowalny próg `[DO USTALENIA]` | T |
+| SYS-COM-001a | **Konsekwencja wyboru klasycznego CAN:** aktualizacja firmware HMI przez ECU jako pośrednika odbywa się ramkami 8-bajtowymi. Przepustowość efektywna ~25-30 kB/s → firmware HMI (~256 KB) ok. 10 s, zasoby graficzne z pamięci zewnętrznej odpowiednio dłużej | Firmware HMI **≤ 60 s**, zasoby graficzne **≤ 5 min**. Aktualizacja w warunkach warsztatowych | T |
 | SYS-COM-002 | Każda ramka CAN istotna funkcjonalnie musi zawierać licznik sekwencyjny i sumę kontrolną | — | I, T |
 | SYS-COM-003 | Odbiornik musi wykrywać ramki zgubione, powtórzone i przekłamane | — | T |
-| SYS-COM-004 | Każda ramka cykliczna musi mieć zdefiniowany okres i timeout | `[DO USTALENIA]` | I |
+| SYS-COM-004 | Każda ramka cykliczna musi mieć zdefiniowany okres i timeout | Timeout **= 3 × okres ramki, nie mniej niż 50 ms**. Pojedyncza zgubiona ramka nie może wywołać usterki (test negatywny). Okresy poszczególnych ramek — specyfikacja protokołu, Faza 2-Desktop | I, T |
+| **SYS-COM-008** | ECU musi **uruchamiać i prowadzić silnik bez HMI** (odłączone, uszkodzone, zawieszone) | Brak HMI = kod usterki DTC-COM-01, nie blokada. Usypianie bez potwierdzenia — wystarcza cisza na magistrali; wybudzanie przyciskiem startu i przez USB działa bez HMI (decyzja Pawła 18.10.2026) | T |
 | **SYS-COM-007** | Wybudzenie ECU musi pociągać za sobą **wybudzenie HMI** | Dotychczas opisany był wyłącznie kierunek odwrotny (HMI budzi ECU ramką CAN). Bez tego kierowca budzi ECU przyciskiem startu i nie widzi żadnego wskazania — w szczególności HMI-UI-009 traci sens | T |
 | SYS-COM-005 | Wersja protokołu musi być kontrolowana; niezgodność wersji ECU/HMI/aplikacji musi być wykryta i zgłoszona | — | T |
 | **SYS-COM-005a** | Przy **każdej** niezgodności wersji protokołu HMI musi wygasić wszystkie dane pomiarowe i wyświetlić wyłącznie komunikat o niezgodności wraz z obiema wersjami | Bez podziału na major/minor — jedna reguła, jedna ścieżka w kodzie. Brak wskazania jest jednoznaczny, wskazanie możliwie fałszywe nie jest | T |
@@ -210,8 +215,8 @@ Każde wymaganie zawiera: **identyfikator**, treść ze słowem „musi", **wart
 | **HMI-UI-006** | Usterki muszą być prezentowane kierowcy w **czterech poziomach** przypisanych wprost do klas usterek | P0 (klasa K0) — wyłącznie log. P1 (K1, K2) — symbol + komunikat do potwierdzenia, symbol zostaje; uszkodzony odczyt zastąpiony kreskami, **nigdy liczbą**. P2 (K3) — symbol + **trwały pas z informacją o ograniczeniu, niemożliwy do schowania**. P3 (K4) — pełny ekran z przyczyną i instrukcją odblokowania | I, T |
 | **HMI-UI-007** | Komunikat poziomu P2 musi zawierać **trzy elementy**: co uległo awarii, że moc jest ograniczona celowo, oraz co kierowca ma zrobić | Uzasadnienie: przy mapie awaryjnej silnik pracuje na tyle źle, że bez wyjaśnienia kierowca uzna go za zepsuty i będzie go dalej męczył. Sam komunikat o awarii czujnika tego wymagania nie spełnia | I |
 | **HMI-UI-008** | Przy wielu jednoczesnych usterkach ekran zajmuje usterka o **najwyższej klasie**; pozostałe dostępne z listy pod przyciskiem, z licznikiem aktywnych usterek | — | T |
-| HMI-UI-004 | Jasność podświetlenia musi być ograniczana po przekroczeniu progu temperatury | Próg `[DO USTALENIA]` °C, charakterystyka `[DO USTALENIA]` | T |
-| HMI-UI-005 | Wyświetlacz musi być czytelny w pełnym słońcu | Kryterium `[DO USTALENIA]` | T (test na słońcu) |
+| HMI-UI-004 | Jasność podświetlenia musi być ograniczana po przekroczeniu progu temperatury | Start ograniczania przy **Tmax panelu − 5 °C** (Tmax z karty wybranego panelu), liniowo do **70 %** jasności przy Tmax | T |
+| HMI-UI-005 | Wyświetlacz musi być czytelny w pełnym słońcu | Przy natężeniu **≥ 80 klx** na ekranie bieg i prędkość odczytane bezbłędnie przez 3 osoby z odległości 70 cm, pod kątem do 45°. **Test przy jasności już ograniczonej przez HMI-UI-004** — ograniczenie działa właśnie w słońcu. Okulary polaryzacyjne poza kryterium (decyzja 18.10.2026) | T (test na słońcu) |
 
 ---
 
@@ -254,6 +259,9 @@ Status: ⬜ niewykonane · 🔶 częściowo · ✅ zamknięte dowodem.
 | SYS-ENV-004 | Dobór komponentów | — | T-ENV-004 | Zestawienie zakresów przechowywania z kart katalogowych całego BOM (analiza) | 4 | ⬜ |
 | SYS-ENV-005 | Obudowa + Molex CMC 28 + Deutsch DTM | — | T-ENV-005 | Protokół próby zanurzeniowej 1 m / 30 min wg IP67 | 6 | ⬜ |
 | SYS-ENV-006 | Mocowanie PCB, podparcie elementów ciężkich | — | T-ENV-006 | Profil wibracji przyjęty w Fazie 3 + protokół testu na wstrząsarce lub przejazd pomiarowy | 3 (profil), 9 (test) | ⬜ |
+| **SYS-ENV-008** | TVS dwukierunkowy, dioda Schottky'ego na gałęzi logiki, ochrona PROFET | — | T-ENV-008 | Protokół: −14 V z zasilacza przez 60 s, potem pełny test funkcji; kontrola bezpiecznika | 6 | ⬜ |
+| **SYS-ENV-009** | TVS dobrany na energię zrzutu, elementy wejściowe ≥ 40 V | — | T-ENV-009 | Obliczenie energii TVS (analiza) + próba 35 V / 400 ms z zasilacza o ograniczonym prądzie | 4, 6 | ⬜ |
+| **SYS-ENV-010** | TVS + filtr LC wejścia | — | T-ENV-010 | Obliczenie energii impulsów 1 i 2a wobec charakterystyki TVS (analiza) + uproszczony test: rozłączanie cewki przekaźnika na linii zasilania, oscylogram na wejściu i kontrola pracy. Bez akredytowanego laboratorium (decyzja 18.10.2026) | 4, 6 | ⬜ |
 | SYS-ENV-007 | MAX9926UAEE/V+ + HRTIM w STM32G474VET3 | C | T-ENV-007 | Protokół: generator sygnału VR, 200–10 000 obr/min, zliczanie zgubionych zębów | 6 | ⬜ |
 
 ### 20.2 Zapłon
@@ -262,11 +270,10 @@ Status: ⬜ niewykonane · 🔶 częściowo · ✅ zamknięte dowodem.
 |---|---|---|---|---|---|---|
 | ECU-IGN-001 | VBG08H-E, HRTIM | C | T-IGN-001 | Protokół: kąt zadany z mapy vs zmierzony na wyjściu drivera | 6 | ⬜ |
 | **ECU-IGN-002** | VBG08H-E, HRTIM (**impuls generowany przez peryferium, nie przez program** — spec. FW B.2.3), MAX9926, STM32G474VET3 | C + I (priorytety przerwań) | **T-IGN-002** | **Histogram błędu z min. 10⁵ zapłonów, oscyloskop, przy jednoczesnej pracy logowania, CAN i USB. Test krytyczny dla bramki G2** | 6 | ⬜ |
-| ECU-IGN-003 | Pomiar VBAT (dzielnik + ADC + VREFINT) | C | T-IGN-003 | Protokół: prąd cewki w funkcji napięcia 7–16 V | 6 | ⬜ |
-| ECU-IGN-004 | VBG08H-E (ograniczenie prądu, diagnostyka termiczna) | C | T-IGN-004 | Pomiar temperatury drivera przy maksymalnych obrotach i najwyższym napięciu | 6 | ⬜ |
 | ECU-IGN-005 | **Rejestr okresu HRTIM jako sufit sprzętowy** (kasowanie wyjścia zdarzeniem porównania oraz końcem okresu) + ograniczenie prądu w VBG08H-E | — (niezależne od FW) | T-IGN-005 | Test wstrzykiwania usterki: zawieszenie firmware z wyjściem w stanie aktywnym oraz zapis błędnej wartości porównania; pomiar długości impulsu w obu przypadkach | 6 | ⬜ |
 | ECU-IGN-006 | — | C | T-IGN-006 | Protokół: odcięcie i powrót przy zadanym progu, stanowisko + silnik | 6, 8 | ⬜ |
 | ECU-IGN-006a | — | C + D (walidacja zakresu) + aplikacja | T-IGN-006a | Protokół: odrzucenie wartości spoza 50–500 obr/min po stronie aplikacji **i** po stronie ECU | 7 | ⬜ |
+| **ECU-IGN-021** | Zasilanie logiki od 7 V (SYS-ENV-002), MAX9926, blok AC-CDI | C.1.8 | T-IGN-021 | Protokół: zasilacz laboratoryjny 7 V zamiast akumulatora, 10 prób rozruchu kopnięciem na zimnym silniku | 6, 8 | ⬜ |
 | **ECU-IGN-020** | — (brak TPS w MVP-A) | C + D | T-IGN-020 | Przegląd struktury mapy: jedna oś, obroty (inspekcja) + protokół na stanowisku potwierdzający, że kąt zależy wyłącznie od obrotów | 5, 6 | ⬜ |
 | **ECU-IGN-012** | **Koło magnesowe Beta 300 RR: 1 wypust, 30°, krawędź spływu w GMP** (zmierzone) + MAX9926 | C.1.1 + G (kalibracja) | T-IGN-012 | Przegląd struktur danych: geometria jako parametr kalibracyjny, nie stała (inspekcja) + test z podmienioną geometrią na stanowisku | 5, 6 | ⬜ |
 | **ECU-IGN-013** | HRTIM + wejście przechwytujące w STM32G474VET3 | C.1.3 | T-IGN-013 | Protokół: generator sygnału VR z wymuszonym przyspieszaniem i zwalnianiem; porównanie modelu kąta z sygnałem odniesienia | 6 | ⬜ |
@@ -310,7 +317,7 @@ Status: ⬜ niewykonane · 🔶 częściowo · ✅ zamknięte dowodem.
 
 | Wymaganie | Realizacja sprzętowa | Moduł FW | ID testu | Dowód | Faza | Status |
 |---|---|---|---|---|---|---|
-| ECU-PWR-001 | Architektura uśpienia (6.4): przełącznik obciążenia 5 V, TJA1043 w Standby, W25Q64 w deep power-down | A | T-PWR-001 | Protokół pomiaru prądu (miernik z zakresem µA) przy 12,0 V i +25 °C | 6 | ⬜ |
+| ECU-PWR-001 | Architektura uśpienia (`produkt.md` rozdz. 6): szyny 3,3 V i 5 V wyłączane przez INH TJA1043, w uśpieniu czuwa tylko transceiver; bilans ≤ 63 µA (rozdz. 6.1) | A | T-PWR-001 | Protokół pomiaru prądu (miernik z zakresem µA) przy 12,0 V i +25 °C | 6 | ⬜ |
 | SYS-PWR-002 | Jw. + uśpienie HMI (7.1) | A + J | T-PWR-002 | Protokół pomiaru prądu całego zestawu | 6 | ⬜ |
 | ECU-PWR-003 | — | A + A.4 | T-PWR-003 | Oscylogram: zbocze źródła wybudzenia → pierwszy impuls na wyjściu drivera zapłonu | 6 | ⬜ |
 | ECU-PWR-003a | — | A + B (B.2.5) | T-PWR-003a | Protokół: czas i zakres autotestu pełnego vs skróconego, log przyczyny wyboru; pomiar czasu sumy kontrolnej map | 6 | ⬜ |
@@ -340,6 +347,8 @@ Status: ⬜ niewykonane · 🔶 częściowo · ✅ zamknięte dowodem.
 | **ECU-SAF-012a** | W25Q64 (suma kontrolna konfiguracji) | B (B.2.5.2) | T-SAF-012a | Protokół: celowe uszkodzenie bajtu w konfiguracji użytkownika, potwierdzenie **uruchomienia silnika** na wartościach domyślnych z ostrzeżeniem | 6 | ⬜ |
 | ECU-SAF-007 | Rezystory ściągające na wszystkich wyjściach mocy | — | T-SAF-007 | Oscylogram stanu wyjść od chwili podania zasilania do końca startu MCU | 6 | ⬜ |
 | **ECU-SAF-016** | **Rezystory ściągające na linii bramkującej EN** driverów | — (niezależne od FW) | T-SAF-016 | Protokół wstrzykiwania usterki: odłączenie zasilania komparatora przy pracującym silniku — potwierdzenie odcięcia, nie załączenia. Osobno: oscylogram stanu linii EN od chwili podania zasilania | 6 | ⬜ |
+| **ECU-SAF-018** | Pin WAKE TJA1043 + wejście przycisku startu w MCU + BTS7008-2EPA (kanał rozrusznika) | A.3b, A.4 | T-SAF-018 | Protokół: start z uśpienia przyciskiem trzymanym (rozrusznik rusza po gotowości), puszczonym przed gotowością (brak rozrusznika), trzymanym przy kill switchu w STOP (brak rozrusznika) | 6 | ⬜ |
+| **ECU-SAF-017** | TPS3430-Q1 na szynie 3,3 V procesora, bez linii wyłączającej; szyny wyłączane przez INH TJA1043 | A.4 | T-SAF-017 | Przegląd schematu (inspekcja) + test: w każdym stanie z zasilonym procesorem, łącznie ze startem, brak obsługi WDI powoduje reset | 4, 6 | ⬜ |
 | **ECU-SAF-016a** | Komparator zasilany z szyny 5 V za przełącznikiem obciążenia | — | T-SAF-016a | Przegląd schematu (inspekcja) + pomiar prądu spoczynkowego w T-PWR-001 potwierdzający brak wpływu komparatora | 4, 6 | ⬜ |
 | ECU-SAF-008 | BTS7008-2EPA (kanał rozrusznika) | B + A.3b | T-SAF-008 | Protokół: próba załączenia rozrusznika przy obrotach > 400 obr/min, potwierdzenie blokady | 8 | ⬜ |
 | ECU-SAF-009 | BTS7008-2EPA | A.3b | T-SAF-009 | Protokół: pomiar czasu ciągłej pracy rozrusznika | 6 | ⬜ |
@@ -373,7 +382,8 @@ Status: ⬜ niewykonane · 🔶 częściowo · ✅ zamknięte dowodem.
 | SYS-COM-002a | — | I (harmonogram zadań) | T-COM-002a | Protokół: pomiar odstępów między ramkami analizatorem CAN, histogram | 6 | ⬜ |
 | SYS-COM-002b | — | I | T-COM-002b | Jw. dla ramek wolnozmiennych | 6 | ⬜ |
 | SYS-COM-003 | — | Protokół (Faza 2-Desktop) | T-COM-003 | Protokół wstrzykiwania błędów: ramki zgubione, powtórzone, przekłamane | 6 | ⬜ |
-| SYS-COM-004 | — | Protokół (Faza 2-Desktop) | T-COM-004 | Przegląd specyfikacji protokołu: każda ramka cykliczna ma okres i timeout (inspekcja) | 2-Desktop | ⬜ |
+| SYS-COM-004 | — | Protokół (Faza 2-Desktop) | T-COM-004 | Przegląd specyfikacji protokołu: każda ramka cykliczna ma okres i timeout (inspekcja) + test negatywny: usunięcie jednej ramki z magistrali nie wywołuje usterki, usunięcie trzech kolejnych — wywołuje | 2-Desktop | ⬜ |
+| **SYS-COM-008** | — | A.4, B (DTC-COM-01) | T-COM-008 | Protokół: odłączone HMI — start z uśpienia przyciskiem, praca silnika, zaśnięcie po 30 min; to samo przy HMI zawieszonym (nadaje śmieci lub nic) | 6 | ⬜ |
 | **SYS-COM-007** | TJA1043 ×2 | A.4 + J | T-COM-007 | Protokół: wybudzenie ECU każdym ze źródeł, kontrola czy HMI budzi się bez interakcji kierowcy z wyświetlaczem | 6 | ⬜ |
 | SYS-COM-005 | — | H | T-COM-005 | Protokół: połączenie niezgodnych wersji, kontrola wykrycia i komunikatu | 7 | ⬜ |
 | **SYS-COM-005a** | — | J (HMI) | T-COM-005a | Protokół: połączenie wersji różniących się o `minor` **i** o `major`; w obu przypadkach ekran bez danych pomiarowych | 7 | ⬜ |

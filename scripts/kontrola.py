@@ -43,7 +43,7 @@ RE_POZYCJA = r'^\|\s*\*{0,2}(O-\d{3})\*{0,2}\s*\|(?:[^|\n]*\|){5,}'
 # Identyfikatory wycofane — nie mogą występować poza zapisem o ich usunięciu.
 # DTC-SEN-04 NIE jest wycofany: został przeniesiony do wariantów B/C, bo
 # czujnik przepustnicy w nich istnieje. Nie wpisywać go tutaj.
-WYCOFANE = ['ECU-IGN-008']
+WYCOFANE = ['ECU-IGN-008', 'ECU-IGN-003', 'ECU-IGN-004']
 KONTEKST_USUNIECIA = ('usunięt', 'Usunięt', 'wycofan', 'Wycofan', 'OBALONE', 'nieaktualn')
 
 bledy = []
@@ -95,24 +95,28 @@ def liczniki(wymagania, firmware, otwarte):
     i = wymagania.index('## 20.') if '## 20.' in wymagania else len(wymagania)
     czesc_wymagan = wymagania[:i]
 
-    otwarte_wymagania = set()
+    # Wymagania [B/C] z DO USTALENIA nie blokują G0 MVP-A — blokują bramkę
+    # wariantu B/C, realizowanego jako osobna wariacja po MVP-A.
+    otwarte_wymagania, otwarte_bc = set(), set()
     for linia in czesc_wymagan.split('\n'):
         if 'DO USTALENIA' in linia:
             m = re.match(RE_WYMAGANIE, linia)
             if m:
-                otwarte_wymagania.add(m.group(1))
+                cel = otwarte_bc if '[B/C]' in linia.split('|')[1] else otwarte_wymagania
+                cel.add(m.group(1))
 
     pozycje = unikalne(RE_POZYCJA, otwarte)
     zalozenia = unikalne(r'\|\s*\*{0,2}(Z\d{1,3})\*{0,2}\s*\|', otwarte)
 
     return {
         'wymagania': len(unikalne(RE_WYMAGANIE, czesc_wymagan)),
-        'wymagania otwarte (DO USTALENIA)': len(otwarte_wymagania),
+        'wymagania otwarte MVP-A (blokują G0)': len(otwarte_wymagania),
+        'wymagania otwarte B/C (poza G0)': len(otwarte_bc),
         'kody usterek DTC': len(unikalne(r'\bDTC-[A-Z]{3}-\d{2}\b', firmware, 0)),
         'identyfikatory testów': len(unikalne(r'\bT-[A-Z]{3}-\d{3}[a-z]?\b', wymagania, 0)),
         'pozycje otwarte': len(pozycje),
         'założenia': len(zalozenia),
-    }, sorted(otwarte_wymagania), pozycje
+    }, sorted(otwarte_wymagania), pozycje, sorted(otwarte_bc)
 
 
 # ------------------------------------------- 3. odwołania do pozycji otwartych
@@ -159,7 +163,7 @@ def main():
     otwarte = czytaj(OTWARTE)
 
     zdefiniowane, pokryte = pokrycie(wymagania)
-    licz, otwarte_wym, pozycje = liczniki(wymagania, firmware, otwarte)
+    licz, otwarte_wym, pozycje, otwarte_bc = liczniki(wymagania, firmware, otwarte)
     uzyte = odwolania(pozycje)
     osierocone()
 
@@ -171,6 +175,8 @@ def main():
 
     print('\nWYMAGANIA OTWARTE (blokują bramkę G0)')
     print('  ' + (', '.join(otwarte_wym) if otwarte_wym else 'brak'))
+    print('\nWYMAGANIA OTWARTE B/C (blokują bramkę wariantu B/C, nie G0)')
+    print('  ' + (', '.join(otwarte_bc) if otwarte_bc else 'brak'))
 
     if bledy:
         print('\nROZBIEŻNOŚCI — %d' % len(bledy))

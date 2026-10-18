@@ -14,8 +14,8 @@ Firmware w każdej chwili znajduje się w dokładnie jednym zdefiniowanym stanie
 
 | Stan | Opis | Wyjścia mocy | Pobór |
 |---|---|---|---|
-| **UŚPIENIE** | **Poprawione 20.09.2026 — opis nie nadążał za przeprojektowaniem zasilania (F-002/F-003).** Obie przetwornice pozostają włączone w trybie oszczędnym: **3,3 V** zasila MCU w trybie Stop, flash, IMU i VIO transceivera; **5,0 V** zasila wyłącznie **VCC transceivera TJA1043** — musi zostać pod napięciem, bo przy zaniku VCC układ samoczynnie przechodzi w Sleep i przestaje nasłuchiwać magistrali. Odcinany jest **przełącznik obciążenia 5 V**: bez zasilania zostają czujniki zewnętrzne, MAX9926 i MLX90316. TJA1043 w trybie Standby, MCU w trybie Stop z aktywnymi przerwaniami EXTI | Wszystkie wyłączone | ~70-135 µA |
-| **WYBUDZANIE** | Stan przejściowy. Wyjście MCU z trybu Stop, **załączenie przełącznika obciążenia 5 V** (przetwornica już pracuje), odczekanie na start czujników i ustalenie się progu adaptacyjnego MAX9926 (~1-2 ms), reinicjalizacja peryferiów (FDCAN, ADC, timery), wczytanie konfiguracji i map z flash, uruchomienie watchdoga, zapis przyczyny wybudzenia do logu | Wszystkie wyłączone | — |
+| **UŚPIENIE** | **Zmienione 18.10.2026 — architektura INH** (`produkt.md` rozdz. 6). Obie przetwornice **wyłączone** przez INH TJA1043; procesor, watchdog, pamięć i czujniki **bez zasilania**. Czuwa tylko TJA1043 w trybie Sleep, zasilany z akumulatora: wzorzec wybudzenia na magistrali i zbocze na pinie WAKE | Wszystkie wyłączone | ≤ 63 µA (bilans `produkt.md` 6.1) |
+| **WYBUDZANIE** | Stan przejściowy. **Pełny start firmware** (RAM nie przetrwał uśpienia): uruchomienie watchdoga, odczyt flag Pwon i źródła wybudzenia z ERR_N, zapis przyczyny wybudzenia do logu, odtworzenie stanu z pamięci nieulotnej, wybudzenie HMI, **załączenie przełącznika obciążenia 5 V**, odczekanie na start czujników i ustalenie się progu adaptacyjnego MAX9926 (~1–2 ms), wczytanie konfiguracji i map. Szczegóły: A.4 | Wszystkie wyłączone | — |
 | **GOTOWOŚĆ** | Silnik nie pracuje, system czuwa. HMI aktywne. Prime pompy paliwa. Oczekiwanie na obroty lub przycisk startu | Pompa (prime), światła wg ustawień | ~320 mA |
 | **ROZRUCH** | Wał się kręci, obroty poniżej progu pracy samodzielnej. Osobna strategia: wzbogacenie, inne wyprzedzenie zapłonu. **Rozrusznik pracuje równolegle z tym stanem** (jeśli rozruch elektryczny), nie przed nim — ECU generuje iskrę w trakcie kręcenia | Zapłon, wtrysk (mapa rozruchowa), pompa, rozrusznik (warunkowo) | — |
 | **PRACA** | Silnik pracuje samodzielnie. Pełna funkcjonalność: mapy, korekty, rev limiter, wentylator, logowanie | Wszystkie wg logiki | — |
@@ -80,35 +80,35 @@ Firmware w każdej chwili znajduje się w dokładnie jednym zdefiniowanym stanie
 
 ⚠️ **Udokumentowane ryzyko resztkowe:** limit 5 s bez wymuszonej przerwy chroni przed jednorazowym zablokowaniem przycisku, ale nie przed uporczywym odpalaniem — po zwolnieniu i ponownym naciśnięciu licznik startuje od zera. Przyjęte świadomie.
 
-### A.4 Źródła wybudzenia z UŚPIENIA
+### A.4 Uśpienie i wybudzanie (architektura z 18.10.2026)
 
-**Architektura: MCU zarządza uśpieniem** (nie transceiver). STM32G474 pozostaje zasilany w trybie Stop i sam nasłuchuje wejść; po wybudzeniu włącza regulator 5 V dla czujników zewnętrznych. Szczegóły sprzętowe — rozdz. 6.4 dokumentu procesu.
+**Architektura: szyny 3,3 V i 5 V wyłączane przez INH transceivera TJA1043** (`produkt.md` rozdz. 6). W uśpieniu procesor jest **bez zasilania** — nie ma trybu Stop, RAM nie przetrwa, każde wybudzenie to pełny start firmware.
 
 | # | Źródło | Mechanizm | Uwagi dla FW |
 |---|---|---|---|
-| 1 | **Ramka CAN z HMI** | TJA1043 w Standby nasłuchuje magistrali, reaguje na filtrowany wzorzec wybudzenia → zmiana RXD → przerwanie EXTI | Po wybudzeniu MCU reinicjalizuje peryferium FDCAN. Wzorzec wybudzenia do zdefiniowania w protokole (Faza 2-Desktop) |
-| 2 | **Przycisk startu** | GPIO z EXTI, rezystor podciągający | Filtrowanie drgań styku; opcjonalnie wymóg przytrzymania |
-| 3 | **Przyciski na kierownicy** | Budzą HMI lokalnie → HMI wysyła ramkę CAN → budzi ECU (przez źródło 1) | — |
-| 4 | **Podłączenie USB** | Wykrycie 5 V przez dzielnik → GPIO z EXTI | — |
+| 1 | **Ramka CAN z HMI** | TJA1043 w Sleep wykrywa wzorzec wybudzenia na magistrali → INH → szyny → start MCU | Każda zwykła ramka spełnia wzorzec |
+| 2 | **Przycisk startu** | Pin WAKE TJA1043 → INH → szyny → start MCU | Przycisk jest nadal wciśnięty, gdy firmware wystartuje — zachowanie rozrusznika: O-024 |
+| 3 | **Przyciski na kierownicy** | Pin WAKE TJA1043 w HMI → HMI nadaje → źródło 1 | — |
+| 4 | **Podłączenie USB** | Tranzystor ściąga pin WAKE w ECU | — |
 
-**Wybudzanie sygnałem obrotów wału — świadomie odrzucone** (decyzja 2026-08-31, uzasadnienie w rozdz. 6.4 dok. procesu). Sygnał obrotów ma jedną ścieżkę: cewka VR → MAX9926 → MCU, a MAX9926 jest w uśpieniu bez zasilania.
+**Wybudzanie sygnałem obrotów wału — świadomie odrzucone** (`produkt.md` rozdz. 6.3). **Konsekwencja:** jeśli ECU śpi, kopnięcie samo go nie obudzi — najpierw przycisk.
 
-**Konsekwencja dla FW i instrukcji:** jeśli ECU śpi, kopnięcie samo w sobie go nie obudzi — użytkownik musi najpierw nacisnąć przycisk. Dotyczy to zarówno czujników VR, jak i Halla.
+**Wymagania FW przy starcie (każdy start jest startem od zera):**
+1. Transceiver w **Listen-only** → odczyt **Pwon** z ERR_N (zasilanie BAT zanikło — akumulator był odłączony; zegar i dane nie są ciągłe). Odczekanie ok. 8 µs po każdej zmianie trybu (jednostka do potwierdzenia w oryginale karty)
+2. Transceiver w **Normal** → odczyt **źródła wybudzenia** z ERR_N przed czwartym zboczem nadawania (lokalne: przycisk lub USB; brak: magistrala). Flaga jest też ustawiana przy pierwszym zasileniu — interpretacja razem z Pwon
+3. Zapis przyczyny wybudzenia do logu — diagnoza rozładowań akumulatora
+4. Odtworzenie stanu z pamięci nieulotnej (motogodziny, przebieg, zatrzask K4, usterki)
+5. **Wybudzenie HMI** — gdy ECU nie śpi, HMI też nie śpi
+6. Włączenie przełącznika obciążenia 5 V, odczekanie na start MAX9926 i czujników (~1–2 ms)
 
-**Wymagania FW przy zasypianiu:**
-- Wyłączenie przełącznika obciążenia 5 V przez GPIO (odcina czujniki zewnętrzne, MAX9926, MLX90316)
-- **Wprowadzenie w tryb niskiego poboru układów na szynie 3,3 V, która pozostaje włączona:**
-  - **BMI090L (IMU)** → tryb suspend. W normalnym trybie pobiera ~5 mA, czyli ~50× cały budżet uśpienia — bez tego oszczędzanie energii nie ma sensu
-  - **W25Q64 (flash)** → deep power-down (~1 µA zamiast ~15 mA przy odczycie)
-  - **TJA1043** → tryb Standby (nasłuch magistrali)
-- Wysłanie polecenia uśpienia do HMI po CAN, odczekanie na potwierdzenie, dopiero potem zaśnięcie własne
-- Przejście MCU w tryb Stop z aktywnymi przerwaniami EXTI
+**Wymagania FW przy usypianiu** (sekwencja: `produkt.md` rozdz. 6.4):
+1. Żądanie uśpienia do HMI; potwierdzenie **i** cisza na magistrali dłuższa niż timeout ramki HMI
+2. Zapis stanu do pamięci nieulotnej i zakończenie zapisów w toku
+3. Wyłączenie przełącznika obciążenia 5 V
+4. Transceiver w **Go-to-Sleep** (STB_N niski, EN wysoki)
+5. **Jeśli zasilanie nie zanikło w określonym czasie po rozkazie** — wybudzenie przyszło równocześnie i rozkaz został zignorowany (AH1014, rozdz. 6.2.5). Firmware wraca do pracy i traktuje to jak wybudzenie
 
-**Wymagania FW przy wybudzaniu:**
-- **Zapis przyczyny wybudzenia do logu diagnostycznego** — istotne przy diagnozowaniu rozładowania akumulatora
-- Włączenie regulatora 5 V, odczekanie na start MAX9926 i pozostałych czujników (~1-2 ms)
-- Wyprowadzenie BMI090L i W25Q64 z trybów niskiego poboru
-- Reinicjalizacja peryferiów (FDCAN, ADC, timery)
+**Usunięte z poprzedniej wersji:** wprowadzanie IMU i pamięci flash w tryby niskiego poboru, przerwania EXTI w trybie Stop — w uśpieniu te układy są bez zasilania.
 
 ### A.5 Pozostaje do doprecyzowania (przy punktach B, E)
 
@@ -240,11 +240,13 @@ W dwusuwie nie występuje też **utrata synchronizacji** w sensie czterosuwowym:
 
 #### B.2.3 Wyjście diagnostyczne VBG08H-E i sprzętowy limit czasu ładowania (ustalenia 2026-09-20)
 
+> ⚠️ **Nieaktualne po decyzji AC-CDI z 18.10.2026** — VBG08H-E usunięty, zapłon nie jest indukcyjny. Rozdział zostaje do czasu przebudowy pod blok CDI (O-001, punkt 5); nie projektować na jego podstawie.
+
 **Wyjście C.F.** VBG08H-E (pin 6, otwarty dren) przechodzi w stan niski, gdy wejście sterujące idzie w stan wysoki, i wraca w stan wysoki, **gdy prąd cewki osiągnie stały próg 6,5 A** (wartość zależna od temperatury). Ogranicznik prądu układu działa dopiero przy 8,5–10,5 A, klamra przepięciowa przy 320–400 V, miękkie wyłączenie przy temperaturze złącza 150–175 °C.
 
 **Zastosowanie: wyłącznie diagnostyka** (DTC-IGN-04, DTC-IGN-05). Czas od podania sterowania do powrotu C.F. to zmierzony czas dojścia cewki do 6,5 A: brak powrotu oznacza przerwę w obwodzie, powrót zbyt szybki — zwarcie zwojów.
 
-**Odrzucone: sterowanie czasem ładowania w pętli zamkniętej na podstawie C.F.** Propozycja rozważana 2026-09-20 i **wycofana po sprawdzeniu karty katalogowej**: ST opisuje C.F. wyłącznie jako wyjście diagnostyczne, bez żadnej wzmianki o wykorzystaniu do regulacji. Dodatkowo próg 6,5 A należy do układu, nie do cewki, i dryfuje z temperaturą — regulowalibyśmy do wielkości, która nie jest parametrem sterowanego obiektu. ECU-IGN-003 (korekta w funkcji napięcia) pozostaje bez zmian. Temat może wrócić po pomiarach na stanowisku w Fazie 6 jako świadomy eksperyment z własną walidacją.
+**Odrzucone: sterowanie czasem ładowania w pętli zamkniętej na podstawie C.F.** Propozycja rozważana 2026-09-20 i **wycofana po sprawdzeniu karty katalogowej**: ST opisuje C.F. wyłącznie jako wyjście diagnostyczne, bez żadnej wzmianki o wykorzystaniu do regulacji. Dodatkowo próg 6,5 A należy do układu, nie do cewki, i dryfuje z temperaturą — regulowalibyśmy do wielkości, która nie jest parametrem sterowanego obiektu. ECU-IGN-003 (korekta w funkcji napięcia) wycofane 18.10.2026 razem z zapłonem indukcyjnym. Temat może wrócić po pomiarach na stanowisku w Fazie 6 jako świadomy eksperyment z własną walidacją.
 
 **Ograniczenie konstrukcyjne wynikające z progu C.F.:** czas ładowania musi być na tyle długi, by prąd cewki przekroczył 6,5 A — inaczej C.F. nigdy nie zmieni stanu i diagnostyka odczyta sprawną cewkę jako przerwaną. **Do sprawdzenia przy doborze cewki w Fazie 4.**
 
@@ -918,9 +920,9 @@ Zakres: priorytety przerwań, budżet czasowy, obsługa watchdoga okienkowego, r
 - Przy utracie komunikacji z ECU — komunikat o błędzie i **wygaszenie danych** (decyzja L11). Żadna wartość nie jest wyświetlana, żeby nie wprowadzać w błąd zamrożonym odczytem
 - Po resecie MCU wymagana poprawna **reinicjalizacja koprocesora EVE4** (decyzja L22)
 - **Timeout wyświetlacza 3 min** bez interakcji (decyzja A.2)
-- **Uśpienie na polecenie ECU po CAN** (rozdz. 7.1 dok. procesu). ECU dyryguje; HMI ma **własny timeout awaryjny** na wypadek zaginięcia polecenia
-- **Wybudzanie przyciskiem:** linia drabinki rezystorowej podpięta równolegle do wejścia EXTI obok wejścia ADC — naciśnięcie dowolnego przycisku daje zbocze wybudzające. Dopiero po wybudzeniu ADC określa, który przycisk. Konieczne, bo **ADC nie działa w trybie Stop**
+- **Uśpienie na polecenie ECU po CAN** (sekwencja: `produkt.md` rozdz. 6.4). ECU dyryguje; HMI potwierdza **po fizycznym wysłaniu ramki** i dopiero wtedy przechodzi w Go-to-Sleep; naciśnięcie przycisku w trakcie przerywa usypianie. **Własny timeout awaryjny 30 s** bez ramek z ECU. Obsługa zignorowanego Go-to-Sleep jak w ECU (A.4)
+- **Wybudzanie przyciskiem (od 18.10.2026):** drabinka przycisków jest węzłem WAKE transceivera HMI; naciśnięcie włącza szyny HMI, firmware startuje od zera i dopiero wtedy ADC określa, który przycisk. **Nacisk budzący tylko budzi.** Przy starcie ta sama sekwencja odczytu ERR_N co w ECU (A.4)
 - **Zarządzanie jasnością wg temperatury** (decyzja H.13, analiza w rozdz. 7.2): panel LCD czernieje powyżej ~70°C, a na słońcu potrzeba maksymalnej jasności — firmware musi wyważyć czytelność i ochronę wyświetlacza. Progi i charakterystyka do ustalenia
-- Przy zasypianiu: odłączenie wyświetlacza i EVE4, flash SPI w deep power-down, TJA1043 w Standby
+- Przy zasypianiu: zakończenie zapisów, potwierdzenie do ECU, TJA1043 w Go-to-Sleep — szyny HMI gasną przez INH
 
 Zakres do rozpisania: maszyna stanów HMI, struktura menu, format konfiguracji wyglądu z aplikacji desktop, obsługa heartbeat z ECU.

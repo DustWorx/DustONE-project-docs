@@ -10,11 +10,15 @@ Co budujemy, jak to jest zbudowane i dlaczego tak. Pozycje nierozstrzygnięte s�
 
 Samodzielna, programowalna jednostka sterująca silnika do motocykli enduro i adventure, moduł wyświetlacza na kierownicę oraz aplikacja desktop do strojenia i diagnostyki. **Motorsport i entuzjaści offroadu; urządzenie nie jest i nie będzie homologowane drogowo.**
 
-| Wariant | Motocykl odniesienia | Zakres sterowania |
+**Zakres docelowy: wyłącznie silniki 1-cylindrowe (2T i 4T) motocykli enduro** — platforma KTM / Husqvarna / GasGas oraz Beta. Warianty rozróżnia **układ paliwowy**, nie model motocykla.
+
+| Wariant | Układ paliwowy | Zakres sterowania |
 |---|---|---|
-| **MVP-A** — gaźnik | **Beta 300 RR 2015**, 1-cyl. 2T, gaźnik, **bez TPS** | Zapłon (mapa jednowymiarowa, kąt w funkcji obrotów), ogranicznik obrotów, wskaźnik biegu, prędkość i przebieg, motogodziny, wyjścia mocy, diagnostyka |
-| B — TPI | KTM EXC TPI | Dodatkowo wtrysk paliwa |
-| C — TBI | KTM 890 Adventure | Dodatkowo przepustnica sterowana elektronicznie |
+| **MVP-A** — gaźnik | Gaźnik, bez sterowania mieszanką. Motocykl rozwojowy: **Beta 300 RR 2015**, 1-cyl. 2T, **bez TPS** | Zapłon (mapa jednowymiarowa, kąt w funkcji obrotów), ogranicznik obrotów, wskaźnik biegu, prędkość i przebieg, motogodziny, wyjścia mocy, diagnostyka |
+| B — TPI | **Transfer Port Injection** — 2 wtryskiwacze do kanałów przepłukujących | Dodatkowo wtrysk paliwa |
+| C — TBI | **Throttle Body Injection** — 1 wtryskiwacz w gardzieli | Dodatkowo wtrysk paliwa |
+
+⚠️ **Korekta 15.10.2026.** Wcześniejsze wydania tego dokumentu oraz dossier przekazane do audytu zewnętrznego podawały dla wariantów B i C konkretne motocykle odniesienia, w tym **KTM 890 Adventure dla wariantu C, z przepustnicą sterowaną elektronicznie**. Było to nieprawdziwe: motocykli odniesienia dla B i C nigdy nie ustalono, a KTM 890 Adventure występuje w dokumencie źródłowym **wyłącznie jako przykład konstrukcji odrzuconej** (decyzja 0.2 — silniki 2-cylindrowe i ride-by-wire poza zakresem). Audyt AUD-ECU-002 pracował na tym błędnym opisie zakresu.
 
 **Projektowany jest wyłącznie MVP-A.** Warianty B i C mają zarezerwowane zdolności sprzętowe (wymagania `[HW]` i `[B/C]`), ale nie mają własnych specyfikacji ani odbiorcy.
 
@@ -28,7 +32,7 @@ Samodzielna, programowalna jednostka sterująca silnika do motocykli enduro i ad
 | **Regulacja napięcia szyn przez mikrokontroler** | Patrz rozdz. 4.2 — błąd firmware mógłby zniszczyć czujniki i sam procesor |
 | Pełne logowanie sesji jazdy | Zawężone do czarnej skrzynki (zdarzenia krytyczne). Ograniczenie w firmware, nie w sprzęcie — 8 MB daje zapas |
 | Sygnalizacja stanu na samym ECU | Brak diody. Diagnostyka wyłącznie przez HMI i aplikację |
-| Silniki 2-cylindrowe i ride-by-wire | Osobna kategoria ryzyka, wymagałaby dedykowanego projektu |
+| **Silniki 2-cylindrowe i ride-by-wire** (np. KTM 890 Adventure) | Decyzja 0.2 Fazy 0. Ride-by-wire to osobna kategoria inżynierska — redundantne czujniki i failsafe. **Żaden wariant produktu ich nie obejmuje** |
 | Closed-loop lambda, EGT, czujnik spalania stukowego | Poza MVP |
 | Sterowanie pompką olejową | Pompka usuwana, przejście na premiks |
 | Launch control, kontrola trakcji | Poza MVP. Sprzętowo możliwe do dodania później — wymagają tylko istniejących wejść |
@@ -39,13 +43,14 @@ Samodzielna, programowalna jednostka sterująca silnika do motocykli enduro i ad
 
 | # | Decyzja | Wybór | Uzasadnienie |
 |---|---|---|---|
-| 2.1 | Zasilanie | Tylko motocykle z akumulatorem 12 V | Eliminuje obsługę surowego napięcia przemiennego ze statora. **Uwaga: nie eliminuje DC-CDI**, które jest zasilane z akumulatora — ten wniosek został przez tę decyzję błędnie domyślony i jest teraz pozycją O-001 |
+| 2.1 | Zasilanie | Logika ECU wyłącznie z akumulatora 12 V; **energia zapłonu w MVP-A z uzwojenia wzbudzającego statora** (decyzja 2.9) | Pierwotnie decyzja wykluczała obsługę napięcia przemiennego ze statora. Zmieniona 18.10.2026: ECU nadal nie zasila się ze statora, ale prowadzi i prostuje napięcie uzwojenia wzbudzającego do kondensatora zapłonowego |
 | 2.2 | Standalone | Bez fabrycznej wiązki sygnałowej | Uniwersalność między markami |
 | 2.3 | Architektura PCB | Jedna uniwersalna płytka, tryb pracy wybierany programowo | Jeden BOM, jedna płytka zamiast wariantów |
 | 2.4 | Wejście triggera | **Dwie ścieżki wybierane zworką:** (a) VR → MAX9926 → MCU, (b) Hall → ochrona + konfigurowalny rezystor podciągający → wejście cyfrowe MCU | MAX9926 obsługuje wyłącznie czujniki VR; Hall daje gotowy sygnał cyfrowy i nie wymaga kondycjonowania. Zworka ustawiana raz przy instalacji, wewnątrz obudowy — tej samej, która musi być otwieralna dla złącza SWD. Zasilanie czujnika Halla z linii +5 V ref, bez dodatkowych pinów |
 | 2.5 | Synchronizacja fazy (4T) | Domyślnie batch, tylko z wału korbowego; opcjonalne wejście czujnika fazy | Nie wszystkie jednocylindrowe 4T mają dostępny czujnik fazy |
 | 2.7 | Motocykl referencyjny | Beta 300 RR (2015), 1-cyl. 2T, gaźnik, **bez TPS** | Dostępny fizycznie. Motocykl nie ma czujnika przepustnicy i nie będzie on dokładany |
 | 2.8 | Narzędzie PCB | Claude dostarcza schemat, netlistę i wytyczne; Paweł przerysowuje w Fusion 360 Electronics | Dokumentacja transferowalna |
+| 2.9 | Tor energii zapłonu MVP-A | **AC-CDI** z fabryczną cewką | Energia iskry sprawdzona fabrycznie na tym silniku w całym zakresie obrotów, także przy kopnięciu. Akumulator zasila tylko logikę, więc rozruch kopnięciem przy słabym akumulatorze ma największy zapas (ECU-IGN-021). Bez zakupu cewki, przeróbek mechanicznych i dodatkowego obciążenia ładowania. Odrzucone alternatywy i otwarte punkty: O-001 |
 
 ---
 
@@ -56,17 +61,17 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | Funkcja | Układ | Pełny numer | Kwalifikacja / zakres | Uwagi |
 |---|---|---|---|---|
 | Mikrokontroler | **STM32G474VET3** | STM32G474VET3 | −40…+125 °C | Wybrany za HRTIM. **Sufiks T3, nie T6** — T6 ma tylko −40…+85 °C, a analiza termiczna daje do 84 °C wewnątrz obudowy. **LQFP100, nie LQFP64** — bilans wykazał 55 potrzebnych sygnałów wobec ~50 użytkowych w LQFP64; LQFP100 daje ~82 piny, zapas ~27. 512 KB Flash, 128 KB RAM, 170 MHz, HRTIM, FDCAN, USB |
-| Driver zapłonu | **VBG08H-E** | VBG08H-E / VBG08HTR-E (taśma) | ✅ Aktywny, −40…+175 °C | Smart igniter z wbudowanym IGBT. Ograniczanie prądu 8,5–10,5 A, klamra przepięciowa 320–400 V, miękkie wyłączenie przy 150–175 °C złącza. Wyjście diagnostyczne C.F. sygnalizuje osiągnięcie progu 6,5 A — **nie wykrywa zwartego tranzystora wyjściowego**. **EN aktywne niskim, wewnętrznie podciągnięte do góry. Standby 5 mA typ./6 mA max niezależnie od stanu EN** |
+| Tor zapłonu | **AC-CDI — blok dyskretny** | ⚠️ do doboru | ⚠️ do kwalifikacji | Prostownik WN, kondensator zapłonowy, tyrystor, rozładowanie, ochrona przepięciowa. Dobór i arkusze kwalifikacji w O-001 — elementy istotne dla bezpieczeństwa, nie przechodzą do Fazy 4 jako zwykłe bierne. **VBG08H-E usunięty 15.10.2026** — zapłon nie jest indukcyjny |
 | Driver wtryskiwaczy | **TLE9104SH** | TLE9104SHXUMA1 | ✅ Aktywny, AEC-Q100/101 | Historia doboru: L9960 (błąd — mostek H do silników DC) → TLE8104E (funkcjonalnie dobry, **status NRND**) → TLE9104SH. Dane wtryskiwaczy KTM TPI/TBI: 11,7 Ω nom., prąd ~1,23 A przy 14,4 V = wysokoimpedancyjne, **peak-and-hold niepotrzebne, wystarcza tryb nasycony**. 4 kanały low-side (2 na wtryskiwacze, 2 zapas), 3 A/kanał, SPI z diagnostyką. Pin EN jest punktem sprzętowego bramkowania od kill switcha |
-| Transceiver CAN ×2 | **TJA1043** | ⚠️ do ustalenia | ⚠️ do potwierdzenia | TJA1051T/3 odrzucony — nie ma wybudzania przez magistralę. Pracuje w trybie **Standby**: nasłuchuje magistrali i sygnalizuje wykrycie wzorca wybudzenia zmianą linii RXD. **VCC musi być zasilone na stałe** — karta wymusza przejście w Sleep przy zaniku VCC lub VIO. Pin INH nie jest używany do sterowania przetwornicami. Ten sam układ w ECU i HMI |
+| Transceiver CAN ×2 | **TJA1043** | ⚠️ do ustalenia | ✅ Aktywny, AEC-Q100 (strona NXP) | TJA1051T/3 odrzucony — nie ma wybudzania przez magistralę. **Od 18.10.2026 steruje zasilaniem: wyjście INH włącza obie przetwornice, w uśpieniu (Sleep) czuwa sam z pinu BAT, 18 µA typ. / 30 µA maks.** Reguły schematu: rozdz. 6.2. Ten sam układ w ECU i HMI. **NXP wskazuje TJA1443A jako następcę** — zgodność do sprawdzenia przy doborze pełnego numeru (Faza 4) |
 | IMU | ~~BMI090L~~ | — | ❌ **Brak AEC-Q100, −40…+85 °C** | Zmiana z BMI088 miała usunąć brak kwalifikacji; BMI090L jej **też nie ma** — dokumenty producenta wskazują rynki przemysłowe, a karty dystrybutorów status Obsolete. **Dobór nierozstrzygnięty, pozycja O-027** |
 | Pamięć logów | **W25Q64** (8 MB, SPI NOR) | ⚠️ rodzina, nie numer | ⚠️ klasa przemysłowa | Czarna skrzynka, 8 MB z zapasem; wlutowana, bez slotu. Pełny numer i klasa do ustalenia (O-063) |
 | Wyjścia pomocnicze | BTS7008-2EPA ×3 | ⚠️ do ustalenia | AEC-Q100 | PROFET+2, 6 kanałów, diagnostyka, ochrona zwarciowa i odwrotnej polaryzacji. **7,5 A/kanał to wartość nominalna w określonych warunkach, nie dopuszczalny prąd roboczy dowolnego obciążenia** |
 | Kondycjoner VR/Hall | **MAX9926** | MAX9926UAEE/V+ | ✅ Production, −40…+125 °C, automotive | Adaptacyjny próg 33% poprzedniego szczytu, detekcja przejścia przez zero, czułość od 20 mV, odporność na pominięty ząb. **Pobór 4,7 mA typ./10 mA max, brak trybu shutdown** — musi być odcinany przełącznikiem obciążenia. Wersja dwukanałowa; jednokanałowy MAX9924 jest mniejszy i tańszy. Jedyna pozycja niedostępna w TME (O-033) |
 | Ciśnienie atmosferyczne | BMP390 | ⚠️ do ustalenia | ❌ **bez kwalifikacji automotive, −40…+85 °C** | Korekta na wysokość n.p.m. Wymaga membrany odpowietrzającej IP67. **Nowe wymaganie SYS-ENV-003b dyskwalifikuje ten układ w obecnej roli** — przy 85 °C otoczenia wnętrze obudowy przekracza jego zakres. Albo zamiennik w klasie Grade 1/2, albo zatwierdzone odstępstwo z uzasadnieniem miejsca montażu na PCB |
 | Pozycja biegu | MLX90316 | ⚠️ do ustalenia | ⚠️ do potwierdzenia | Triaxis, bezstykowy, kąt magnesu 0–360°, wyjście analogowe. **Wykonalność mechaniczna na Becie niepotwierdzona (O-031)** |
-| **Przetwornica 5,0 V** | do doboru | — | — | Nastawa stała (dzielnik rezystorowy), wejście EN, wyjście Power Good. Zasila VCC transceivera oraz — przez przełącznik obciążenia — czujniki zewnętrzne, MAX9926 i MLX90316. **EN nie służy do usypiania**: przetwornica zostaje włączona także w uśpieniu, bo VCC transceivera musi być pod napięciem. EN jest rezerwą na wyłączenie awaryjne przy wykrytym zwarciu w okablowaniu |
-| **Przetwornica 3,3 V** | do doboru | — | — | Nastawa stała, zawsze włączona (zasila procesor w trybie Stop), Power Good, **niski prąd własny — krytyczny dla budżetu uśpienia**. Wymaga filtru LC dla części analogowej procesora |
+| **Przetwornica 5,0 V** | do doboru | — | — | Nastawa stała (dzielnik rezystorowy), wyjście Power Good. Zasila VCC transceivera oraz — przez przełącznik obciążenia — czujniki zewnętrzne, MAX9926 i MLX90316. **Wejście EN sterowane z INH TJA1043** — musi znosić napięcie akumulatora i wyłączać przetwornicę przy INH niesterowanym. Prąd w stanie wyłączonym ≤ 5 µA (przydział, rozdz. 6.1) |
+| **Przetwornica 3,3 V** | do doboru | — | — | Nastawa stała, Power Good. Zasila procesor, watchdog, pamięć, IMU i VIO transceivera. **Wejście EN sterowane z INH TJA1043** (te same wymagania co 5 V). Prąd w stanie wyłączonym ≤ 5 µA (przydział). Wymaga filtru LC dla części analogowej procesora |
 | **Komparator kill switcha** | do doboru | — | — | Bramkuje wejścia EN driverów sygnałem kill switcha, niezależnie od firmware. Jeden próg między poziomem RUN a STOP układu trzypoziomowego — odcina i przy naciśnięciu, i przy przerwie w przewodzie. Zasilany z szyny 5 V za przełącznikiem obciążenia, więc w uśpieniu nie obciąża budżetu. **Komparator wewnętrzny procesora świadomie odrzucony**: jest konfigurowany przez firmware, a to dokładnie ta zależność, którą zakwestionował audyt |
 | **Przełącznik obciążenia 5 V** | do doboru | — | — | Odcina czujniki zewnętrzne, MAX9926 i MLX90316 w uśpieniu. Powinien mieć ograniczanie prądu — izoluje zwarcie w okablowaniu zewnętrznym od reszty układu |
 | Rezonator HSE | 8 MHz | do doboru | AEC-Q200, −40…+125 °C | Przy 10 000 obr/min błąd kwarcu ±50 ppm to ~0,3 µs ≈ **0,002° kąta wału** — kilkaset razy mniej niż tolerancje mechaniczne koła (0,5–1°). TCXO niepotrzebny |
@@ -85,17 +90,22 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 ### 4.1 Topologia
 
 ```
-12 V B+ ─► bezpiecznik/PTC ─► ochrona (TVS, odwrotna polaryzacja, filtr LC)
-              │
-              ├─► Przetwornica 5,0 V ──┬─► TJA1043 VCC (zawsze wł.)
-              │   nastawa stała        │
-              │   EN = rezerwa         └─► przełącznik obciążenia (GPIO) ─► komparator,
-              │   awaryjna                     MLX90316, MAX9926, czujniki zewnętrzne
-              │
-              └─► Przetwornica 3,3 V ──┬─► MCU (VDD), flash, IMU, TJA1043 VIO
-                  nastawa stała        │   (zawsze włączona — zasila MCU w trybie Stop)
-                  zawsze włączona      │
-                                       └─► filtr LC ─► VDDA/VREF+ MCU
+12 V B+ ─► ochrona wejścia (TVS) ─► dioda Schottky'ego (gałąź logiki) ─► filtr LC ─┬─► 1 kΩ + 10 nF ─► TJA1043 BAT
+                                                                                │       (czuwa zawsze, ~18 µA w Sleep)
+                                                                                │              │ INH
+                                                                                │              ▼
+                                                                                ├─► Przetwornica 5,0 V ◄─ EN ─┐
+                                                                                │   nastawa stała             │
+                                                                                │     └─► TJA1043 VCC,        │
+                                                                                │         przełącznik obciążenia (GPIO) ─► MAX9926,
+                                                                                │         komparator, czujniki zewnętrzne
+                                                                                │                             │
+                                                                                └─► Przetwornica 3,3 V ◄─ EN ─┘
+                                                                                    nastawa stała
+                                                                                      └─► MCU, TPS3430-Q1, flash, IMU, TJA1043 VIO
+                                                                                          └─► filtr LC ─► VDDA/VREF+
+
+W uśpieniu: INH niesterowane → obie przetwornice wyłączone → procesor i watchdog bez zasilania (rozdz. 6)
 ```
 
 **Dwie przetwornice zamiast przetwornicy i regulatora liniowego.** Regulator liniowy z 5 V na 3,3 V traci ~1/3 mocy w cieple (~0,3 W przy naszym poborze), co przy napiętym budżecie termicznym w szczelnej obudowie jest istotne.
@@ -133,11 +143,11 @@ Magistrala wymaga dokładnie **dwóch** rezystorów 120 Ω — na fizycznych ko�
 
 - **ECU:** 120 Ω na stałe (jako gateway zawsze pozostaje jednym końcem)
 - **HMI i każdy przyszły moduł:** terminacja przełączana zworką. Dziś HMI jest drugim końcem; po dołożeniu modułu za HMI zworka schodzi i terminacja przechodzi na nowy ostatni moduł
-- **Terminacja dzielona:** 2×60 Ω szeregowo z kondensatorem ~4,7 nF ze środka do masy zamiast pojedynczego 120 Ω — tłumi zakłócenia wspólne, standard automotive, koszt marginalny
+- **Terminacja dzielona:** 2×60 Ω szeregowo z kondensatorem ~4,7 nF ze środka do masy zamiast pojedynczego 120 Ω — tłumi zakłócenia wspólne, standard automotive, koszt marginalny. Zgodne z rys. 30 noty NXP AH1014, która dodaje **ok. 100 pF z CANH i z CANL do masy**
 
 ### 4.4 Ochrona przed przepięciami, ESD i EMI
 
-**Warstwa 1 — zasilanie:** TVS 24 V unidirectional na wejściu B+ (load dump, przepięcia rozrusznika); ochrona odwrotnej polaryzacji (dioda szeregowa lub ideal-diode MOSFET); filtr LC blokujący szum w obu kierunkach; **PTC 500 mA–1 A tylko na gałęzi logiki, nie na całym B+** — gałąź mocy ciągnie kilka amperów, a PTC o takim prądzie ma zauważalną rezystancję szeregową i wolną reakcję, a te obwody są już chronione indywidualnie przez PROFET-y.
+**Warstwa 1 — zasilanie:** **TVS dwukierunkowy** na wejściu B+ (zmiana 18.10.2026 — jednokierunkowy nie przetrwa odwrotnej polaryzacji; dobór wg rozdz. 13.1); ochrona odwrotnej polaryzacji **diodą Schottky'ego na gałęzi logiki** (decyzja 18.10.2026: ~120 mA × ~0,4 V ≈ 50 mW strat, **0 µA w uśpieniu**; sterownik diody idealnej odrzucony — pobiera prąd spoczynkowy albo wymaga wyłączania przez INH; zapas napięcia dla przetwornicy 5 V przy 7 V na złączu do potwierdzenia przy jej doborze); filtr LC blokujący szum w obu kierunkach; **PTC 500 mA–1 A tylko na gałęzi logiki, nie na całym B+** — gałąź mocy ciągnie kilka amperów, a PTC o takim prądzie ma zauważalną rezystancję szeregową i wolną reakcję, a te obwody są już chronione indywidualnie przez PROFET-y.
 
 **Warstwa 2 — linie wychodzące z obudowy:** czujniki — TVS niskopojemnościowy + filtr RC na każdej linii; CAN — dedykowany dwukanałowy TVS; USB — TVS o bardzo niskiej pojemności, żeby nie zniekształcić pary różnicowej; **trigger — TVS + filtr, linia najbardziej narażona, biegnie przy cewce zapłonowej**.
 
@@ -182,31 +192,69 @@ Rozważona i odrzucona obsługa kill switcha przez HMI i CAN:
 
 ## 6. Uśpienie i wybudzanie
 
-**Motocykle enduro nie mają stacyjki** — ECU jest stale zasilone z akumulatora.
+**Motocykle enduro nie mają stacyjki** — ECU jest stale podłączone do akumulatora.
 
-**Wybrana architektura: procesor zarządza uśpieniem.** Odrzucona alternatywa: transceiver pinem INH wyłącza wszystkie przetwornice, a procesor jest całkowicie bez zasilania. Daje niższy pobór, ale jest rozwiązaniem samochodowym, gdzie kilkadziesiąt sterowników dzieli budżet prądu spoczynkowego; w motocyklu z jednym sterownikiem to ograniczenie nie występuje.
+**Wybrana architektura (decyzja Pawła 18.10.2026): w uśpieniu szyny 3,3 V i 5 V są wyłączone przez wyjście INH transceivera TJA1043.** Procesor, watchdog i cała logika są bez zasilania; czuwa wyłącznie TJA1043 zasilany z pinu BAT. To docelowe zastosowanie układu według producenta: karta TJA1043 opisuje INH jako *„inhibit output for switching external voltage regulators”*, a nota NXP AH1014 (rozdz. 6.3, rys. 30) pokazuje obie przetwornice — w tym zasilającą mikrokontroler — sterowane z INH.
 
-| Element w uśpieniu | Stan |
+**Zastąpiona architektura:** procesor w trybie Stop przy włączonych obu przetwornicach. Odrzucona z dwóch powodów: bilans uśpienia ~117–187 µA przy limicie 150 µA (O-023) oraz sprzeczność watchdoga z uśpieniem (O-013) — zasilony watchdog resetowałby śpiący procesor, a jego programowe wyłączanie tworzyłoby stan „silnik pracuje, nadzór wyłączony”. Wcześniejsze uzasadnienie odrzucenia INH („rozwiązanie samochodowe, w motocyklu niepotrzebne”) nie wytrzymało bilansu.
+
+| Element | Praca | Uśpienie |
+|---|---|---|
+| TJA1043 | Normal | **Sleep** — zasilany z BAT, nasłuch wzorca wybudzenia na magistrali i zbocza na pinie WAKE, INH niesterowane |
+| Przetwornice 5,0 V i 3,3 V | włączone przez INH | **wyłączone** (INH niesterowane, wejście włączania ściągnięte w dół) |
+| STM32G474, TPS3430-Q1, pamięć, IMU, czujniki | zasilane | **bez zasilania** |
+| PROFET-y, driver wtrysku, blok CDI | wg stanu silnika | wyłączone |
+
+**Skutek dla nadzoru (O-013):** watchdog jest zasilany zawsze wtedy, gdy zasilany jest procesor — nie istnieje stan „procesor pracuje, nadzór wyłączony” i nie istnieje programowy wyłącznik nadzoru (ECU-SAF-017).
+
+**Skutek dla danych:** uśpione ECU nie ma RAM. Motogodziny, przebieg, zatrzask K4 (O-014) i stan usterek muszą być w pamięci nieulotnej przed zaśnięciem.
+
+### 6.1 Bilans uśpienia ECU
+
+Punkt odniesienia: **zaciski akumulatora, 12,0 V, +25 °C** (ECU-PWR-001). Dla elementów jeszcze niewybranych wartość jest **przydziałem**, który staje się kryterium doboru.
+
+| Element zasilany z akumulatora w uśpieniu | µA maks. | Źródło |
+|---|---|---|
+| TJA1043, Sleep, pin BAT | 30 | karta (18 typ.) |
+| Pin WAKE, prąd wejściowy | 10 | karta |
+| Przetwornica 5 V, wyłączona | ≤ 5 | przydział |
+| Przetwornica 3,3 V, wyłączona | ≤ 5 | przydział |
+| Zabezpieczenie przed odwrotną polaryzacją — dioda Schottky'ego | 0 | konstrukcja (rozdz. 4.4) |
+| TVS na wejściu, upływ przy 12 V | ≤ 5 | przydział |
+| 3× PROFET, wyłączone | ≤ 3 | przydział |
+| Dzielnik pomiaru akumulatora, podciągnięcia kill switcha i czujników | 0 | **reguła: zasilane wyłącznie z szyn wyłączanych** |
+| **Razem** | **≤ 63** | wobec limitu 150 µA |
+
+Do potwierdzenia pomiarem T-PWR-001 na prototypie.
+
+### 6.2 Reguły schematu dla TJA1043 (ECU i HMI)
+
+Z karty TJA1043 (rys. 9) i noty AH1014 (rys. 30, rozdz. 6.3–6.4), sprawdzone na schematach graficznych 18.10.2026:
+
+| Pin / obwód | Reguła |
 |---|---|
-| Przetwornica 3,3 V | włączona — zasila procesor w trybie Stop |
-| Przetwornica 5,0 V | włączona — VCC transceivera musi być pod napięciem |
-| STM32G474 | tryb Stop, zegar zatrzymany, przerwania zewnętrzne aktywne |
-| TJA1043 | Standby, nasłuch magistrali |
-| Przełącznik obciążenia 5 V | **wyłączony** — odcina czujniki, komparator, MAX9926, MLX90316 |
-| PROFET-y, drivery zapłonu i wtrysku | wyłączone |
+| BAT | Za diodą zabezpieczającą; **ok. 1 kΩ szeregowo + ok. 10 nF** przy pinie |
+| INH → wejścia włączania obu przetwornic | Obciążenie INH **≥ 10 kΩ, ≤ ok. 1 mA** (AH1014). Przy INH niesterowanym przetwornica musi być wyłączona — wewnętrzne ściąganie wejścia albo zewnętrzny rezystor. **Wejście włączania musi znosić napięcie akumulatora** (INH ≈ VBAT) — kryterium doboru przetwornic |
+| WAKE | Przełącznik do masy (przycisk startu; w HMI drabinka przycisków), **Rexbias ≤ 150 kΩ** do BAT za diodą, **RS ≥ 2,7 kΩ** szeregowo (maks. 15 mA pinu przy utracie masy, U do 40 V) |
+| Linia przycisku startu do MCU | W uśpieniu przy puszczonym przycisku niesie napięcie akumulatora — dzielnik lub ogranicznik do 3,3 V |
+| USB | Tranzystor zwierający węzeł WAKE do masy, sterowany napięciem z USB |
+| STB_N, EN | Wprost do portów procesora, **bez zewnętrznych rezystorów** — jak w schematach NXP (decyzja Pawła 18.10.2026). Stan przy niesterowanych pinach: założenie Z16 |
+| ERR_N | Do wejścia procesora z włączonym wewnętrznym podciąganiem. Diagnostyka: Pwon, źródło wybudzenia, usterka magistrali, usterka lokalna |
+| VCC / VIO | Z szyny 5 V / z szyny 3,3 V procesora |
+| CANH, CANL | Terminacja dzielona (rozdz. 4.3) + **ok. 100 pF** z każdej linii do masy |
 
-⚠️ **Bilans prądu uśpienia jest pozycją otwartą (O-023), a limit 150 µA prawdopodobnie nieosiągalny w tej architekturze.** Dotychczasowy bilans pomijał procesor, drugi transceiver, watchdog i driver zapłonu. Przeliczenie na zaciskach akumulatora daje ~117–187 µA bez pozycji nieobliczonych.
+### 6.3 Źródła wybudzenia
 
-⚠️ **Nadzór w uśpieniu nie jest rozstrzygnięty (O-013).** W trybie Stop procesor nie obsługuje watchdoga, a okno ustala kondensator — czyli na stałe w sprzęcie.
+**Każda droga wybudzenia kończy się na transceiverze zasilanym z BAT, nigdy na procesorze.**
 
-### 6.1 Źródła wybudzenia
-
-| Źródło | Mechanizm |
+| Źródło | Droga |
 |---|---|
-| Ramka CAN z HMI | Transceiver w Standby reaguje na **filtrowany wzorzec wybudzenia**, nie na dowolną aktywność — odporność na zakłócenia z zapłonu. Sygnalizuje zmianą linii RXD, przerwanie wybudza procesor |
-| Przycisk startu | Wejście z przerwaniem, rezystor podciągający, przycisk zwiera do masy |
-| Przyciski na kierownicy | Naciśnięcie budzi HMI lokalnie, HMI wysyła ramkę, ta budzi ECU |
-| Podłączenie USB | Wykrycie 5 V z komputera przez dzielnik |
+| Przycisk startu | Pin WAKE TJA1043 w ECU |
+| Podłączenie USB | Tranzystor ściąga pin WAKE w ECU |
+| Przyciski na kierownicy | Pin WAKE TJA1043 w HMI → HMI wstaje i nadaje → TJA1043 w ECU wybudza się z magistrali |
+| Ramka CAN | Filtrowany wzorzec wybudzenia (dominujący–recesywny–dominujący); **każda zwykła ramka go spełnia** |
+
+**Gdy ECU nie śpi, HMI też nie śpi** — ECU po wybudzeniu zawsze budzi HMI. Trwały stan „jeden węzeł pracuje, drugi śpi” jest do uniknięcia ze względu na różne podparcie napięciowe magistrali (AH1014, rozdz. 6.2.4).
 
 **Świadomie odrzucone: wybudzanie sygnałem obrotów wału.** Trzy warianty i powody odrzucenia:
 
@@ -214,15 +262,48 @@ Rozważona i odrzucona obsługa kill switcha przez HMI i CAN:
 |---|---|
 | Dedykowany komparator nanomocowy na równoległej ścieżce VR | Dublowanie ścieżki sygnału — dwa układy, dwie drogi na PCB, możliwa rozbieżność wskazań. Dodatkowo **marginalna czułość przy kopnięciu**: sygnał VR przy obrotach rozruchowych ma 50–300 mV międzyszczytowo, a komparator ze stałym progiem i napięciem niezrównoważenia rzędu miliwoltów działałby na granicy. MAX9926 radzi sobie dzięki adaptacyjnemu progowi i czułości od 20 mV |
 | Utrzymanie MAX9926 pod napięciem | Precyzyjny front-end analogowy pobiera miliampery, nie nanoampery: **4,7 mA typowo, 10 mA maksymalnie, brak jakiegokolwiek trybu shutdown**. To ~3400 mAh miesięcznie — więcej niż cały akumulator 3 Ah |
-| Okresowe próbkowanie (RTC budzi procesor, kondycjoner włączany na krótko) | Przy krótkim oknie łatwo przegapić kopnięcie — zawodne dokładnie w scenariuszu, dla którego się to robi |
+| Okresowe próbkowanie (RTC budzi procesor, kondycjoner włączany na krótko) | Przy krótkim oknie łatwo przegapić kopnięcie — zawodne dokładnie w scenariuszu, dla którego się to robi. W nowej architekturze dodatkowo niemożliwe bez zasilonego procesora |
 
-**Konsekwencja dla użytkownika:** jeśli ECU śpi, przed kopnięciem trzeba nacisnąć przycisk. Do zapisania w instrukcji. Uzasadnienie praktyczne: kopnięcie stosuje się zwykle przy akumulatorze zbyt słabym dla rozrusznika, ale ECU i tak wymaga akumulatora do pracy, więc to jeden ruch więcej, nie utrata funkcji.
+**Scenariusze startu (O-024, decyzje Pawła 18.10.2026):**
 
-⚠️ **Pełna ścieżka wybudzania nie jest zdefiniowana (O-024):** start kickstarterem, start z rozpędu, praca bez HMI, sekwencja wobec czasu startu zasilania i dopuszczenia iskry.
+| Scenariusz | Zachowanie |
+|---|---|
+| Start przyciskiem, ECU śpi | Nacisk budzi; **przycisk trzymany do gotowości (≤ 200 ms, ECU-PWR-003) uruchamia rozrusznik** przy kill switchu w RUN. Puszczony wcześniej — tylko budzi (ECU-SAF-018) |
+| Kopnięcie, ECU śpi | **Najpierw przycisk** (start albo dowolny na kierownicy). Przy słabym akumulatorze — przycisk na kierownicy, żeby nie kręcić rozrusznikiem |
+| Start z rozpędu (popych), ECU śpi | **Najpierw przycisk** — świadome ograniczenie. Po wybudzeniu popych działa normalnie |
+| Praca bez HMI | **Pełna** — start, praca i usypianie bez HMI (SYS-COM-008), kod usterki DTC-COM-01 |
+| Silnik zgasł w ruchu | ECU nie śpi (30 min od ostatniej pracy silnika) — restart z mapy natychmiast (ECU-IGN-019) |
 
-**Dzielnik pomiaru napięcia akumulatora:** typowy dzielnik 100 kΩ/10 kΩ pobiera z 12 V ~110 µA, czyli sam przekroczyłby cały budżet. **Wymagany dzielnik wysokoomowy albo odłączany tranzystorem.**
+Kopnięcie i popych przy uśpionym ECU wymagają przycisku — **do zapisania w instrukcji**.
+
+**Po podłączeniu akumulatora** ECU albo wstaje samo, albo czeka na przycisk — karta tego nie rozstrzyga (założenie Z15). Oba zachowania są bezpieczne.
+
+⚠️ **Pełna ścieżka startu nie jest zdefiniowana (O-024):** czy nacisk budzący uruchamia rozrusznik, start z rozpędu, praca bez HMI, sekwencja wobec czasu startu zasilania i dopuszczenia iskry.
+
+### 6.4 Sekwencja usypiania
+
+1. ECU decyduje: **30 min bez pracy silnika i bez interakcji** (naciśnięcia przycisków HMI są zgłaszane do ECU po CAN). Ekran gaśnie wcześniej, po 3 min — to robi HMI samo, bez usypiania
+2. ECU wysyła żądanie uśpienia do HMI
+3. HMI kończy zapisy w toku; **naciśnięcie przycisku w tym momencie przerywa usypianie** (HMI odpowiada „zajęte”, ECU liczy 30 min od nowa)
+4. HMI wysyła potwierdzenie i **czeka na zgłoszenie kontrolera CAN, że ramka wyszła na magistralę**
+5. HMI ustawia transceiver w Go-to-Sleep → Sleep → INH niesterowane → szyny HMI gasną
+6. ECU po potwierdzeniu czeka na **ciszę na magistrali** dłuższą niż timeout ramki HMI (SYS-COM-004) — drugie, niezależne potwierdzenie
+7. ECU zapisuje stan do pamięci nieulotnej i przechodzi w Sleep tą samą drogą
+
+**Kolejność „HMI milknie pierwsze” jest wymuszona:** każda ramka z HMI obudziłaby uśpione ECU.
+
+| Scenariusz negatywny | Zachowanie |
+|---|---|
+| Potwierdzenie zginęło, HMI zasnęło | Cisza na magistrali wystarcza, ECU zasypia |
+| HMI nie zasnęło | ECU ponawia kilka razy, potem zapisuje usterkę i zasypia; HMI zaśnie na swoim timeoucie |
+| **Go-to-Sleep zignorowany przez równoczesne wybudzenie** (AH1014, rozdz. 6.2.5) — INH zostaje aktywne | Jeśli zasilanie nie zanikło w określonym czasie po rozkazie, firmware wraca do pracy i traktuje to jak wybudzenie |
+| HMI bez ramek od ECU przez **30 s** | HMI usypia się samo (kroki 3 i 5 bez potwierdzenia) |
+| Nacisk budzący HMI | **Tylko budzi**, nie wykonuje akcji w menu |
+| Szyna 5 V poniżej ~3,5 V przez > 100 ms | Transceiver wymusza Sleep (karta). Wymaga akumulatora poniżej ~4 V — poza zakresem ECU-IGN-021 |
 
 **Warunki zaśnięcia:** 30 min bez pracy silnika i bez interakcji; wyświetlacz gaszony po 3 min.
+
+**Dzielnik pomiaru napięcia akumulatora** musi być zasilany za szyną wyłączaną albo odłączany tranzystorem — typowy dzielnik 100 kΩ/10 kΩ pobiera z 12 V ~110 µA, czyli prawie cały limit.
 
 ---
 
@@ -256,7 +337,7 @@ Rozważona i odrzucona obsługa kill switcha przez HMI i CAN:
 | H.8 | Złącze główne | Deutsch DTM04-4P: CAN H, CAN L, +12 V stałe, GND | DTM to miniaturowa wersja DT, 13 A/pin |
 | H.9 | Złącze przycisków | Osobne, Deutsch DTM04-3P | Serwisowalność — kierownice wymieniane po upadkach bez ruszania wiązki głównej |
 | H.10 | Transceiver | TJA1043, ten sam co w ECU | Jeden numer katalogowy na oba urządzenia; wybudzanie przez magistralę potrzebne także w HMI |
-| H.11 | Zasilanie | Dwie przetwornice: 5 V (wyświetlacz i koprocesor, wyłączana w uśpieniu) i 3,3 V (procesor, flash, zawsze włączona) | Analogicznie do ECU |
+| H.11 | Zasilanie | Dwie przetwornice: 5 V (wyświetlacz i koprocesor) i 3,3 V (procesor, flash). **Obie włączane wyjściem INH transceivera HMI; w uśpieniu obie wyłączone** (zmiana 18.10.2026) | Ta sama architektura co ECU (rozdz. 6). TJA1043 HMI zasilany z +12 V stałego ze złącza DTM04 |
 | H.12 | Pamięć zasobów | Zewnętrzna flash SPI NOR, rodzina W25Q | Koprocesor wymaga trwałego przechowywania bitmap, czcionek i animacji; dwubankowy bootloader zostawia ~256 KB na bank — za mało na firmware i zasoby |
 | H.13 | Czujnik temperatury | Cyfrowy na PCB, blisko wyświetlacza | Analiza termiczna wykazała ryzyko przekroczenia 70 °C na słońcu, przy którym panel czernieje |
 
@@ -264,11 +345,13 @@ Rozważona i odrzucona obsługa kill switcha przez HMI i CAN:
 
 **O zaśnięciu decyduje ECU** poleceniem po CAN — zna stan silnika i czas bezczynności. Wyświetlacz gaszony po 3 min, pełne uśpienie przy zasypianiu ECU po 30 min.
 
-**Zabezpieczenie przed utratą polecenia:** gdyby ramka zaginęła, HMI zostałoby wybudzone na stałe i rozładowało akumulator. Dlatego **HMI ma własny timeout awaryjny** — brak jakiejkolwiek ramki z ECU przez określony czas skutkuje samodzielnym zaśnięciem.
+**Zabezpieczenie przed utratą polecenia:** gdyby ramka zaginęła, HMI zostałoby wybudzone na stałe i rozładowało akumulator. Dlatego **HMI ma własny timeout awaryjny** — brak jakiejkolwiek ramki z ECU przez **30 s** skutkuje samodzielnym zaśnięciem.
 
-W uśpieniu: procesor w trybie Stop; przetwornica 3,3 V włączona; **wyświetlacz i koprocesor odłączone** (podświetlenie ~250 mA to główny konsument); podświetlenie przycisków wyłączone; flash w deep power-down; transceiver w Standby.
+W uśpieniu (od 18.10.2026): **obie szyny HMI wyłączone przez INH transceivera**; czuwa tylko TJA1043 zasilany z +12 V stałego. Bilans uśpienia HMI na zaciskach akumulatora: transceiver 30 µA maks., pin WAKE 10, dwie wyłączone przetwornice ≤ 10, TVS ≤ 5, dioda polaryzacji 0 — **razem ≤ 60 µA**. System ECU + HMI **≤ 123 µA** wobec SYS-PWR-002 (250 µA).
 
-**Wybudzenie przyciskiem:** linia drabinki podpięta **równolegle do wejścia z przerwaniem zewnętrznym** obok wejścia ADC. Naciśnięcie dowolnego przycisku ściąga linię w dół i zbocze wybudza procesor; dopiero po wybudzeniu ADC określa, **który** przycisk. Konieczne, bo **przetwornik ADC nie działa w trybie Stop**.
+**Wybudzenie przyciskiem:** drabinka przycisków jest węzłem WAKE transceivera HMI, podciągniętym do akumulatora przez Rexbias. Naciśnięcie dowolnego przycisku ściąga węzeł w dół, transceiver włącza szyny, procesor startuje, dopiero potem ADC określa, **który** przycisk. Linia do ADC wymaga separacji od napięcia akumulatora. **Warunek dla drabinki (O-035): najwyższa rezystancja drabinki < 1,33 × Rexbias** — przy 7 V węzeł musi zejść poniżej VBAT − 3 V. Nacisk budzący tylko budzi.
+
+**Sekwencja usypiania:** rozdz. 6.4.
 
 **Kolejność zasypiania:** ECU wysyła polecenie, czeka na potwierdzenie, dopiero potem zasypia samo — inaczej HMI mogłoby zostać wybudzone.
 
@@ -371,15 +454,15 @@ Elementy fabrycznej instalacji, które **muszą pozostać**, mimo że ECU jest s
 
 | Element | Dlaczego |
 |---|---|
-| **Stator** | Jedyne źródło energii ładującej akumulator — bez niego rozładuje się w kilka godzin jazdy |
+| **Stator** | Uzwojenie ładujące — jedyne źródło energii ładującej akumulator. **Uzwojenie wzbudzające — źródło energii zapłonu (AC-CDI)**, prowadzone do ECU |
 | **Regulator napięcia i prostownik** | Bez niego napięcie rośnie z obrotami i zniszczy akumulator oraz odbiorniki |
 | **Akumulator** | ECU zasilane wyłącznie z akumulatora; dodatkowo bufor wygładzający tętnienia |
 | **Czujnik prędkości koła** | Wykorzystywany przez ECU |
-| **Cewka zapłonowa** | Sterowana przez ECU. ⚠️ Zgodność z naszym driverem zależy od topologii zapłonu — O-001 |
+| **Cewka zapłonowa** | **Fabryczna RC01 IG5128 (cewka CDI), zachowana.** Uzwojenie pierwotne dostaje impuls z kondensatora w ECU |
 
 **Elementy usuwane:** fabryczny sterownik zapłonu, fabryczna wiązka sygnałowa, licznik, pompka olejowa w silnikach TPI/TBI (przejście na premiks).
 
-**Kondensator buforowy na wejściu zasilania ECU** jest wymagany, żeby ECU pracowało stabilnie przy tętniącym napięciu z prostownika przy uszkodzonym lub odłączonym akumulatorze. Granica działania to ~7 V na złączu; akumulator przy 7 V jest już zniszczony, nie tylko rozładowany. Ładowanie cewki przy niskim napięciu wymaga ~1,7× dłuższego czasu, co przy obrotach kopnięcia (300–500 obr/min) nie stanowi problemu, a energia iskry pozostaje pełna.
+**Kondensator buforowy na wejściu zasilania ECU** jest wymagany, żeby ECU pracowało stabilnie przy tętniącym napięciu z prostownika przy uszkodzonym lub odłączonym akumulatorze. Granica działania to ~7 V na złączu; akumulator przy 7 V jest już zniszczony, nie tylko rozładowany. W AC-CDI energia iskry pochodzi z uzwojenia wzbudzającego, nie z akumulatora — przy 7 V akumulator zasila wyłącznie logikę ECU i kondycjoner VR (ECU-IGN-021).
 
 ---
 
@@ -391,7 +474,7 @@ Homologacja pojazdu nie dotyczy — produkt offroad i motorsport, nie do ruchu d
 
 ## 13. Obwiednia środowiskowa i elektryczna
 
-**Część ustalona 13.10.2026 — temperatura (SYS-ENV-003, 003a, 003b, 004). Otwarte: obwiednia napięciowa i profil wibracji — pozycje O-022 i O-047.** Przyjęte podejście: bierzemy **strukturę listy prób** z norm automotive i **wartości wyprowadzamy z naszego układu**, nie z norm.
+**Część ustalona 13.10.2026 — temperatura (SYS-ENV-003, 003a, 003b, 004). Obwiednia napięciowa ustalona 18.10.2026 (rozdz. 13.1, O-022). Otwarte: profil wibracji — O-047.** Przyjęte podejście: bierzemy **strukturę listy prób** z norm automotive i **wartości wyprowadzamy z naszego układu**, nie z norm.
 
 | Źródło | Co z niego bierzemy |
 |---|---|
@@ -402,3 +485,30 @@ Homologacja pojazdu nie dotyczy — produkt offroad i motorsport, nie do ruchu d
 | **ISO 7637-2** | Zestaw impulsów testowych na linii zasilania |
 
 **Dlaczego wartości nie pochodzą z norm.** Normy są pisane dla samochodów, a **zrzut obciążenia skaluje się z wydajnością alternatora**: stator 150–200 W daje zaburzenie o rząd wielkości mniejsze niż alternator samochodowy 1–2 kW. Przyjęcie wartości samochodowych oznaczałoby przepłacenie za ochronę wejścia zaprojektowaną pod zjawisko, które w tym motocyklu nie wystąpi.
+
+### 13.1 Obwiednia napięciowa (decyzje Pawła 18.10.2026)
+
+**Instalacja odniesienia:** regulator **Arrowhead AKM6000** = zamiennik **Shindengen SH721AA** (Beta 2728101000, KTM/Husqvarna 80011034000) — **jednofazowy, tyrystorowy, bocznikowy**, ten sam na całej platformie docelowej. Akumulator **kwasowy / AGM / żelowy, zawsze podłączony**. Rozruch awaryjny **wyłącznie kopniakiem**.
+
+**Dlaczego samochodowy zrzut obciążenia 101 V tu nie występuje:** powstaje w alternatorze z uzwojeniem wzbudzenia, którego pole wygasa setki milisekund. Stator z magnesami trwałymi z regulatorem bocznikowym jest zwierany co półokres — mechanizm długiego impulsu nie istnieje. Realne zagrożenia: **awaria regulatora** i **poluzowany zacisk akumulatora**.
+
+Wartości normowe za: Analog Devices, LT Journal v26n4 (ISO 16750-2, ISO 7637-2, instalacja 12 V).
+
+| Zdarzenie | Norma | Nasza wartość | Wymagane zachowanie | Wymaganie |
+|---|---|---|---|---|
+| Zakres pracy | 6–16 V | 9–16 V pełna funkcja, 7–18 V sterowanie silnikiem, rozruch od 7 V | Bez zmian | SYS-ENV-001, -002, ECU-IGN-021 |
+| Awaria regulatora — przepięcie | 18 V / 60 min | **18 V ciągle** | Praca; ostrzeżenie od 17 V i wentylator jako obciążenie | SYS-ENV-002, ECU-PWR-009 |
+| Odwrotna polaryzacja | −14 V / 60 s | **−14 V / 60 s** | Przetrwać bez uszkodzenia i bez przepalenia bezpiecznika | SYS-ENV-008 |
+| Zrzut obciążenia ograniczony (poluzowany zacisk) | 35 V / 400 ms | **35 V / 400 ms — wartość wstępna**, korekta po pomiarze napięcia jałowego uzwojenia ładującego | Przetrwać; praca nie wymagana | SYS-ENV-009 |
+| Impulsy przewodzone | 1: −150 V/10 Ω/2 ms; 2a: +112 V/2 Ω/50 µs; 3a/3b: −220/+150 V/50 Ω/150 ns | Te same poziomy | 1, 3a, 3b: przetrwać, dopuszczalny reset; 2a: praca bez zakłóceń | SYS-ENV-010 |
+| Tętnienia nałożone | 1–4 Vpp, 50 Hz–25 kHz | **Z pomiaru tętnień na akumulatorze ×2** | Praca bez zakłóceń | Pomiar w sesji |
+| Zapad | 4,5 V / 100 ms | **Akceptowane ograniczenie** | ECU może zasnąć (TJA1043: VCC < ~3,5 V przez > 100 ms); ponowne naciśnięcie przycisku je budzi. Rozrusznik i tak by się zatrzymał | Instrukcja |
+| Rozruch z kabli 24 V | 24 V / 60 s | **Poza zakresem** | Instrukcja: nie używać źródeł 24 V | — |
+
+**Konsekwencje dla ochrony wejścia (rozdz. 4.4):**
+- **TVS dwukierunkowy** — jednokierunkowy przy odwróconym akumulatorze przewodzi jak dioda i ginie albo przepala bezpiecznik
+- Napięcie pracy TVS powyżej 18 V ciągłej pracy; napięcie ograniczania i energia dobrane pod zrzut 35 V / 400 ms oraz impulsy 1 i 2a — obliczenie energii jako dowód (SYS-ENV-010)
+- **Wszystko na wejściu, przed TVS i za nim, ≥ 40 V**: przetwornice, dioda, kondensatory wejściowe. TJA1043 ma 58 V
+- Odrzucony duży kondensator podtrzymujący na zapad 4,5 V: 7–23 mF, upływ elektrolitu do ~1 mA przy limicie uśpienia 150 µA, prąd udarowy, starzenie w +85 °C — przy zysku jednego naciśnięcia przycisku
+
+**Do sesji pomiarowej** (`measurements/pomiar-wzbudzajacego.md`): napięcie i tętnienia na akumulatorze przy kilku obrotach; napięcie przemienne jałowe uzwojenia ładującego z odpiętym regulatorem — najgorszy przypadek awarii regulatora i podstawa korekty 35 V.
