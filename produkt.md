@@ -61,18 +61,19 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | Funkcja | Układ | Pełny numer | Kwalifikacja / zakres | Uwagi |
 |---|---|---|---|---|
 | Mikrokontroler | **STM32G474VET3** | STM32G474VET3 | −40…+125 °C | Wybrany za HRTIM. **Sufiks T3, nie T6** — T6 ma tylko −40…+85 °C, a analiza termiczna daje do 84 °C wewnątrz obudowy. **LQFP100, nie LQFP64** — bilans wykazał 55 potrzebnych sygnałów wobec ~50 użytkowych w LQFP64; LQFP100 daje ~82 piny, zapas ~27. 512 KB Flash, 128 KB RAM, 170 MHz, HRTIM, FDCAN, USB |
-| Tor zapłonu | **AC-CDI — blok dyskretny** | ⚠️ do doboru | ⚠️ do kwalifikacji | Prostownik WN, kondensator zapłonowy, tyrystor, rozładowanie, ochrona przepięciowa. Dobór i arkusze kwalifikacji w O-001 — elementy istotne dla bezpieczeństwa, nie przechodzą do Fazy 4 jako zwykłe bierne. **VBG08H-E usunięty 15.10.2026** — zapłon nie jest indukcyjny |
+| Tor zapłonu | **AC-CDI — blok dyskretny** | ⚠️ do doboru | ⚠️ do kwalifikacji | Prostownik WN, kondensator zapłonowy, tyrystor, rezystor rozładowujący, ochrona przepięciowa; **bramka tyrystora sprzężona pojemnościowo** (ECU-IGN-005), **tranzystor zwierający bramkę do katody** sterowany kill switchem (ECU-SAF-001), **dzielnik napięcia uzwojenia wzbudzającego** do ADC (ECU-SAF-021). Dobór i arkusze kwalifikacji w O-001 — elementy istotne dla bezpieczeństwa. **VBG08H-E usunięty 15.10.2026** |
 | Driver wtryskiwaczy | **TLE9104SH** | TLE9104SHXUMA1 | ✅ Aktywny, AEC-Q100/101 | Historia doboru: L9960 (błąd — mostek H do silników DC) → TLE8104E (funkcjonalnie dobry, **status NRND**) → TLE9104SH. Dane wtryskiwaczy KTM TPI/TBI: 11,7 Ω nom., prąd ~1,23 A przy 14,4 V = wysokoimpedancyjne, **peak-and-hold niepotrzebne, wystarcza tryb nasycony**. 4 kanały low-side (2 na wtryskiwacze, 2 zapas), 3 A/kanał, SPI z diagnostyką. Pin EN jest punktem sprzętowego bramkowania od kill switcha |
 | Transceiver CAN ×2 | **TJA1043** | ⚠️ do ustalenia | ✅ Aktywny, AEC-Q100 (strona NXP) | TJA1051T/3 odrzucony — nie ma wybudzania przez magistralę. **Od 18.10.2026 steruje zasilaniem: wyjście INH włącza obie przetwornice, w uśpieniu (Sleep) czuwa sam z pinu BAT, 18 µA typ. / 30 µA maks.** Reguły schematu: rozdz. 6.2. Ten sam układ w ECU i HMI. **NXP wskazuje TJA1443A jako następcę** — zgodność do sprawdzenia przy doborze pełnego numeru (Faza 4) |
-| IMU | ~~BMI090L~~ | — | ❌ **Brak AEC-Q100, −40…+85 °C** | Zmiana z BMI088 miała usunąć brak kwalifikacji; BMI090L jej **też nie ma** — dokumenty producenta wskazują rynki przemysłowe, a karty dystrybutorów status Obsolete. **Dobór nierozstrzygnięty, pozycja O-027** |
+| Akcelerometr (dawniej IMU) | **ST AIS2IH** | AIS2IHTR | ✅ **AEC-Q100** (karta DS12421 rev. 4, str. 1); **−40…+115 °C** — warunkowo wobec SYS-ENV-003b (założenie Z17); aktywny, dostępność deklarowana przez ST do 01/2033 | **Decyzja Pawła 25.10.2026: sam akcelerometr, bez żyroskopu** — żyroskopy MEMS są wrażliwe na drgania (przesunięcie zera → dryf kąta), a wywrotka to kąt grawitacji w spoczynku. Zakres **±16 g** (czarna skrzynka), odporność na udar 10 000 g (0,2 ms, bez zasilania), filtr pasma ODR/2…ODR/20 jako antyaliasing, samotest, dryf zera ±0,2 mg/°C, SPI, LGA-12 2×2 mm. Zasilany z szyny 3,3 V — w uśpieniu bez zasilania. **Czego nie robi:** nie liczy kąta (robi to MCU); nie mierzy powyżej ±16 g (wypadek ponad zakres = nasycenie); nie jest elementem bezpieczeństwa funkcjonalnego (ST: zastosowania motoryzacyjne bez funkcji bezpieczeństwa). **Zapasowy:** Murata SCA3300-D01-1 (−40…+125 °C, ±6 g, bez deklaracji AEC-Q). Odrzucone: BMI090L, IAM-20381HT (Grade 2, 105 °C), ADXL317 (I²S, 5 mA), SMA130 (85 °C), AIS3624DQ (wycofany), FXLS8964/67 (105 °C) |
 | Pamięć logów | **W25Q64** (8 MB, SPI NOR) | ⚠️ rodzina, nie numer | ⚠️ klasa przemysłowa | Czarna skrzynka, 8 MB z zapasem; wlutowana, bez slotu. Pełny numer i klasa do ustalenia (O-063) |
 | Wyjścia pomocnicze | BTS7008-2EPA ×3 | ⚠️ do ustalenia | AEC-Q100 | PROFET+2, 6 kanałów, diagnostyka, ochrona zwarciowa i odwrotnej polaryzacji. **7,5 A/kanał to wartość nominalna w określonych warunkach, nie dopuszczalny prąd roboczy dowolnego obciążenia** |
 | Kondycjoner VR/Hall | **MAX9926** | MAX9926UAEE/V+ | ✅ Production, −40…+125 °C, automotive | Adaptacyjny próg 33% poprzedniego szczytu, detekcja przejścia przez zero, czułość od 20 mV, odporność na pominięty ząb. **Pobór 4,7 mA typ./10 mA max, brak trybu shutdown** — musi być odcinany przełącznikiem obciążenia. Wersja dwukanałowa; jednokanałowy MAX9924 jest mniejszy i tańszy. Jedyna pozycja niedostępna w TME (O-033) |
-| Ciśnienie atmosferyczne | BMP390 | ⚠️ do ustalenia | ❌ **bez kwalifikacji automotive, −40…+85 °C** | Korekta na wysokość n.p.m. Wymaga membrany odpowietrzającej IP67. **Nowe wymaganie SYS-ENV-003b dyskwalifikuje ten układ w obecnej roli** — przy 85 °C otoczenia wnętrze obudowy przekracza jego zakres. Albo zamiennik w klasie Grade 1/2, albo zatwierdzone odstępstwo z uzasadnieniem miejsca montażu na PCB |
+| Ciśnienie atmosferyczne | **Infineon KP464** | KP464XTMA1 / KP464EXTMA1 — do ustalenia przy zakupie | ✅ **AEC-Q103-002** (karta rev. 1.20, str. 1) — standard AEC dla czujników MEMS; **−40…+125 °C** | **Montowany od początku na PCB MVP-A** (decyzja Pawła 25.10.2026). W MVP-A tylko logowanie ciśnienia i wysokości; korekta dawki w B/C. Zakres 40–115 kPa, ±1,0 kPa (0…85 °C), ±1,5 kPa na krańcach; SPI 16-bit; zasilanie 3,0–5,25 V, 3,5 mA aktywnie, 10 µA w power-down; start 5–10 ms; diagnostyka toru sygnału, komórki i EEPROM. **Uwagi z karty:** czuły na światło > 1 lx (obudowa nieprzezroczysta, membrana nieprzepuszczająca światła); pin VPROG wyłącznie do programowania EEPROM — podłączenie wg angielskiej karty. **Wymaga otworu ciśnieniowego z membraną IP67 w obudowie.** ⚠️ Dostępność: Farnell — 52 tyg. i MOQ 3400 szt. dla KP464E; dostępność w małych ilościach do sprawdzenia (TME → Mouser → Farnell → DigiKey) w Fazie 4. BMP390 odrzucony (bez kwalifikacji, 85 °C) |
 | Pozycja biegu | MLX90316 | ⚠️ do ustalenia | ⚠️ do potwierdzenia | Triaxis, bezstykowy, kąt magnesu 0–360°, wyjście analogowe. **Wykonalność mechaniczna na Becie niepotwierdzona (O-031)** |
 | **Przetwornica 5,0 V** | do doboru | — | — | Nastawa stała (dzielnik rezystorowy), wyjście Power Good. Zasila VCC transceivera oraz — przez przełącznik obciążenia — czujniki zewnętrzne, MAX9926 i MLX90316. **Wejście EN sterowane z INH TJA1043** — musi znosić napięcie akumulatora i wyłączać przetwornicę przy INH niesterowanym. Prąd w stanie wyłączonym ≤ 5 µA (przydział, rozdz. 6.1) |
 | **Przetwornica 3,3 V** | do doboru | — | — | Nastawa stała, Power Good. Zasila procesor, watchdog, pamięć, IMU i VIO transceivera. **Wejście EN sterowane z INH TJA1043** (te same wymagania co 5 V). Prąd w stanie wyłączonym ≤ 5 µA (przydział). Wymaga filtru LC dla części analogowej procesora |
-| **Komparator kill switcha** | do doboru | — | — | Bramkuje wejścia EN driverów sygnałem kill switcha, niezależnie od firmware. Jeden próg między poziomem RUN a STOP układu trzypoziomowego — odcina i przy naciśnięciu, i przy przerwie w przewodzie. Zasilany z szyny 5 V za przełącznikiem obciążenia, więc w uśpieniu nie obciąża budżetu. **Komparator wewnętrzny procesora świadomie odrzucony**: jest konfigurowany przez firmware, a to dokładnie ta zależność, którą zakwestionował audyt |
+| **Czujniki temperatury wnętrza ECU** | 2× termistor NTC, AEC-Q200 | do doboru (Faza 4) | AEC-Q200 | Przy bloku CDI i w sekcji mocy (PROFET-y, przetwornice). Razem z czujnikiem w MCU realizują ochronę termiczną ECU-SAF-020 (T1/T2/T3) i dane do logu z jazdy (A8, Z17). Dzielnik z szyny wyłączanej w uśpieniu — 0 µA w bilansie 6.1 (decyzja Pawła 25.10.2026) |
+| **Komparator kill switcha** | do doboru | — | — | Bramkuje wejścia EN driverów, **wejście PROFET kanału rozrusznika** (ECU-SAF-019) **oraz klucz po stronie masy cewki przekaźnika rozrusznika** (ECU-SAF-022) sygnałem kill switcha, niezależnie od firmware (od 25.10.2026). Jeden próg między poziomem RUN a STOP układu trzypoziomowego — odcina i przy naciśnięciu, i przy przerwie w przewodzie. Zasilany z szyny 5 V za przełącznikiem obciążenia, więc w uśpieniu nie obciąża budżetu. **Komparator wewnętrzny procesora świadomie odrzucony**: jest konfigurowany przez firmware, a to dokładnie ta zależność, którą zakwestionował audyt |
 | **Przełącznik obciążenia 5 V** | do doboru | — | — | Odcina czujniki zewnętrzne, MAX9926 i MLX90316 w uśpieniu. Powinien mieć ograniczanie prądu — izoluje zwarcie w okablowaniu zewnętrznym od reszty układu |
 | Rezonator HSE | 8 MHz | do doboru | AEC-Q200, −40…+125 °C | Przy 10 000 obr/min błąd kwarcu ±50 ppm to ~0,3 µs ≈ **0,002° kąta wału** — kilkaset razy mniej niż tolerancje mechaniczne koła (0,5–1°). TCXO niepotrzebny |
 | **Watchdog zewnętrzny** | TPS3430-Q1 | ⚠️ do ustalenia | AEC-Q100, −40…+125 °C | **Okienkowy**, nie prosty timeout — wykrywa też kod działający w złym tempie (uszkodzony PLL), czego zwykły watchdog nie zauważy. Okno programowane kondensatorem, 63 ms–77 s. **Ma wejście wyłączające nadzór — patrz O-013** |
@@ -151,7 +152,7 @@ Magistrala wymaga dokładnie **dwóch** rezystorów 120 Ω — na fizycznych ko�
 
 **Warstwa 2 — linie wychodzące z obudowy:** czujniki — TVS niskopojemnościowy + filtr RC na każdej linii; CAN — dedykowany dwukanałowy TVS; USB — TVS o bardzo niskiej pojemności, żeby nie zniekształcić pary różnicowej; **trigger — TVS + filtr, linia najbardziej narażona, biegnie przy cewce zapłonowej**.
 
-**Warstwa 3 — wyjścia mocy:** diody gaszące na obciążeniach indukcyjnych (PROFET ma wbudowane ograniczanie, zewnętrzne diody go odciążają); cewka zapłonowa ma clamp w driverze, linia odseparowana na PCB.
+**Warstwa 3 — wyjścia mocy:** diody gaszące na obciążeniach indukcyjnych (PROFET ma wbudowane ograniczanie, zewnętrzne diody go odciążają); **tor AC-CDI: obwód tłumiący na tyrystorze, rezystor bramka–katoda przeciw samoczynnemu załączeniu, odstępy izolacyjne dla napięć setek woltów (ECU-IGN-027), sekcja WN odseparowana na PCB** (zmiana 25.10.2026).
 
 **Warstwa 4 — konstrukcja PCB:** ciągła płaszczyzna masy rozdzielona na sekcję analogową i mocy z jednym punktem połączenia; fizyczne oddzielenie sekcji zapłonu i PROFET od analogowej; kondensatory odsprzęgające przy każdym układzie; sygnały analogowe z dala od ścieżek przełączających duże prądy; do rozważenia ekran metalowy nad sekcją analogową.
 
@@ -313,9 +314,9 @@ Kopnięcie i popych przy uśpionym ECU wymagają przycisku — **do zapisania w 
 
 1. **Watchdog wewnętrzny procesora** — taktowany własnym oscylatorem, niezależnym od zegara głównego. Wykrywa zawieszenie oprogramowania.
 2. **TPS3430-Q1, watchdog okienkowy zewnętrzny** — niezależny od procesora, działa przy awarii zasilania rdzenia, uszkodzeniu kwarcu lub zawieszeniu sprzętowym. **Okienkowy**: sygnał musi przyjść w zdefiniowanym oknie, za wcześnie lub za późno oznacza reset. Wykrywa kod działający w złym tempie, co przy sterowniku zapłonu jest realnym zagrożeniem.
-3. **Stan bezpieczny przy resecie** — sam reset nie wystarczy, jeśli wyjścia zostaną w przypadkowym stanie. Przy resecie i podczas startu wszystkie wyjścia mocy muszą być domyślnie wyłączone, inaczej reset przy pracującym silniku mógłby zostawić cewkę pod napięciem albo wtryskiwacz otwarty.
+3. **Stan bezpieczny przy resecie** — sam reset nie wystarczy, jeśli wyjścia zostaną w przypadkowym stanie. Przy resecie i podczas startu wszystkie wyjścia mocy muszą być domyślnie wyłączone, inaczej reset przy pracującym silniku mógłby wyzwolić tyrystor w przypadkowej chwili albo (B/C) zostawić wtryskiwacz otwarty. W AC-CDI zawieszone wyjście daje najwyżej jedną iskrę (ECU-IGN-005).
 
-⚠️ **Realizacja punktu 3 jest błędna i jest pozycją otwartą (O-002, O-017).** Zapis mówił o rezystorach ściągających na wejściach sterujących wszystkich driverów. Dla driverów wtrysku i PROFET (wejścia aktywne wysokim) jest to poprawne. **Dla EN drivera zapłonu jest odwrotnie**: EN jest aktywne niskim, więc ściągnięcie go do masy **załącza** układ, a dodatkowo pokonuje wewnętrzny pull-up, który sam z siebie dawał stan bezpieczny.
+⚠️ **Stan bezpieczny per wyjście do zdefiniowania (O-017).** Problem polaryzacji EN drivera VBG08H-E (O-002) zniknął razem z driverem; dla wtrysku (B/C) i PROFET-ów (wejścia aktywne wysokim) rezystory ściągające są poprawne, a bramka tyrystora ma rezystor bramka–katoda.
 
 ⚠️ **Watchdog nie jest ochroną toru zapłonu (O-012).** Przy oknie 100 ms i 10 000 obr/min to 16,7 obrotu wału. Dla błędu kąta pojedynczego impulsu dopuszczalny czas reakcji wynosi zero — chroni wyłącznie zapobieganie i ograniczenie tego, co stopień wyjściowy jest w stanie zrobić.
 
@@ -393,29 +394,31 @@ Szacunki z wartości typowych z kart katalogowych. **Do weryfikacji pomiarem.**
 
 Stator w enduro tej klasy oddaje typowo 150–200 W, więc bilans się domyka; szczyt występuje rzadko i przy wysokich obrotach, gdy stator daje pełną moc. Samo ECU z HMI to <4 W.
 
-### 9.2 Straty cieplne w obudowie ECU
+### 9.2 Straty cieplne w obudowie ECU (przebudowa 25.10.2026, MVP-A)
 
 | Źródło | Straty |
 |---|---|
-| **Driver zapłonu** (8000 obr/min, dwell 3 ms → wypełnienie ~40%) | **4,8 W** |
-| Drivery wtryskiwaczy (2 kanały, 1,23 A, wypełnienie ~10%) | ~0,16 W |
+| **Blok AC-CDI** (prostownik, tyrystor, rezystor rozładowujący) | **≤ 1,5 W — szacunek**, do potwierdzenia pomiarem uzwojenia wzbudzającego |
 | PROFET ×3 | 0,27 W |
 | Przetwornica 5,0 V | 0,17 W |
 | Przetwornica 3,3 V | 0,07 W |
 | Przełącznik obciążenia | 0,05 W |
-| **Razem** | **~5,5 W** |
+| Logika (MCU, czujniki, CAN) | w przetwornicach |
+| *Drivery wtryskiwaczy* | *0 W w MVP-A (B/C: ~0,16 W)* |
+| **Razem MVP-A** | **~2,1 W** |
 
-| Wykonanie obudowy | Temp. wewnątrz przy otoczeniu 40 °C |
-|---|---|
-| Aluminium + dobry kontakt termiczny (Rth ≈ 3 K/W) | **57 °C** ✅ |
-| Aluminium bez past i padów (Rth ≈ 8 K/W) | **84 °C** ⚠️ |
-| Tworzywo (Rth ≈ 20 K/W) | **150 °C** ❌ |
+Dawna pozycja 4,8 W (driver cewki indukcyjnej VBG08H-E) wypadła razem z zapłonem indukcyjnym.
 
-**Wniosek: obudowa aluminiowa z kontaktem termicznym jest wymagana, nie zalecana. Tworzywo wykluczone.**
+| Wykonanie obudowy | Przyrost temp. | Wewnątrz przy 85 °C otoczenia |
+|---|---|---|
+| Aluminium + dobry kontakt termiczny (Rth ≈ 3 K/W) | ~6 °C | **~91 °C** ✅ |
+| Aluminium bez padów (Rth ≈ 8 K/W) | ~17 °C | **~102 °C** ⚠️ AIS2IH (115 °C) bez marginesu 15 °C |
+| Tworzywo (Rth ≈ 20 K/W) | ~42 °C | **~127 °C** ❌ ponad Grade 1 |
 
-⚠️ **Dwa ograniczenia tego bilansu.** Model używa uproszczonej rezystancji cieplnej obudowy; wymagany jest pełny łańcuch złącze→pad→interfejs termiczny→obudowa→otoczenie. Ponadto **dominująca pozycja 4,8 W opiera się na niepotwierdzonym dwell 3 ms** (założenie Z2) i na niepotwierdzonej topologii zapłonu (O-001) — jeśli silnik ma CDI, cały ten wiersz traci sens.
+**Wniosek bez zmian: obudowa aluminiowa z kontaktem termicznym jest wymagana.** Spadek strat z ~5,5 W do ~2,1 W zwiększa zapas, ale przy 85 °C otoczenia tworzywo nadal przekracza klasę Grade 1.
 
-**Do firmware:** czas ładowania cewki powinien być skracany przy wysokich obrotach — ładowanie tylko do osiągnięcia prądu nasycenia, nie stałe. Realnie obniży to dominujące źródło strat.
+⚠️ **Ograniczenia bilansu:** uproszczona rezystancja cieplna obudowy (wymagany pełny łańcuch złącze→pad→interfejs→obudowa→otoczenie); straty bloku CDI to szacunek do pomiaru.
+
 
 ---
 
@@ -426,11 +429,11 @@ Stator w enduro tej klasy oddaje typowo 150–200 W, więc bilans się domyka; s
 | Parametr | Wymaganie |
 |---|---|
 | Szczelność | IP67 minimum — zanurzenie, przeprawy wodne, mycie ciśnieniowe |
-| Wyrównanie ciśnienia | **Membrana odpowietrzająca obowiązkowa** — czujnik ciśnienia atmosferycznego w hermetycznej obudowie byłby bezużyteczny. Zapobiega też kondensacji przy zmianach temperatury |
-| Odprowadzanie ciepła | **Aluminium z zapewnionym kontaktem termicznym** (pady lub pasta) między ścianką a driverem zapłonu, PROFET-ami i przetwornicą. Tworzywo wykluczone |
+| Wyrównanie ciśnienia | **Membrana odpowietrzająca obowiązkowa** — czujnik ciśnienia atmosferycznego (KP464) w hermetycznej obudowie byłby bezużyteczny. Zapobiega też kondensacji przy zmianach temperatury. **Membrana i obudowa nieprzepuszczające światła** — KP464 jest czuły na światło powyżej 1 lx |
+| Odprowadzanie ciepła | **Aluminium z zapewnionym kontaktem termicznym** (pady lub pasta) między ścianką a blokiem AC-CDI (tyrystor, prostownik), PROFET-ami i przetwornicami. Tworzywo wykluczone (rozdz. 9.2) |
 | Przepusty | Molex CMC 28-obwodowe (header wlutowany) + USB-C uszczelnione lub z zaślepką, IP67 |
 | Wibracje | Mocowanie PCB w kilku punktach, nie tylko na złączu; silikonowe tuleje w punktach montażu do ramy |
-| Temperatura | **−40…+85 °C otoczenia** (SYS-ENV-003), przechowywanie −40…+105 °C (SYS-ENV-004). **Obudowa nie może kumulować ciepła**: przy 85 °C otoczenia i przyroście +17 °C (dobry kontakt termiczny) wnętrze osiąga 102 °C, co daje 23 °C marginesu do klasy Grade 1. Przy złym kontakcie (+44 °C) wnętrze osiąga **129 °C i przekracza Grade 1** — dlatego kontakt termiczny jest wymaganiem, nie zaleceniem |
+| Temperatura | **−40…+85 °C otoczenia** (SYS-ENV-003), przechowywanie −40…+105 °C (SYS-ENV-004). Przy 85 °C otoczenia i dobrym kontakcie termicznym wnętrze ~91 °C, przy złym ~102 °C (rozdz. 9.2, przebudowa 25.10.2026) — **kontakt termiczny jest wymaganiem**, bo przy złym akcelerometr AIS2IH traci margines (Z17). Ochrona termiczna: ECU-SAF-020 |
 | Dostęp serwisowy | Otwarcie bez niszczenia uszczelnienia (uszczelka wymienna, nie klejona) — dostęp do złącza SWD i zworki triggera |
 | Montaż | Odporny na uderzenia; z dala od strumienia błota i gorąca wydechu |
 

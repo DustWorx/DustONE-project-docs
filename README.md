@@ -24,14 +24,14 @@ Generowane przez `scripts/kontrola.py`, nie wpisywane ręcznie.
 
 | Pozycja | Stan |
 |---|---|
-| Wymagania z identyfikatorem | 112 |
-| Pokrycie w tabeli traceability | 112 / 112 |
-| Wymagania bez ustalonej wartości — **blokują G0** | **1** |
+| Wymagania z identyfikatorem | 129 |
+| Pokrycie w tabeli traceability | 129 / 129 |
+| Wymagania bez ustalonej wartości — **blokują G0** | **2** |
 | Wymagania bez ustalonej wartości — wariant B/C, poza G0 | 4 |
-| Kody usterek w macierzy | 47 |
-| Identyfikatory testów | 105 |
+| Kody usterek w macierzy | 52 |
+| Identyfikatory testów | 122 |
 | Pozycje otwarte | 63 |
-| Założenia (3 obalone, 1 potwierdzone, 12 niepotwierdzonych) | 16 |
+| Założenia (3 obalone, 1 potwierdzone, 13 niepotwierdzonych) | 17 |
 
 ---
 
@@ -50,7 +50,7 @@ Pięć plików. Każdy odpowiada na jedno pytanie.
 | Plik | Odpowiada na pytanie |
 |---|---|
 | [`produkt.md`](produkt.md) | **Co budujemy i jak to jest zbudowane?** Zakres, warianty, decyzje sprzętowe z uzasadnieniami i odrzuconymi alternatywami, komponenty, zasilanie, złącze, uśpienie, HMI, budżety, obudowy, obwiednia środowiskowa |
-| [`wymagania.md`](wymagania.md) | **Co musi być spełnione i czym to udowodnimy?** 112 wymagań z wartościami i metodą weryfikacji + tabela pokrycia od wymagania do dowodu |
+| [`wymagania.md`](wymagania.md) | **Co musi być spełnione i czym to udowodnimy?** 129 wymagań z wartościami i metodą weryfikacji + tabela pokrycia od wymagania do dowodu |
 | [`firmware.md`](firmware.md) | **Jak firmware ma się zachowywać?** Maszyna stanów, bezpieczeństwo i macierz usterek, trigger i synchronizacja, punkty C.2–J otwarte |
 | [`otwarte.md`](otwarte.md) | **Czego jeszcze nie wiemy i co może być fałszywe?** Jedyny rejestr pozycji otwartych, założenia, ryzyka zaakceptowane świadomie |
 | [`proces.md`](proces.md) | **W jakiej kolejności i kiedy można przejść dalej?** Fazy, bramki, kryteria odbioru wyrobu, plan prac |
@@ -105,5 +105,5 @@ Aktualna dokumentacja żyje na gałęzi **`Actual-documentation`** i to ona jest
 ## Ograniczenia, o których trzeba wiedzieć przy czytaniu
 
 - **Nie było niezależnego przeglądu ludzkiego.** Oba audyty i cała dokumentacja powstały jako analiza wspierana modelem językowym. Przed uruchomieniem toru energii, odcięcia i synchronizacji potrzebny jest punktowy przegląd przez drugiego inżyniera — pozycja O-057.
-- **Dwanaście założeń nie jest potwierdzonych pomiarem.** `otwarte.md` rozdz. 8 wymienia je wraz z tym, co się zawali, jeśli są fałszywe. Trzy już się zawaliły.
+- **Trzynaście założeń nie jest potwierdzonych pomiarem.** `otwarte.md` rozdz. 8 wymienia je wraz z tym, co się zawali, jeśli są fałszywe. Trzy już się zawaliły.
 - Dokumenty opisują stan projektowy, nie zweryfikowany sprzętowo.

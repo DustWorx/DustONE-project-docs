@@ -50,7 +50,7 @@ Firmware w każdej chwili znajduje się w dokładnie jednym zdefiniowanym stanie
 | ROZRUCH | Zwolnienie przycisku startu | Rozrusznik wyłączony; jeśli wał się zatrzyma → GOTOWOŚĆ |
 | ROZRUCH | **Przekroczenie 5 s ciągłego kręcenia** | Rozrusznik wyłączony, komunikat na HMI |
 | ROZRUCH | Zanik obrotów | GOTOWOŚĆ |
-| ROZRUCH / PRACA | Kill switch / wykrycie wywrotki (IMU) / zanik obrotów | ZATRZYMYWANIE |
+| ROZRUCH / PRACA | Kill switch / wykrycie wywrotki (akcelerometr) / zanik obrotów | ZATRZYMYWANIE |
 | ROZRUCH / PRACA | Usterka krytyczna | AWARIA |
 | ZATRZYMYWANIE | Zapis logów zakończony, wyjścia wygaszone | GOTOWOŚĆ |
 | AWARIA | **Zatrzask** (decyzja 1.2 planu naprawczego): wyjście wymaga zatrzymania wału **i świadomego odblokowania przez kierowcę**. Nie ma automatycznego powrotu | GOTOWOŚĆ (po odblokowaniu) |
@@ -152,19 +152,48 @@ Uzasadnienie: w enduro silnik pełni również funkcję hamulca silnikowego i st
 | # | Zdarzenie | Podstawa | Uzasadnienie |
 |---|---|---|---|
 | 1 | Rozwarcie kill switcha | Funkcja podstawowa, ECU-SAF-001 | Świadoma decyzja kierowcy; realizowane także sprzętowo, niezależnie od firmware |
-| 2 | Potwierdzona wywrotka (IMU) | ECU-SAF-005 | Motocykl leży — silnik nie powinien pracować |
+| 2 | Potwierdzona wywrotka (akcelerometr) | ECU-SAF-005 | Motocykl leży — silnik nie powinien pracować |
 | 3 | Reset watchdoga | ECU-SAF-003 | Przyczyna nieznana, stan sterowania nieokreślony |
 | 4 | Zapaść napięcia (brown-out) | ECU-SAF-004 | Stan rejestrów i przebieg przerwanej operacji nieokreślone |
 | 5 | Przekroczenie progu ogranicznika obrotów | ECU-IGN-006 | Odcięcie **chwilowe, bez zatrzasku** — funkcja normalna, nie usterka |
 | 6 | **Utrata wiarygodnego sygnału obrotów przy pracującym silniku** *(przemianowane 2026-10-11 — patrz C.1.7)* | K4, decyzja 2026-09-20 | Bez sygnału obrotów nie ma bazy czasu — nie da się wyznaczyć momentu zapłonu. Alternatywą byłoby wyzwalanie w losowej fazie. Odcięcie jest tu jawnym zachowaniem zamiast stanu nieokreślonego |
 | 7 | **Wtryskiwacz zablokowany otwarty** | K4, decyzja 2026-09-20 | Zwarcie kanału zgłoszone przez TLE9104SH. Zalanie cylindra: uderzenie hydrauliczne w 4T, spłukanie filmu olejowego z gładzi w 2T |
 | ~~8~~ | ~~Driver zapłonu zablokowany w stanie załączonym~~ | **Wycofane 2026-09-20** | Po lekturze karty katalogowej VBG08H-E: **firmware nie ma czym tego wykryć**. Wyjście diagnostyczne C.F. odnosi się wyłącznie do stanu wejścia sterującego, więc zwarty tranzystor wyjściowy nie daje sygnału zwrotnego. Zapisanie reakcji na niewykrywalną usterkę byłoby ochroną pozorną. Zagrożenie pokrywają: ograniczenie prądu i miękkie wyłączenie w samym układzie, sprzętowy sufit czasu ładowania (B.2.3) oraz okno watchdoga — analiza w B.2.3 |
+| 9 | **Przegrzanie elektroniki ECU — próg T3** *(dopisane 25.10.2026, decyzja Pawła)* | ECU-SAF-020, DTC-PWR-13 | **Ochrona sprzętu, nie bezpieczeństwo kierowcy.** Próg 120 °C wewnątrz obudowy przy projektowanej wartości ~92 °C — występuje tylko przy usterce (obudowa przy wydechu, uszkodzony blok CDI, utrata kontaktu termicznego). Warunki: zgodność dwóch niezależnych czujników przez 10 s; niewiarygodny czujnik wyłącza tę pozycję zamiast ją wyzwalać |
 
 **Lista jest zamknięta.** Dopisanie do niej kolejnej pozycji wymaga osobnej decyzji zapisanej w tym dokumencie, z uzasadnieniem — inaczej lista rozrośnie się przez drobne kroki do wariantu, który odrzuciliśmy. Pozycja 8 została **wycofana tego samego dnia**, gdy okazało się, że nie da się jej wykryć — to samo kryterium, którym odrzuciliśmy zablokowany rozrusznik (B.2.2).
 
 **Rozstrzygnięcie odrzucone — przegrzanie cieczy chłodzącej:** rozważane jako kandydat do K4, **pozostaje w K3** (ograniczenie obrotów + ostrzeżenie). Trzy powody: (a) czujnik temperatury cieczy jest jednym z najczęściej zawodzących elementów, a przerwa w przewodzie daje odczyt skrajny — fałszywe zgaszenie na podjeździe jest groźniejsze niż zagrożenie, przed którym miało chronić; (b) zgaszenie silnika zatrzymuje pompę cieczy i **pogarsza** przegrzanie lokalnie; (c) podtrzymuje wcześniejszą decyzję L5. Zmiana tej decyzji wymaga wpisu w historii zmian dokumentu.
 
 ---
+
+#### B.1.2 Analiza zagrożeń zamkniętej listy zatrzymań — MVP-A (25.10.2026, O-016)
+
+**Zatrzymania** (nr 7 — wtryskiwacz — dotyczy wyłącznie B/C; nr 8 wycofany)
+
+| # | Zatrzymanie | Zagrożenie | Mechanizm | Maks. czas | Fałszywe zadziałanie i ograniczenie |
+|---|---|---|---|---|---|
+| 1 | Kill switch | Brak możliwości zgaszenia (zablokowany gaz, upadek) | Sprzętowo: zwarcie uzwojenia wzbudzającego + blokada wyzwalania tyrystora; równolegle FW | ≤ 10 ms (ECU-SAF-001) | Przerwa w wiązce gasi silnik — celowo fail-safe; kodowanie rezystorami rozróżnia przerwę (DTC-SAF-01) |
+| 2 | Wywrotka | Silnik pracuje przy leżącym motocyklu: koło na biegu, wyciek paliwa | Akcelerometr, kąt ważny przy 0,8–1,2 g | 3 s (ECU-SAF-005) | Hopy i lądowania — bramka ważności zeruje licznik; trawers < 65° |
+| 3 | Reset watchdoga | Nieokreślony stan sterowania zapłonem | TPS3430-Q1 | okno watchdoga — **nie jest ochroną pojedynczej iskry** (O-012); tę zapewniają ECU-IGN-023 i ECU-IGN-019 | Reset od zakłóceń w jeździe — EMC (O-039), log przyczyny |
+| 4 | Zapaść napięcia | Przerwana operacja, nieokreślone rejestry | BOR MCU | sprzętowo | Z akumulatorem kwasowym i regulatorem nie występuje w jeździe (rozdz. 13.1 `produkt.md`) |
+| 5 | Ogranicznik obrotów | Przekręcenie silnika | FW, chwilowe | jeden obrót | Błędny próg — zakres 3000–12 000 walidowany w ECU (ECU-IGN-006) |
+| 6 | Utrata sygnału obrotów | Brak podstawy czasu — iskry nie da się wyznaczyć | DTC-IGN-01 | ≥ 100 ms | Wcześniejsze ostrzeżenie o jakości sygnału (DTC-IGN-03a) |
+| 9 | Przegrzanie ECU (T3) | Ochrona sprzętu, nie kierowcy | 2 niezależne czujniki | 10 s (ECU-SAF-020) | Usterka czujnika wyłącza T3 zamiast go wyzwalać |
+
+**Uszkodzenia elementów wykonawczych**
+
+| Element | Uszkodzenie | Skutek | Ocena / środek |
+|---|---|---|---|
+| Tyrystor CDI | zwarcie lub przerwa | Brak iskry, silnik gaśnie | Bezpieczne — kod usterki |
+| Prostownik / kondensator CDI | zwarcie | Brak iskry | Bezpieczne |
+| Element zwierający uzwojenie wzbudzające | zwarcie | Silnik nie odpali | Bezpieczne |
+| **Element zwierający uzwojenie wzbudzające** | **przerwa** | Kill działa tylko przez blokadę tyrystora | **Uszkodzenie ukryte → test przy każdym zgaszeniu (ECU-SAF-021)** |
+| **Blokada wyzwalania tyrystora** | **nie blokuje** | Kill działa tylko przez zwarcie wzbudzającego | **Uszkodzenie ukryte → ECU-SAF-021** |
+| **PROFET rozrusznika** | **zwarcie wyjścia** | Rozrusznik kręci bez przerwy, bramkowanie wejścia nie pomaga | **Drugi niezależny klucz w obwodzie cewki przekaźnika (ECU-SAF-022)** |
+| PROFET wentylatora / świateł | zwarcie | Odbiornik działa stale, rozładowanie na postoju | Kod usterki, akceptowalne |
+
+**Decyzje Pawła 25.10.2026:** test obu ścieżek kill switcha przy każdym zgaszeniu, ze startem dozwolonym przy jednej sprawnej ścieżce; drugi klucz rozrusznika. **Analiza wymaga niezależnego przeglądu ludzkiego (O-057)** — jest wynikiem pracy wspieranej modelem.
 
 ### B.2 Macierz usterek
 
@@ -185,8 +214,8 @@ Uzasadnienie: w enduro silnik pełni również funkcję hamulca silnikowego i st
 | DTC-SEN-05 | Napięcie akumulatora — odczyt niemożliwy | poza 5–20 V (uszkodzenie dzielnika lub ADC) | 1000 ms | **K1** | Korekty napięciowe na wartościach nominalnych | Kreski + komunikat |
 | DTC-SEN-06 | Prędkość koła — brak sygnału | brak impulsów przy obrotach silnika > 2000 obr/min | 3 s | **K1** | Bez wpływu na sterowanie silnikiem | Wskazanie wygaszone + komunikat |
 | DTC-SEN-07 | Pozycja biegu — odczyt poza zakresem lub brak odpowiedzi | błąd transmisji SPI lub kąt poza zakresem kalibracji | 200 ms | **K1** | Bez wpływu na sterowanie silnikiem | Wskazanie biegu wygaszone |
-| DTC-SEN-08 | Ciśnienie barometryczne — brak komunikacji | 3 kolejne nieudane odczyty I²C | 3 próby | **K2** | Wartość zastępcza 1013 hPa (poziom morza — mieszanka bogatsza, kierunek bezpieczny) | Komunikat |
-| DTC-SEN-09 | IMU — brak komunikacji | 3 kolejne nieudane odczyty SPI | 3 próby | **K1** | Wykrywanie wywrotki nieczynne | Komunikat „WYKRYWANIE WYWROTKI NIECZYNNE" |
+| DTC-SEN-08 | Ciśnienie barometryczne — brak komunikacji lub błąd diagnostyki KP464 | 3 kolejne nieudane odczyty SPI albo kod diagnostyczny czujnika (tor sygnału, komórka, EEPROM) | 3 próby | **K1 w MVP-A, K2 w B/C** | **MVP-A:** tylko kod usterki i brak wartości w logu — ciśnienie nie wpływa na sterowanie. **B/C:** wartość zastępcza 1013 hPa (poziom morza — mieszanka bogatsza, kierunek bezpieczny) | Komunikat |
+| DTC-SEN-09 | Akcelerometr — brak komunikacji | 3 kolejne nieudane odczyty SPI | 3 próby | **K1** | Wykrywanie wywrotki nieczynne | Komunikat „WYKRYWANIE WYWROTKI NIECZYNNE" |
 
 
 
@@ -217,8 +246,9 @@ Uzasadnienie modelu narastającego: stała wartość jest zawsze błędna w jedn
 | DTC-IGN-02 | **Sygnał obrotów niewiarygodny** — powtarzalne naruszenie kryteriów z C.1.7 | długość wypustu poza ±25% kalibracji, zbocze poza oknem kątowym, stosunek okresów poza 0,5–2,0 | **2 kolejne obroty wału** | **K4** | Odcięcie + zatrzask |
 | DTC-IGN-03 | **Odrzucone zbocze pojedyncze** | zbocze poza oknem kątowym (C.1.6) | — | **K0** | **Zbocze ignorowane**, zapłon bez zmian z modelu kąta. Wyłącznie licznik |
 | DTC-IGN-03a | **Podwyższona liczba odrzuceń** — jakość sygnału | > 5 odrzuceń na 100 obrotów | 100 obrotów | **K1** | Ostrzeżenie o jakości sygnału; wskazuje na zakłócenia lub luźny czujnik |
-| DTC-IGN-04 | Cewka — brak osiągnięcia progu prądu | C.F. nie wraca w stan wysoki do końca ładowania | 3 kolejne zapłony | **K3** | Wydłużenie ładowania do limitu + ograniczenie obrotów |
-| DTC-IGN-05 | Cewka — próg prądu osiągany zbyt wcześnie | C.F. wraca poniżej 30% oczekiwanego czasu | 3 kolejne zapłony | **K3** | Skrócenie ładowania + ograniczenie obrotów |
+| **DTC-IGN-08** | **Brak napięcia uzwojenia wzbudzającego przy obracającym się wale** | dzielnik wzbudzającego → ADC: brak napięcia przy ważnym sygnale obrotów | 3 obroty | **K1** | Kod usterki „ZAPŁON — BRAK ZASILANIA CDI”; silnik i tak gaśnie z braku iskry. Rozróżnia przerwę w uzwojeniu/wiązce od usterki ECU (dawne DTC-IGN-04 i -05 dla cewki indukcyjnej wycofane 25.10.2026) |
+| **DTC-IGN-06** | **Wyzwolenie tyrystora niezgodne ze zleceniem** — usterka wykonania (firmware, timer, zakłócenie) | przechwycony moment wyzwolenia różni się od zleconego o więcej niż odpowiednik granicy ECU-IGN-022 | **1 zdarzenie** | **K3** | Tryb zastępczy: iskra na krawędzi spływu (GMP) + ograniczenie obrotów; ostrzeżenie (ECU-IGN-024) |
+| **DTC-IGN-07** | **Błąd prognozy kąta powyżej granicy** przy wyzwoleniu zgodnym ze zleceniem — gwałtowna zmiana prędkości wału | kąt rzeczywisty wyliczony wstecz z następnego obrotu poza +1° / −2° względem zadanego | **3 w 100 obrotach** | **K3** | Jak DTC-IGN-06. Każde pojedyncze przekroczenie zapisywane w logu (K0) |
 | DTC-INJ-01 | Wtryskiwacz zablokowany otwarty | diagnostyka SPI TLE9104SH — zwarcie do masy | natychmiast | **K4** | Odcięcie + zatrzask |
 | DTC-INJ-02 | Wtryskiwacz — przerwa obciążenia | diagnostyka SPI | 3 kolejne wtryski | **K3** | Ograniczenie obrotów — w wariancie dwuwtryskiwaczowym praca na jednym daje ubogą mieszankę |
 | DTC-INJ-03 | Driver wtrysku — przegrzanie | diagnostyka SPI | natychmiast | **K3** | Ograniczenie obrotów |
@@ -226,7 +256,6 @@ Uzasadnienie modelu narastającego: stała wartość jest zawsze błędna w jedn
 | DTC-PWR-02 | Kanał wentylatora — zwarcie lub przeciążenie | jw. | 3 próby | **K3** | Obniżony próg ograniczenia obrotów od temperatury |
 | DTC-PWR-03 | Kanał świateł — zwarcie lub przeciążenie | jw. | 3 próby | **K1** | Kanał wyłączony |
 | DTC-PWR-04 | Kanał rozrusznika zablokowany załączony | prąd mimo wyłączonego sterowania — *możliwość wykrycia do potwierdzenia w Fazie 4* | 200 ms | **K1** | Komunikat „ODŁĄCZ AKUMULATOR" |
-| DTC-SYS-01 | Przegrzanie ECU | czujnik temperatury w mikrokontrolerze | 5 s | **K3** | Skrócenie ładowania cewki + ograniczenie obrotów |
 
 **Przebudowa DTC-IGN-02 i 03 — korekta 2026-10-11 po pomiarach koła impulsowego.** Dotychczasowe brzmienie mówiło o wzorze zębów i zgubionym zębie, czyli opisywało detekcję właściwą dla koła 60-2. **Beta 300 RR ma jeden wypust na obrót**, więc nie ma wzoru zębów ani zgubionego zęba — oba zapisy opisywały mechanizm, którego nie da się zrealizować.
 
@@ -238,17 +267,25 @@ W dwusuwie nie występuje też **utrata synchronizacji** w sensie czterosuwowym:
 
 ---
 
-#### B.2.3 Wyjście diagnostyczne VBG08H-E i sprzętowy limit czasu ładowania (ustalenia 2026-09-20)
+#### B.2.3 Blok AC-CDI: sterowanie i diagnostyka (przebudowa 25.10.2026, O-001)
 
-> ⚠️ **Nieaktualne po decyzji AC-CDI z 18.10.2026** — VBG08H-E usunięty, zapłon nie jest indukcyjny. Rozdział zostaje do czasu przebudowy pod blok CDI (O-001, punkt 5); nie projektować na jego podstawie.
+**Zastępuje rozdział o VBG08H-E** (driver usunięty 15.10.2026, zapłon nie jest indukcyjny; poprzednia treść w historii repozytorium).
 
-**Wyjście C.F.** VBG08H-E (pin 6, otwarty dren) przechodzi w stan niski, gdy wejście sterujące idzie w stan wysoki, i wraca w stan wysoki, **gdy prąd cewki osiągnie stały próg 6,5 A** (wartość zależna od temperatury). Ogranicznik prądu układu działa dopiero przy 8,5–10,5 A, klamra przepięciowa przy 320–400 V, miękkie wyłączenie przy temperaturze złącza 150–175 °C.
+| Element | Rola | Wymaganie |
+|---|---|---|
+| Uzwojenie wzbudzające → dioda → kondensator zapłonowy | Ładowanie **bierne**, bez udziału firmware — kondensator ładuje się przez uzwojenie pierwotne cewki przy każdym półokresie | ECU-IGN-025, Z14 |
+| Tyrystor | Rozładowanie kondensatora przez uzwojenie pierwotne = iskra. Wyłącza się sam po spadku prądu poniżej prądu podtrzymania | — |
+| **Bramka tyrystora sprzężona pojemnościowo** (kondensator szeregowy + dioda rozładowująca + rezystor bramka–katoda) | Zbocze z HRTIM daje jeden krótki impuls prądu bramki; **zawieszone wyjście w stanie wysokim daje najwyżej jedną iskrę** | **ECU-IGN-005** |
+| Tranzystor zwierający bramkę do katody, sterowany sprzętowo kill switchem | Druga ścieżka odcięcia (obok zwarcia uzwojenia wzbudzającego) | ECU-SAF-001 |
+| Dzielnik napięcia uzwojenia wzbudzającego → ADC | Test obu ścieżek kill switcha przy zgaszeniu; diagnostyka utraty wzbudzającego | ECU-SAF-021, DTC-IGN-08 |
+| Przechwytywanie wyzwolenia (wejście timera) | Porównanie rzeczywistego wyzwolenia ze zleconym | ECU-IGN-024 |
+| Rozładowanie kondensatora po zatrzymaniu | Bezpieczeństwo serwisu | ECU-IGN-026 |
 
-**Zastosowanie: wyłącznie diagnostyka** (DTC-IGN-04, DTC-IGN-05). Czas od podania sterowania do powrotu C.F. to zmierzony czas dojścia cewki do 6,5 A: brak powrotu oznacza przerwę w obwodzie, powrót zbyt szybki — zwarcie zwojów.
+**Czego impulsowa bramka nie robi:** nie chroni przed procesorem generującym fałszywe zbocza — każde zbocze to impuls. Przed tym chronią ECU-IGN-024 (reakcja od pierwszego zdarzenia), watchdog i obie ścieżki kill switcha.
 
-**Odrzucone: sterowanie czasem ładowania w pętli zamkniętej na podstawie C.F.** Propozycja rozważana 2026-09-20 i **wycofana po sprawdzeniu karty katalogowej**: ST opisuje C.F. wyłącznie jako wyjście diagnostyczne, bez żadnej wzmianki o wykorzystaniu do regulacji. Dodatkowo próg 6,5 A należy do układu, nie do cewki, i dryfuje z temperaturą — regulowalibyśmy do wielkości, która nie jest parametrem sterowanego obiektu. ECU-IGN-003 (korekta w funkcji napięcia) wycofane 18.10.2026 razem z zapłonem indukcyjnym. Temat może wrócić po pomiarach na stanowisku w Fazie 6 jako świadomy eksperyment z własną walidacją.
+**Ogranicznik obrotów w CDI:** pominięcie impulsu bramki — kondensator pozostaje naładowany i rozładuje się przy najbliższym dopuszczonym zapłonie. Dawna kwestia „ładowania zbyt długo przy odcięciu” (O-011) w tej topologii nie istnieje.
 
-**Ograniczenie konstrukcyjne wynikające z progu C.F.:** czas ładowania musi być na tyle długi, by prąd cewki przekroczył 6,5 A — inaczej C.F. nigdy nie zmieni stanu i diagnostyka odczyta sprawną cewkę jako przerwaną. **Do sprawdzenia przy doborze cewki w Fazie 4.**
+**Wartości elementów bramki** (kondensator, rezystory) — z karty wybranego tyrystora: prąd bramki, prąd podtrzymania, czas narastania prądu anody, oraz z indukcyjności uzwojenia pierwotnego cewki (pomiar).
 
 ##### Decyzja architektoniczna: impuls zapłonu generuje peryferium, nie program
 
@@ -258,32 +295,9 @@ Uzasadnienie liczbowe: przy 6000 obr/min jeden stopień obrotu wału trwa 27,8 �
 
 To jest standard branżowy, nie rozwiązanie autorskie: NXP eTPU to osobny procesor z własnym rdzeniem i pamięcią, z gotowymi funkcjami *Spark and Dwell Time*, sterowania wtryskiem i trybem kątowym; Infineon AURIX ma GTM, Renesas RH850 ma ATU. Decyzja porządkuje też wybór STM32G474 — układ wybrano właśnie za HRTIM, a przy sterowaniu programowym HRTIM byłby zbędny.
 
-##### Sprzętowy sufit czasu ładowania — domknięcie ECU-IGN-005
+##### Impulsowa bramka tyrystora — domknięcie ECU-IGN-005 (25.10.2026)
 
-**Zweryfikowane 2026-09-20 bezpośrednio w STM32CubeMX na STM32G474VETx.** Parametr `Reset Source Selection` wyjścia HRTIM przyjmuje **liczbę aktywnych źródeł kasowania od 0 do 32**; po jej wpisaniu pojawiają się osobne pozycje „1st Reset Source", „2nd Reset Source" itd. Lista źródeł zawiera między innymi:
-
-- *Timer counter reset event coming solely from software*
-- **Timer period event forces the output to its inactive state**
-- *Timer compare 1 / 2 / 3 / 4 event forces the output to its inactive state*
-- *The master timer period event forces the output to its inactive state*
-
-Zdarzenie końca okresu i zdarzenie porównania można więc przypisać **jednocześnie** jako niezależne źródła kasowania.
-
-**Konfiguracja wynikająca z tego ustalenia:**
-
-| Rejestr | Kto zapisuje | Rola |
-|---|---|---|
-| Okres (PER) | ustawiany **raz przy inicjalizacji**, jako stała konfiguracyjna | **Maksymalny dopuszczalny czas ładowania — sufit sprzętowy** |
-| Porównanie (CMP) | zapisywany przez zadanie zapłonu **w każdym cyklu** | Rzeczywisty czas ładowania z mapy |
-| Źródła kasowania wyjścia | ustawiane raz | **Zdarzenie porównania ORAZ zdarzenie końca okresu** |
-
-Skutek: utknięte zadanie zapłonu nie przedłuży impulsu, bo licznik dojdzie do okresu i zdejmie wyjście. **Błędna wartość porównania — nawet większa od okresu — również go nie wydłuży**, bo zdarzenie końca okresu kasuje wyjście niezależnie. Zadanie zapłonu nie ma drogi, żeby ten sufit podnieść, bo nie dotyka rejestru okresu.
-
-**To domyka ECU-IGN-005 i pozycję otwartą z rozdz. 9.1 planu naprawczego — bez ani jednego dodatkowego elementu.** Weryfikacja: T-IGN-005 (wstrzyknięcie usterki z zawieszonym firmware, pomiar długości impulsu).
-
-**Analiza uzupełniająca — ile realnie grozi przy zawieszonym firmware.** Prąd jest ograniczony przez układ do 8,5–10,5 A. Przy rezystancji uzwojenia pierwotnego rzędu 0,4 Ω daje to około 40 W traconych w cewce plus 15–20 W na tranzystorze. Okno watchdoga wynosi 100 ms, po którym następuje reset, a rezystory ściągające zdejmują sterowanie. Cewka przyjmuje w tym czasie **około 6 J**, co przy jej masie rzędu 0,3 kg oznacza przyrost temperatury poniżej jednej dziesiątej stopnia. Sufit z rejestru okresu skraca to jeszcze o rząd wielkości. Sprzętowy układ monostabilny byłby więc wydatkiem bez pokrycia w zagrożeniu.
-
-**Pozostaje do zweryfikowania w Fazie 5:** tryb pracy licznika (single shot retriggerable / non-retriggerable / continuous) właściwy dla sterowania kątowego. Nie wpływa na samą zasadę sufitu, bo zdarzenie końca okresu występuje w każdym z tych trybów.
+Dawne domknięcie (rejestr okresu HRTIM jako sufit czasu ładowania cewki) **przestało dotyczyć** — w CDI nie ma czasu ładowania sterowanego przez firmware, a pozycja O-004 wskazała, że rejestr okresu dzieli zegar z funkcją, którą miał chronić. Nowe zabezpieczenie jest **niezależne od zegara i firmware**: kondensator w torze bramki przenosi tylko zbocze, więc żaden stan wyjścia — także zamarznięty licznik — nie da ciągłego wyzwalania. Weryfikacja: T-IGN-005.
 
 ---
 
@@ -303,6 +317,10 @@ Skutek: utknięte zadanie zapłonu nie przedłuży impulsu, bo licznik dojdzie d
 | DTC-PWR-08b | **Szyna 5 V poniżej zakresu pracy lub Power Good nieaktywny** | ADC < 4,50 V albo > 5,50 V, albo PG nieaktywny | 100 ms | **K4** | MAX9926 przestaje pracować, sygnał obrotów zanika i silnik gaśnie przez DTC-IGN-01. **Przyczyna źródłowa dla zatrzasku** — patrz decyzja niżej |
 | DTC-PWR-09 | Szyna 3,3 V poza zakresem | ADC poza 3,15–3,45 V | 100 ms | **K1** | Ostrzeżenie + wymuszony zapis logu; przy dalszym spadku sprawę przejmuje brown-out (DTC-SAF, grupa 4) |
 | DTC-PWR-10 | Przełącznik obciążenia 5 V nie załączył się | brak napięcia na szynie czujników po 5 ms od załączenia | 3 próby | **K3** | Blokada wyjścia ze stanu GOTOWOŚĆ — bez tej szyny nie ma odczytów czujników |
+| **DTC-PWR-11** | Temperatura wnętrza ECU — próg T1 | **> 95 °C** (NTC lub czujnik MCU) | 5 s | **K1** | Ostrzeżenie na HMI (ECU-SAF-020) |
+| **DTC-PWR-12** | Temperatura wnętrza ECU — próg T2 | **> 105 °C** | 5 s | **K1** | Wyłączenie świateł i wyjść aux; wentylator chłodnicy i rozrusznik pozostają (ECU-SAF-020) |
+| **DTC-PWR-13** | Temperatura wnętrza ECU — próg T3 | **> 120 °C na dwóch niezależnych czujnikach naraz** (NTC i czujnik MCU) | 10 s | **K4** | Zgaszenie silnika, zatrzask; odblokowanie po ostygnięciu poniżej 95 °C (ECU-SAF-020, zatrzymanie nr 9 z listy B.1.1) |
+| **DTC-PWR-14** | Czujnik temperatury ECU niewiarygodny | odczyt poza zakresem fizycznym (przerwa/zwarcie NTC) albo rozbieżność NTC–MCU > 20 °C | 1 s | **K1** | Kod usterki; **czujnik nie może uczestniczyć w T3** — zgaszenie termiczne nieczynne do usunięcia usterki |
 
 **Warunek obrotów przy DTC-PWR-05 jest konieczny.** Przy rozruchu zapad napięcia do 9 V jest normalny — rozrusznik pobiera kilkadziesiąt amperów. Bez warunku `obroty > 2000` ECU zgłaszałoby awarię ładowania przy każdym odpaleniu i kierowca przestałby zwracać uwagę na ten komunikat, co jest gorsze niż jego brak.
 
@@ -356,7 +374,8 @@ Zapis ten zostaje w dokumencie jako ostrzeżenie: rozdz. 6.4 dokumentu procesu *
 | DTC-SAF-02 | Reset watchdoga | rejestr przyczyny resetu w STM32G474 | natychmiast | **K4** | Zatrzask + zapis migawki (B.2.5.3) + inkrementacja licznika |
 | DTC-SAF-03 | Trzeci reset watchdoga | licznik ≥ 3, zerowany po 60 s bezawaryjnej pracy silnika (ECU-SAF-006) | — | **K4** | Stan AWARIA trwały, koniec prób startu, kasowanie wyłącznie aplikacją desktop |
 | DTC-SAF-04 | Zapaść napięcia (brown-out) | flaga BOR w STM32G474 | natychmiast | **K4** | Zatrzask + zapis migawki |
-| DTC-SAF-05 | **Potwierdzona wywrotka** | kąt przechyłu **> 65°** z BMI090L | **3 s nieprzerwanie** | **K4** | Odcięcie + zatrzask |
+| DTC-SAF-05 | **Potwierdzona wywrotka** | kąt przechyłu **> 65°** z AIS2IH, **ważny tylko przy 0,8–1,2 g** (ECU-SAF-005) | **3 s nieprzerwanie; kąt nieważny zeruje licznik** | **K4** | Odcięcie + zatrzask |
+| **DTC-SAF-06** | **Jedna ścieżka odcięcia kill switcha nie zadziałała** | przy przejściu w STOP: napięcie uzwojenia wzbudzającego nie zanikło **albo** linia wyzwalania tyrystora nie jest zablokowana (odczyt zwrotny) | 1 zdarzenie | **K1** | Ostrzeżenie „KILL SWITCH — USTERKA JEDNEJ ŚCIEŻKI”; kolejny start dozwolony — druga ścieżka działa (ECU-SAF-021) |
 | DTC-SYS-02 | Błędna suma kontrolna firmware | autotest pełny przy starcie | — | — | **Brak startu**, komunikat, wejście w tryb bootloadera |
 | DTC-SYS-03a | **Błędna suma kontrolna map sterowania** (zapłon, wtrysk, korekty, progi wentylatora, próg ogranicznika) | autotest pełny przy starcie | — | — | **Blokada startu silnika** + komunikat „MAPY USZKODZONE — WGRAJ PONOWNIE" |
 | DTC-SYS-03b | **Błędna suma kontrolna konfiguracji użytkownika** (obwód koła, jednostki, wygląd HMI, jasność) | autotest pełny przy starcie | — | **K1** | Podstawienie wartości domyślnych + ostrzeżenie. **Silnik pracuje normalnie** |
@@ -428,7 +447,7 @@ Problem: przy zwykłym okablowaniu normalnie zamkniętym przerwa w przewodzie i 
 
 | Zakres | Zawartość | Reakcja na uszkodzenie |
 |---|---|---|
-| **Mapy sterowania** (DTC-SYS-03a) | Mapa zapłonu, mapa wtrysku, korekty (temperatura, ciśnienie, napięcie), progi wentylatora, próg i histereza ogranicznika obrotów, czasy ładowania cewki | **Blokada startu** |
+| **Mapy sterowania** (DTC-SYS-03a) | Mapa zapłonu, mapa wtrysku, korekty (temperatura, ciśnienie, napięcie), progi wentylatora, próg i histereza ogranicznika obrotów | **Blokada startu** |
 | **Konfiguracja użytkownika** (DTC-SYS-03b) | Obwód koła, jednostki, układ i wygląd ekranów HMI, jasność podświetlenia, wybrany profil wyglądu | **Wartości domyślne + ostrzeżenie, silnik pracuje** |
 
 Kryterium podziału: **czy wartość wpływa na to, co ECU robi z silnikiem.** Progi wentylatora i ogranicznika są po stronie map mimo że wyglądają na ustawienia użytkownika, bo ich uszkodzenie może doprowadzić do przegrzania lub przekroczenia obrotów.
@@ -495,7 +514,7 @@ Kryterium ograniczenia nie jest „jak poważna wydaje się usterka", tylko **ja
 | Grupa | Czego ECU nie wie | Reakcja | Usterki |
 |---|---|---|---|
 | **G1 — wartość zastępcza wystarcza** | Temperatura powietrza, ciśnienie atmosferyczne. Wpływ na dawkę rzędu kilku procent | **Bez ograniczeń, pełny zakres obrotów.** Wartość zastępcza + ostrzeżenie | DTC-SEN-03, DTC-SEN-08 (klasa K2) |
-| **G2 — ochrona termiczna lub elektryczna** | Nic — dane są poprawne, problem jest po stronie sprzętu | **Limit obrotów 5000 obr/min, mapy bez zmian.** Cel: zdjęcie obciążenia z przegrzanego lub uszkodzonego elementu | DTC-INJ-03, DTC-PWR-01, DTC-PWR-02, DTC-SYS-01, DTC-SYS-09 |
+| **G2 — ochrona termiczna lub elektryczna** | Nic — dane są poprawne, problem jest po stronie sprzętu | **Limit obrotów 5000 obr/min, mapy bez zmian.** Cel: zdjęcie obciążenia z przegrzanego lub uszkodzonego elementu | DTC-INJ-03, DTC-PWR-01, DTC-PWR-02, DTC-SYS-09. *(DTC-SYS-01 — przegrzanie ECU — wycofany 25.10.2026, zastąpiony przez DTC-PWR-11…13, ECU-SAF-020)* |
 | **G3 — utrata sygnału obciążenia** | Położenie przepustnicy (warianty B/C) albo szyna 5 V. **W MVP-A zostaje wyłącznie przypadek szyny 5 V — TPS w tym wariancie nie istnieje** | **Osobna strategia (B.3.2)** — mapa awaryjna + limit 3500 obr/min | DTC-SEN-04, DTC-PWR-08a |
 
 Grupa G1 nie ogranicza niczego celowo. Podstawienie 20 °C za temperaturę powietrza albo 1013 hPa za ciśnienie zmienia dawkę o kilka procent — to mniej niż różnica między porankiem a popołudniem tego samego dnia. Ograniczanie obrotów z tego powodu byłoby karą bez przyczyny.
@@ -724,17 +743,15 @@ Model jest konieczny z dwóch powodów:
 
 | Powód | Wyjaśnienie |
 |---|---|
-| **Start ładowania cewki wypada poza wypustem** | Patrz tabela w C.1.5 — powyżej ok. 1000 obr/min ładowanie musi ruszyć zanim wypust się pojawi |
 | **Bramkowanie kątowe wejścia** | Bez wiedzy, gdzie jest wał, nie da się stwierdzić, że zbocze przyszło w złym miejscu (C.1.6) |
 
 **Rozdzielenie dokładności — kluczowe dla zrozumienia całości:**
 
 | Zdarzenie | Źródło wyznaczenia | Wymagana dokładność | Skutek błędu |
 |---|---|---|---|
-| **Start ładowania** | ciągły model kąta | niska | ciepło w driverze — prąd i tak ograniczy VBG08H-E |
 | **Iskra** | krawędź natarcia + wyliczona zwłoka | **1,0° (ECU-IGN-002)** | moc, detonacja, uszkodzenie silnika |
 
-Wypust **nie jest oknem ładowania cewki**. Jest punktem odniesienia dla kąta.
+W AC-CDI nie ma ładowania cewki sterowanego przez firmware (25.10.2026) — model kąta służy bramkowaniu wejścia i restartowi w ruchu.
 
 #### C.1.4 Estymata prędkości i korekta przyspieszenia
 
@@ -746,21 +763,11 @@ Wypust zajmuje te same 30° wału w każdym obrocie, więc czas jego przejścia 
 
 **Odrzucone: średnia z pełnego obrotu jako baza.** Prostsze i niezależne od kalibracji długości wypustu, ale obarczone błędem **systematycznym** od tętnienia prędkości — a błąd systematyczny nie uśrednia się i wchodzi wprost w kąt zapłonu.
 
-#### C.1.5 Ładowanie cewki
+#### C.1.5 Ładowanie kondensatora CDI (przebudowa 25.10.2026)
 
-| Obroty | Czas obrotu | Ładowanie 3 ms jako kąt | Wyprzedzenie typ. | Start ładowania | W wypuście? |
-|---|---|---|---|---|---|
-| 400 | 150 ms | 7,2° | 2° | 9,2° przed GMP | tak |
-| 600 | 100 ms | 10,8° | 5° | 15,8° przed GMP | tak |
-| 1000 | 60 ms | 18,0° | 10° | 28,0° przed GMP | na styk |
-| 1500 | 40 ms | 27,0° | 15° | 42,0° przed GMP | nie |
-| 3000 | 20 ms | 54,0° | 20° | 74,0° przed GMP | nie |
-| 6000 | 10 ms | 108,0° | 20° | 128° przed GMP | nie |
-| 10 000 | 6 ms | 180,0° | 12° | 192° przed GMP | nie |
+W AC-CDI kondensator zapłonowy ładuje się **biernie** z uzwojenia wzbudzającego — firmware nie steruje ładowaniem. Dawna tabela czasów ładowania cewki indukcyjnej przestała dotyczyć (VBG08H-E usunięty 15.10.2026).
 
-Powyżej ok. 1000 obr/min start ładowania przypada w obszarze między wypustami i jest wyznaczany **wyłącznie z modelu kąta**. Nie wpływa to na dokładność iskry, bo iskra kończy ładowanie przez rejestr porównania HRTIM, aktualizowany po korekcie modelu na krawędzi natarcia.
-
-Sufit sprzętowy czasu ładowania z B.2.3 (rejestr okresu HRTIM) obowiązuje niezmiennie.
+**Jedyne ograniczenie dla firmware:** iskra może paść tylko wtedy, gdy kondensator jest naładowany. Okno kątowe ładowania wynika z fazy uzwojenia wzbudzającego względem GMP — **założenie Z14**, potwierdzane pomiarem (`measurements/pomiar-wzbudzajacego.md`). Jeśli okno nie obejmie całej mapy wyprzedzenia, mapa zostanie ograniczona do zakresu, w którym kondensator jest naładowany.
 
 #### C.1.6 Bramkowanie kątowe wejścia — odrzucanie fałszywych zboczy (wymaganie Pawła, 2026-10-11)
 
@@ -810,6 +817,8 @@ Licznik odrzuceń jest wskaźnikiem jakości instalacji o dużej wartości diagn
 
 #### C.1.8 Sekwencja rozruchu
 
+> ⚠️ **Zmienione 25.10.2026 (decyzja Pawła, O-007): w stanie ROZRUCH iskra na krawędzi spływu (GMP), już przy pierwszym przejściu wypustu — ECU-IGN-019.** Powód: prognoza z czasu daje najwięcej błędu w kierunku za wczesnej iskry właśnie przy kopnięciu, kiedy sprężanie hamuje wał — ryzyko odbicia kopniaka. Poniższy tekst opisuje wersję z 11.10 i zostaje jako historia decyzji.
+
 **Iskra od drugiego przejścia wypustu.** Pierwsze przejście służy wyłącznie do pomiaru: krawędź natarcia startuje pomiar, krawędź spływu go kończy, z czego powstaje pierwsza estymata prędkości i model kąta.
 
 Uzasadnienie: kickstarter obraca wał kilkakrotnie w jednym ruchu nogi, więc wypust przechodzi pod czujnikiem wielokrotnie w trakcie tego samego kopnięcia. **Strata pierwszego obrotu nie kosztuje kopnięcia.** W zamian cały układ ma jedną ścieżkę w kodzie zamiast dwóch i żadnego przypadku szczególnego.
@@ -835,6 +844,21 @@ Rozróżnienie istotne dla bezpieczeństwa silnika — jeden limit nie zastępuj
 
 **Potwierdzenie, że 28° wystarcza:** fabryczne CDI pracuje na tym samym kole, więc jego mapa również musi mieścić się w tej geometrii.
 
+#### C.1.9a Bezwzględne granice błędu kąta (decyzje Pawła 25.10.2026, O-007)
+
+**Kierunek błędu prognozy:** iskra liczona z czasu od krawędzi natarcia wypada **wcześniej**, gdy wał hamuje szybciej niż zakładała estymata, i **później**, gdy przyspiesza. Za wczesna iskra jest groźniejsza: detonacja w pracy, **odbicie kopniaka przy rozruchu**.
+
+| Środek | Rodzaj | Wymaganie |
+|---|---|---|
+| Iskra w ROZRUCHU na krawędzi spływu (GMP), bez prognozy | **zapobieganie** — usuwa najgorszy przypadek (hamowanie wału przy kopnięciu) | ECU-IGN-019 |
+| Timer startowany sprzętowo zboczem natarcia, minimalne opóźnienie 2° | **zapobieganie** — iskra przed zboczem niemożliwa niezależnie od firmware | ECU-IGN-023 |
+| Granica +1° / −2° w 100 % zapłonów poza rozruchem | wymaganie wobec prognozy | ECU-IGN-022 |
+| Przechwytywanie rzeczywistego wyzwolenia tyrystora | **wykrywanie** — nie cofa pojedynczej złej iskry (dopuszczalny czas = 0), zapobiega powtórzeniom | ECU-IGN-024, DTC-IGN-06, -07 |
+
+**Dwa rodzaje przekroczeń, dwie reakcje:** usterka wykonania jest dowodem defektu — tryb zastępczy od pierwszego zdarzenia; błąd prognozy przy prawidłowym wyzwoleniu jest fizyką wału (lądowanie, szarpnięcie sprzęgłem) — reakcja dopiero przy powtarzalności 3/100, żeby twarde lądowanie nie wrzucało trybu zastępczego.
+
+**Tryb zastępczy jest z natury bezpieczny:** iskra na krawędzi spływu nie zależy od prognozy, więc nie może być za wczesna.
+
 #### C.1.10 Wymagania kalibracyjne — do punktu G
 
 | Parametr | Pochodzenie | Uwaga |
@@ -858,7 +882,7 @@ Do zweryfikowania oscyloskopem na pracującym silniku i do uwzględnienia przy p
 
 *Do opracowania.* Mapa rozruchowa, wzbogacenie przy rozgrzewaniu, mapy zapłonu i wtrysku, korekty (temperatura powietrza i cieczy, ciśnienie atmosferyczne, napięcie akumulatora), odcięcie paliwa przy zamkniętej przepustnicy, ogranicznik obrotów, mapa awaryjna przy utracie TPS (B.3.2).
 
-**Wymaganie z analizy termicznej (rozdz. 6.8 dok. procesu):** czas ładowania cewki musi być skracany przy wysokich obrotach — ładowanie tylko do osiągnięcia prądu nasycenia, nie stałe 3 ms. Przy 8000 obr/min i stałym dwell wypełnienie sięga 40%, co daje 4,8 z 5,5 W wszystkich strat cieplnych ECU.
+*(Dawne wymaganie skracania czasu ładowania cewki przy wysokich obrotach usunięte 25.10.2026 — dotyczyło zapłonu indukcyjnego.)*
 
 ---
 
@@ -896,11 +920,19 @@ Zakres: czujnik biegu (pozycje, z uwzględnieniem układu 1-N-2-3-4-5-6 i filtra
 
 ## H. Bootloader i aktualizacja
 
-*Do opracowania*
+**Wymagania: ECU-BTL-001…006 (decyzje Pawła 25.10.2026).** Rozpisanie procedury — po podziale pamięci (punkt D).
 
-**Ustalone (zasada #10 procesu):** dwubankowy, automatyczny powrót do poprzedniej wersji przy nieudanej aktualizacji. STM32G474 i STM32G0B1 mają sprzętowe wsparcie dwubankowej pamięci Flash.
+| Element | Ustalenie |
+|---|---|
+| Warunki dopuszczenia | Kill switch STOP + wał stoi (≥ 2 s bez VR **i** STOP) + VBAT ≥ 12,0 V; sprawdzane przez ECU, utrata warunku przerywa zapis |
+| Rozbrojenie | Sprzętowe przez kill switch: zapłon (ECU-SAF-001) i rozrusznik (ECU-SAF-019) — niezależne od GPIO w trakcie kasowania Flash |
+| Pamięć | Dwa banki; nowy obraz do banku nieaktywnego; przerwanie na dowolnym etapie = praca na poprzedniej wersji |
+| Weryfikacja | CRC-32 (sprzętowy CRC) + zgodność wersji ECU/HMI/protokołu; **bez podpisu cyfrowego** (ryzyko zaakceptowane) |
+| Potwierdzenie | Dojście do GOTOWOŚCI z poprawnym autotestem; 3 nieudane starty → powrót do poprzedniego banku |
+| Bootloader | Zabezpieczony przed zapisem, zmiana tylko przez SWD |
+| HMI | Przez ECU jako pośrednika po CAN (SYS-COM-001a), pakiet ECU+HMI jako jedna transakcja (SYS-COM-005b) |
 
-Zakres do rozpisania: procedura aktualizacji ECU i HMI (HMI przez ECU jako gateway), weryfikacja integralności, kontrola zgodności wersji (zasada #7).
+Pozostaje do rozpisania w punkcie H: format pakietu, sekwencja komend USB, kolejność ECU/HMI w transakcji i odzyskiwanie po niezgodności wersji między urządzeniami (O-041).
 
 ---
 

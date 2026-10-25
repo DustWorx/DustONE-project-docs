@@ -43,7 +43,9 @@ RE_POZYCJA = r'^\|\s*\*{0,2}(O-\d{3})\*{0,2}\s*\|(?:[^|\n]*\|){5,}'
 # Identyfikatory wycofane — nie mogą występować poza zapisem o ich usunięciu.
 # DTC-SEN-04 NIE jest wycofany: został przeniesiony do wariantów B/C, bo
 # czujnik przepustnicy w nich istnieje. Nie wpisywać go tutaj.
-WYCOFANE = ['ECU-IGN-008', 'ECU-IGN-003', 'ECU-IGN-004']
+WYCOFANE = ['ECU-IGN-008', 'ECU-IGN-003', 'ECU-IGN-004',
+            # 25.10.2026: kody zapłonu indukcyjnego i przegrzania zastąpione (AC-CDI, ECU-SAF-020)
+            'DTC-IGN-04', 'DTC-IGN-05', 'DTC-SYS-01']
 KONTEKST_USUNIECIA = ('usunięt', 'Usunięt', 'wycofan', 'Wycofan', 'OBALONE', 'nieaktualn')
 
 bledy = []
@@ -112,7 +114,7 @@ def liczniki(wymagania, firmware, otwarte):
         'wymagania': len(unikalne(RE_WYMAGANIE, czesc_wymagan)),
         'wymagania otwarte MVP-A (blokują G0)': len(otwarte_wymagania),
         'wymagania otwarte B/C (poza G0)': len(otwarte_bc),
-        'kody usterek DTC': len(unikalne(r'\bDTC-[A-Z]{3}-\d{2}\b', firmware, 0)),
+        'kody usterek DTC': len(unikalne(r'\bDTC-[A-Z]{3}-\d{2}\b', firmware, 0) - set(WYCOFANE)),
         'identyfikatory testów': len(unikalne(r'\bT-[A-Z]{3}-\d{3}[a-z]?\b', wymagania, 0)),
         'pozycje otwarte': len(pozycje),
         'założenia': len(zalozenia),

@@ -69,7 +69,7 @@ Nadrzędne wobec bramek poszczególnych faz.
 
 ## 4. Kryteria odbioru wyrobu MVP-A
 
-**Status: propozycja niezatwierdzona (O-050).** Bramki opisują fazy, a te kryteria opisują wyrób — dopóki nie zostaną zatwierdzone, projekt formalnie nie ma definicji gotowości.
+**Status: zatwierdzone przez Pawła 25.10.2026, kryterium po kryterium (O-050).** Bramki opisują fazy, a te kryteria opisują wyrób. A4 uzupełnione o granicę bezwzględną 25.10.2026 (O-007).
 
 Wyrób uznaje się za gotowy, gdy **wszystkie** poniższe są spełnione i udokumentowane:
 
@@ -78,15 +78,17 @@ Wyrób uznaje się za gotowy, gdy **wszystkie** poniższe są spełnione i udoku
 | A1 | Rozruch kickstarterem na zimnym silniku | ≤ 3 kopnięcia, 10 prób z rzędu | Protokół z Fazy 8 |
 | A2 | Rozruch kickstarterem na rozgrzanym silniku | ≤ 2 kopnięcia, 10 prób | jw. |
 | A3 | Praca ciągła w całym zakresie obrotów bez przerw w zapłonie | 800–10 000 obr/min | Rejestracja przerw |
-| A4 | Dokładność momentu zapłonu | wg ECU-IGN-002 **oraz bezwzględnej granicy błędu (O-007)** | T-IGN-002 |
+| A4 | Dokładność momentu zapłonu | wg ECU-IGN-002 (≤ 1,0° w 99,9 %) **oraz ECU-IGN-022: w 100 % zapłonów wcześniej ≤ 1°, później ≤ 2°**; w rozruchu iskra w GMP (ECU-IGN-019) | T-IGN-002, T-IGN-019, T-IGN-022 |
 | A5 | Każdy mechanizm klasy K4 zweryfikowany wstrzykiwaniem usterki | 100% pozycji | Protokoły T-SAF-* |
-| A6 | Pobór prądu w uśpieniu | ECU ≤ 150 µA, zestaw ≤ 250 µA — **wartość do rewizji, patrz O-023** | T-PWR-001, T-PWR-002 |
+| A6 | Pobór prądu w uśpieniu | ECU ≤ 150 µA, zestaw ≤ 250 µA (bilans: ≤ 63 / ≤ 123 µA) | T-PWR-001, T-PWR-002 |
 | A7 | Przejazd terenowy bez usterki krytycznej i bez fałszywego odcięcia | **10 godzin** pracy silnika w terenie | Log czarnej skrzynki |
-| A8 | Temperatura wewnątrz obudów w granicach klas komponentów | pomiar w warunkach letnich | Protokół termiczny |
+| A8 | Temperatura wewnątrz obudów w granicach klas komponentów z marginesem SYS-ENV-003b | **Komora klimatyczna +85 °C otoczenia** oraz **dane z czujników temperatury ECU z przejazdu A7**; w miejscu akcelerometru **≤ 100 °C** (Z17); żadne zadziałanie progu T3 (ECU-SAF-020) | Protokół z komory + log |
 | A9 | Czytelność wyświetlacza w pełnym słońcu | wg HMI-UI-005 | T-UI-005 |
-| A10 | Pełny cykl: strojenie mapy, zapis, aktualizacja firmware ECU i HMI, powrót do pracy | bez utraty spójności danych | T-COM-005b, T-COM-006 |
+| A10 | Pełny cykl: strojenie mapy, zapis, aktualizacja firmware ECU i HMI, powrót do pracy, **w tym przerwanie aktualizacji w losowym momencie** | bez utraty spójności danych; ECU zawsze startuje | T-COM-005b, T-COM-006, T-BTL-003 |
 | A11 | Pozycje P0 otwarte | **zero** | `otwarte.md` |
 | A12 | Ryzyka o wpływie wysokim | zamknięte dowodem albo **świadomie zaakceptowane na piśmie** | `otwarte.md` |
+| **A14** | **Rozruch kopnięciem przy bardzo słabym akumulatorze** — zasilacz 7 V na złączu ECU zamiast akumulatora (ECU-IGN-021) | **≤ 5 kopnięć**, 10 prób | Protokół z Fazy 8 |
+| **A15** | **Zero fałszywych wywrotek, w tym na hopach** (ECU-SAF-005) | przejazd A7 zawiera hopy; zero zadziałań | Log kąta i przyspieszenia z czarnej skrzynki |
 | **A13** | **Brak nieplanowanej iskry** w żadnym scenariuszu: reset, zanik zasilania, kill switch, utrata synchronizacji, aktualizacja firmware, ruch wsteczny wału | zero zdarzeń | Protokoły T-AUD-03, T-AUD-05, T-AUD-10 |
 
 **A7 jest kryterium najtrudniejszym i celowo takim pozostaje.** Dziesięć godzin realnej jazdy wyłapie to, czego nie wyłapie żadne stanowisko: zakłócenia, wibracje, błoto, temperaturę, zachowanie kierowcy. Jeśli któregokolwiek z pozostałych kryteriów nie da się zmierzyć przed A7, znaczy to, że A7 przyszło za wcześnie.
@@ -102,14 +104,38 @@ Kolejność wynika z jednej reguły: **dane wejściowe przed decyzjami, które o
 | Etap | Zakres | Co rozstrzyga |
 |---|---|---|
 | **0** | Repozytorium i baseline, uczciwe statusy, korekta potwierdzonych błędów zapisu | Utrwalenie stanu — **wykonane 13.10.2026** |
-| **1** | **Triaż zapłonu i oględziny na motocyklu** (`measurements/triaz-zaplonu.md`) | Czy driver zapłonu i cała architektura ładowania cewki zostają w projekcie |
-| **2** | Pełna sesja pomiarowa i naprawa założeń fizycznych | Topologia zapłonu, kąt odniesienia, budżet latencji, model usterek ogranicznika dwell |
-| **3** | Zamknięcie G0 | Obwiednia środowiskowa, granica błędu kąta, polityka live tuningu, wymagania bootloadera i wybudzania, budżet wykonalności, zamiennik IMU |
-| **4** | Architektura, schemat, G1 i G2 | Tor energii, logika odcięcia, niezależny sufit czasu ładowania, wiązka, EMC, termika. **Niezależny przegląd ludzki przed PCB** |
+| **1** | **Triaż zapłonu i oględziny na motocyklu** (`measurements/triaz-zaplonu.md`) | Czy driver zapłonu i cała architektura ładowania cewki zostają w projekcie — **wykonane 15.10.2026: zapłon nie jest indukcyjny, przyjęte AC-CDI** |
+| **2** | Pełna sesja pomiarowa i naprawa założeń fizycznych | Topologia zapłonu, kąt odniesienia, budżet latencji, przebieg uzwojenia wzbudzającego względem GMP (AC-CDI) |
+| **3** | Zamknięcie G0 | Obwiednia środowiskowa, granica błędu kąta, polityka live tuningu, wymagania bootloadera i wybudzania, budżet wykonalności, zamiennik IMU (**wybrany 25.10.2026: AIS2IH**, warunek Z17) |
+| **4** | Architektura, schemat, G1 i G2 | Tor energii AC-CDI, logika odcięcia, niezależne ograniczenie wyzwalania tyrystora (ECU-IGN-005), wiązka, EMC, termika. **Niezależny przegląd ludzki przed PCB** |
 | **5** | Dokończenie punktu C, punkt D, punkt H, protokoły | Rozruch i synchronizacja, struktura map, bootloader, komunikacja |
 | **6** | Stanowisko i G3 | Wstrzykiwanie usterek, standard kodowania, odtwarzalny build |
 
 ---
+
+### 5.1 Wyposażenie pomiarowe i założenia budżetowe (O-051, decyzje Pawła 25.10.2026)
+
+**Budżet i zakupy prowadzi Paweł.** Ten rozdział zapisuje tylko skutki techniczne.
+
+| Przyrząd | Do czego | Stan |
+|---|---|---|
+| Rigol DHO804 (4 kanały, 70 MHz) | Oscylogramy zapłonu, VR, zasilania | jest |
+| 3× sonda P4100 100:1 / 2 kV | Uzwojenie wzbudzające, pierwotne cewki, uzwojenie ładujące | do kupienia |
+| Multimetr, miernik µA | Rezystancje, pobór w uśpieniu (T-PWR-001/002) | jest |
+| ST-LINK na płytce Nucleo | Programowanie i debugowanie przez SWD | jest |
+| Zasilacz laboratoryjny 0–30 V / 5 A | 7 V (A14), 18 V, −14 V (zamiana przewodów), zapady | do kupienia |
+| **Symulator VR na Nucleo z DAC** | Testy zapłonu na stanowisku: obroty, hamowanie wału, zakłócenia, **wyjście cyfrowe „prawdziwego kąta” jako niezależne odniesienie** | do zbudowania |
+| Adapter USB-CAN (typu CANable) | Podgląd i wstrzykiwanie ramek — **niezależny od ECU** | do kupienia |
+| STEVAL-MKI218V1 + STEVAL-MKI109D | Drgania w miejscu montażu (O-047) | do kupienia |
+| Własna komora grzewcza (+85 °C) | A8, SYS-ENV-003 strona gorąca, progi ECU-SAF-020 | do zbudowania |
+| Termopary z rejestratorem, luksomierz | A8, A9 | do kupienia |
+
+**Pomiar kąta zapłonu (wymóg O-051):** na stanowisku odniesieniem jest **wyjście kąta z symulatora VR**, które nie przechodzi przez kondycjoner ECU. Przy 10 000 obr/min 1° to 16,7 µs, a oscyloskop i timery dają rozdzielczość w nanosekundach, więc niepewność toru jest o rzędy wielkości mniejsza od granicy ECU-IGN-022. **Na silniku** niezależne odniesienie to lampa stroboskopowa z tarczą kątową (niepewność rzędu 0,5–1°). Wystarcza do porównania z fabrycznym CDI, **nie** do dowodu granicy 1°. Granicę dowodzi stanowisko.
+
+**Świadomie przyjęte luki w dowodach:**
+- **−40 °C (SYS-ENV-003) bez pomiaru.** Zamrażarka daje ok. −20…−30 °C. Dolna granica wykazywana analizą klas temperaturowych elementów (SYS-ENV-003b)
+- **EMC bez laboratorium akredytowanego** (decyzja 18.10.2026, SYS-ENV-010)
+- **Jedna iteracja PCB.** Warunek: pełny przegląd schematu i płytki przed zamówieniem, w tym niezależny przegląd ludzki toru zapłonu i odcięcia (O-057)
 
 ## 6. Dokumenty
 

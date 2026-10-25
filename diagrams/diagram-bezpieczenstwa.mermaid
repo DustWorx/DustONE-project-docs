@@ -8,6 +8,8 @@
 %% Objasnienia i uzasadnienia kazdej sciezki: faza2-fw-specyfikacja.md punkt B.
 %% Zmiana 1.2 (29.09.2026): pokazany mechanizm wykrycia szyny 5 V (ADC + Power Good)
 %%   oraz rezystory sciagajace na linii bramkujacej EN (ECU-SAF-016).
+%% Zmiana 2.0 (25.10.2026): tor AC-CDI — bramka impulsowa zamiast sufitu HRTIM, dwie sciezki kill switcha,
+%%   wywrotka z akcelerometru AIS2IH (ECU-SAF-005).
 
 flowchart TB
 
@@ -21,7 +23,7 @@ flowchart TB
 
     subgraph FWS["2. Zrodla programowe - wymagaja dzialajacego firmware"]
         direction LR
-        IMU_F["Wywrotka IMU<br/>ponad 65 st. przez 3 s"]
+        IMU_F["Wywrotka AIS2IH<br/>kat z wektora grawitacji<br/>0,8-1,2 g, 3 s"]
         SYNC["Utrata<br/>synchronizacji"]
         INJ_S["Wtryskiwacz<br/>zwarty"]
         RAIL["Szyna 5 V ponizej 4,50 V<br/>wykryte przez ADC<br/>+ sygnal Power Good"]
@@ -30,7 +32,7 @@ flowchart TB
 
     subgraph MECH["3. Mechanizm"]
         direction LR
-        CMP["Komparator kill switcha<br/>+ rezystory sciagajace<br/>na linii bramkujacej EN"]
+        CMP["Komparator kill switcha<br/>zwarcie wzbudzajacego + bramki tyrystora<br/>blokada rozrusznika"]
         RST["Reset MCU<br/>+ rezystory sciagajace"]
         FWT["Zadanie<br/>bezpieczenstwa K4"]
     end
@@ -57,8 +59,8 @@ flowchart TB
     FWT --> CUT_L
     REV --> CUT_T
 
-    HRT["Rejestr okresu HRTIM<br/>sufit czasu ladowania cewki<br/>i dlugosci impulsu<br/>NIE gasi silnika"]
-    HRT ==> LIMIT["Ograniczenie<br/>dlugosci impulsu"]
+    HRT["Bramka tyrystora sprzezona<br/>pojemnosciowo (ECU-IGN-005)<br/>NIE gasi silnika"]
+    HRT ==> LIMIT["Zawieszone wyjscie<br/>= najwyzej jedna iskra"]
 
     classDef hw fill:#1f6feb,stroke:#0b3d91,color:#ffffff,stroke-width:2px
     classDef fw fill:#8957e5,stroke:#4c2889,color:#ffffff
