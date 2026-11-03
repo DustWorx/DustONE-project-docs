@@ -10,6 +10,8 @@
 %%   oraz rezystory sciagajace na linii bramkujacej EN (ECU-SAF-016).
 %% Zmiana 2.0 (25.10.2026): tor AC-CDI — bramka impulsowa zamiast sufitu HRTIM, dwie sciezki kill switcha,
 %%   wywrotka z akcelerometru AIS2IH (ECU-SAF-005).
+%% Zmiana 2.1 (1.11.2026): dwa osobne uklady progowe kill switcha (firmware.md B.1.3).
+%% Zmiana 2.2 (1.11.2026): watchdog w PMIC TPS65381A-Q1, ENDRV blokuje zaplon sprzetowo.
 
 flowchart TB
 
@@ -17,7 +19,7 @@ flowchart TB
         direction LR
         KS_PRESS["Kill switch<br/>nacisniety"]
         KS_BREAK["Przerwa przewodu<br/>kill switcha"]
-        WDG["Watchdog<br/>TPS3430-Q1"]
+        WDG["Watchdog PMIC<br/>TPS65381A-Q1<br/>ENDRV + reset"]
         BOR["Brown-out<br/>w STM32G474"]
     end
 
@@ -32,7 +34,8 @@ flowchart TB
 
     subgraph MECH["3. Mechanizm"]
         direction LR
-        CMP["Komparator kill switcha<br/>zwarcie wzbudzajacego + bramki tyrystora<br/>blokada rozrusznika"]
+        CMP["Komparator kill switcha<br/>zezwolenie bramki AND<br/>+ PROFET rozrusznika"]
+        THR["Prog tranzystorowy kill switcha<br/>zwarcie wzbudzajacego<br/>+ klucz masy rozrusznika"]
         RST["Reset MCU<br/>+ rezystory sciagajace"]
         FWT["Zadanie<br/>bezpieczenstwa K4"]
     end
@@ -45,7 +48,10 @@ flowchart TB
 
     KS_PRESS ==> CMP
     KS_BREAK ==> CMP
+    KS_PRESS ==> THR
+    KS_BREAK ==> THR
     WDG ==> RST
+    WDG ==>|"ENDRV"| CUT_T
     BOR ==> RST
 
     RAIL --> SYNC
@@ -54,6 +60,7 @@ flowchart TB
     INJ_S --> FWT
 
     CMP ==> CUT_T
+    THR ==> CUT_T
     KS_BREAK ==> CUT_L
     RST ==> CUT_L
     FWT --> CUT_L

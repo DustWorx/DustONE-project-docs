@@ -45,6 +45,7 @@ Na złączach między silnikiem a sterownikiem zapłonu zapisz **kolory** i zmie
 | Uzwojenie wzbudzające (2 przewody statora do sterownika) | …… Ω | …… |
 | Pick-up (osobna wtyczka) | …… Ω | …… |
 | Każdy z przewodów powyżej względem masy silnika | …… (zwarty / izolowany) | — |
+| **Przycisk kill:** przewód kill względem masy — przycisk puszczony / wciśnięty (dodane 1.11.2026, O-015) | …… / …… Ω | …… |
 
 Ostatni wiersz rozstrzyga, czy uzwojenie wzbudzające i pick-up są pływające, czy mają jeden koniec na masie. Potrzebne do projektu wejść ECU.
 
@@ -86,6 +87,12 @@ Jeśli wysokie napięcie wychodzi poza ekran — zwiększ V/dz na CH1–CH3 i po
 
 **5b. Napięcie jałowe uzwojenia ładującego — najgorszy przypadek awarii regulatora.** Silnik zgaszony: **odpiąć złącze regulatora od statora**. Sondy P4100 (100X) na obu przewodach uzwojenia ładującego względem masy, MATH = różnica. Krótko na biegu jałowym, ~5000 i najwyższych bezpiecznych obrotach. **Napięcie może przekroczyć 100 V** — te same zasady co przy uzwojeniu wzbudzającym. Motocykl pracuje wtedy na samym akumulatorze — krótko. Po pomiarze złącze regulatora z powrotem.
 
+## Krok 6 — Obrót wsteczny i liczba obrotów na kopnięcie (dodane 1.11.2026, O-009, ECU-IGN-019)
+
+**6a. Cofnięcie wału.** Podłączenie jak w kroku 3. Tryb Single, 50 ms/dz, wyzwalanie na CH4 (pick-up). **Wolne, niepełne kopnięcie**: wał przechodzi przez wypust, nie pokonuje sprężania i **cofa się przez wypust**. Zapis 3–5 razy. Interesuje mnie: kształt pick-upu przy cofnięciu wobec obrotu do przodu (CH4), czy uzwojenie wzbudzające ładuje wtedy kondensator (MATH) i **czy fabryczne CDI daje iskrę przy cofnięciu** (CH3). Zwykła technika kopania, buty — jak przy normalnym odpalaniu.
+
+**6b. Obroty na kopnięcie.** Kill switch wciśnięty (silnik nie odpali, pick-up dalej widoczny). Tryb Single, 200 ms/dz, wyzwalanie na CH4. Jedno pełne, energiczne kopnięcie — zliczę przejścia wypustu. Powtórzyć 3 razy.
+
 ## Co z tego wyliczę
 
 | Wielkość | Z czego | Do czego |
@@ -97,5 +104,8 @@ Jeśli wysokie napięcie wychodzi poza ekran — zwiększ V/dz na CH1–CH3 i po
 | Kształt impulsu na pierwotnym cewki | CH3 | Napięcie i czas impulsu — wymagania dla tyrystora |
 | Napięcie i tętnienia akumulatora | Krok 5a | Wymaganie odporności na tętnienia (×2 zmierzonych) |
 | Napięcie jałowe uzwojenia ładującego | Krok 5b | Korekta wartości 35 V w SYS-ENV-009, dobór TVS |
+| Pick-up przy cofnięciu wobec obrotu do przodu | Krok 6a, CH4 | Czy kierunek da się rozpoznać z sygnału (ECU-IGN-019, O-009) |
+| Iskra i ładowanie kondensatora przy cofnięciu | Krok 6a, CH3 i MATH | Czy fabryczne CDI chroni się przed iskrą wsteczną fizyką uzwojenia |
+| Liczba obrotów wału na kopnięcie | Krok 6b | Koszt potwierdzenia kierunku (do jednego obrotu na kopnięcie), kryterium A14 |
 
 **Prześlij:** pliki CSV, zrzuty ekranu, tabelę z kroku 2 i zdjęcie miejsca wpięcia sond.

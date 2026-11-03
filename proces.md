@@ -24,7 +24,7 @@ Analiza wspierana modelem językowym nie jest niezależnym przeglądem ludzkim. 
 |---|---|---|
 | 0 | Wymagania (ECU + HMI + aplikacja) | ⬜ **otwarta** — bramka G0 zablokowana |
 | 1 | Architektura systemu | ⚠️ warunkowo — brak diagramu elektrycznego |
-| 2-ECU | Projekt szczegółowy sprzętu ECU | ⚠️ warunkowo — dobór przetwornic, komparatora, potwierdzenie BOM |
+| 2-ECU | Projekt szczegółowy sprzętu ECU | ⚠️ warunkowo — elementy wokół PMIC (przyjęty 1.11.2026), komparator i próg tranzystorowy, potwierdzenie BOM |
 | 2-HMI | Projekt szczegółowy sprzętu HMI | ⚠️ warunkowo — drzewo zasilania, drabinka przycisków, pełny numer pamięci |
 | **2-FW** | **Specyfikacja funkcjonalna firmware** | 🔶 **w toku** — A i B zamknięte, C.1 do ponownego przeglądu, C.2–J otwarte |
 | 2-Desktop | Aplikacja desktop i protokoły komunikacji | ⬜ |
@@ -82,7 +82,7 @@ Wyrób uznaje się za gotowy, gdy **wszystkie** poniższe są spełnione i udoku
 | A5 | Każdy mechanizm klasy K4 zweryfikowany wstrzykiwaniem usterki | 100% pozycji | Protokoły T-SAF-* |
 | A6 | Pobór prądu w uśpieniu | ECU ≤ 150 µA, zestaw ≤ 250 µA (bilans: ≤ 63 / ≤ 123 µA) | T-PWR-001, T-PWR-002 |
 | A7 | Przejazd terenowy bez usterki krytycznej i bez fałszywego odcięcia | **10 godzin** pracy silnika w terenie | Log czarnej skrzynki |
-| A8 | Temperatura wewnątrz obudów w granicach klas komponentów z marginesem SYS-ENV-003b | **Komora klimatyczna +85 °C otoczenia** oraz **dane z czujników temperatury ECU z przejazdu A7**; w miejscu akcelerometru **≤ 100 °C** (Z17); żadne zadziałanie progu T3 (ECU-SAF-020) | Protokół z komory + log |
+| A8 | Temperatura wewnątrz obudów w granicach klas komponentów z marginesem SYS-ENV-003b | **Komora klimatyczna +50 °C otoczenia** (SYS-ENV-003, zmiana 1.11.2026) oraz **dane z czujników temperatury ECU z przejazdu A7**; w miejscu akcelerometru **≤ 100 °C** (Z17); żadne zadziałanie progu T3 (ECU-SAF-020) | Protokół z komory + log |
 | A9 | Czytelność wyświetlacza w pełnym słońcu | wg HMI-UI-005 | T-UI-005 |
 | A10 | Pełny cykl: strojenie mapy, zapis, aktualizacja firmware ECU i HMI, powrót do pracy, **w tym przerwanie aktualizacji w losowym momencie** | bez utraty spójności danych; ECU zawsze startuje | T-COM-005b, T-COM-006, T-BTL-003 |
 | A11 | Pozycje P0 otwarte | **zero** | `otwarte.md` |
@@ -127,7 +127,7 @@ Kolejność wynika z jednej reguły: **dane wejściowe przed decyzjami, które o
 | **Symulator VR na Nucleo z DAC** | Testy zapłonu na stanowisku: obroty, hamowanie wału, zakłócenia, **wyjście cyfrowe „prawdziwego kąta” jako niezależne odniesienie** | do zbudowania |
 | Adapter USB-CAN (typu CANable) | Podgląd i wstrzykiwanie ramek — **niezależny od ECU** | do kupienia |
 | STEVAL-MKI218V1 + STEVAL-MKI109D | Drgania w miejscu montażu (O-047) | do kupienia |
-| Własna komora grzewcza (+85 °C) | A8, SYS-ENV-003 strona gorąca, progi ECU-SAF-020 | do zbudowania |
+| Własna komora grzewcza (+50 °C, SYS-ENV-003 od 1.11.2026) | A8, SYS-ENV-003 strona gorąca, progi ECU-SAF-020 | do zbudowania |
 | Termopary z rejestratorem, luksomierz | A8, A9 | do kupienia |
 
 **Pomiar kąta zapłonu (wymóg O-051):** na stanowisku odniesieniem jest **wyjście kąta z symulatora VR**, które nie przechodzi przez kondycjoner ECU. Przy 10 000 obr/min 1° to 16,7 µs, a oscyloskop i timery dają rozdzielczość w nanosekundach, więc niepewność toru jest o rzędy wielkości mniejsza od granicy ECU-IGN-022. **Na silniku** niezależne odniesienie to lampa stroboskopowa z tarczą kątową (niepewność rzędu 0,5–1°). Wystarcza do porównania z fabrycznym CDI, **nie** do dowodu granicy 1°. Granicę dowodzi stanowisko.

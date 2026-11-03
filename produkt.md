@@ -61,59 +61,152 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | Funkcja | Układ | Pełny numer | Kwalifikacja / zakres | Uwagi |
 |---|---|---|---|---|
 | Mikrokontroler | **STM32G474VET3** | STM32G474VET3 | −40…+125 °C | Wybrany za HRTIM. **Sufiks T3, nie T6** — T6 ma tylko −40…+85 °C, a analiza termiczna daje do 84 °C wewnątrz obudowy. **LQFP100, nie LQFP64** — bilans wykazał 55 potrzebnych sygnałów wobec ~50 użytkowych w LQFP64; LQFP100 daje ~82 piny, zapas ~27. 512 KB Flash, 128 KB RAM, 170 MHz, HRTIM, FDCAN, USB |
-| Tor zapłonu | **AC-CDI — blok dyskretny** | ⚠️ do doboru | ⚠️ do kwalifikacji | Prostownik WN, kondensator zapłonowy, tyrystor, rezystor rozładowujący, ochrona przepięciowa; **bramka tyrystora sprzężona pojemnościowo** (ECU-IGN-005), **tranzystor zwierający bramkę do katody** sterowany kill switchem (ECU-SAF-001), **dzielnik napięcia uzwojenia wzbudzającego** do ADC (ECU-SAF-021). Dobór i arkusze kwalifikacji w O-001 — elementy istotne dla bezpieczeństwa. **VBG08H-E usunięty 15.10.2026** |
+| Tor zapłonu | **AC-CDI — blok dyskretny** | ⚠️ do doboru | ⚠️ do kwalifikacji | Prostownik WN, kondensator zapłonowy, tyrystor, rezystor rozładowujący, ochrona przepięciowa; **bramka tyrystora sprzężona pojemnościowo** (ECU-IGN-005), **bramka AND w torze impulsu**: impuls z HRTIM × zezwolenie z komparatora kill switcha, rezystory ściągające na obu wejściach (ECU-SAF-001, -016; decyzja Pawła 1.11.2026 — zastępuje tranzystor zwierający bramkę do katody), **dzielnik napięcia uzwojenia wzbudzającego** do ADC (ECU-SAF-021); **dwa łańcuchy rezystorów na kondensatorze**: rozładowujący (ECU-IGN-026) i pomiarowy do ADC, próbkowany sprzętowo przed iskrą (ECU-IGN-028, -029; decyzja Pawła 1.11.2026). Dobór i arkusze kwalifikacji w O-001 — elementy istotne dla bezpieczeństwa. **VBG08H-E usunięty 15.10.2026** |
 | Driver wtryskiwaczy | **TLE9104SH** | TLE9104SHXUMA1 | ✅ Aktywny, AEC-Q100/101 | Historia doboru: L9960 (błąd — mostek H do silników DC) → TLE8104E (funkcjonalnie dobry, **status NRND**) → TLE9104SH. Dane wtryskiwaczy KTM TPI/TBI: 11,7 Ω nom., prąd ~1,23 A przy 14,4 V = wysokoimpedancyjne, **peak-and-hold niepotrzebne, wystarcza tryb nasycony**. 4 kanały low-side (2 na wtryskiwacze, 2 zapas), 3 A/kanał, SPI z diagnostyką. Pin EN jest punktem sprzętowego bramkowania od kill switcha |
 | Transceiver CAN ×2 | **TJA1043** | ⚠️ do ustalenia | ✅ Aktywny, AEC-Q100 (strona NXP) | TJA1051T/3 odrzucony — nie ma wybudzania przez magistralę. **Od 18.10.2026 steruje zasilaniem: wyjście INH włącza obie przetwornice, w uśpieniu (Sleep) czuwa sam z pinu BAT, 18 µA typ. / 30 µA maks.** Reguły schematu: rozdz. 6.2. Ten sam układ w ECU i HMI. **NXP wskazuje TJA1443A jako następcę** — zgodność do sprawdzenia przy doborze pełnego numeru (Faza 4) |
 | Akcelerometr (dawniej IMU) | **ST AIS2IH** | AIS2IHTR | ✅ **AEC-Q100** (karta DS12421 rev. 4, str. 1); **−40…+115 °C** — warunkowo wobec SYS-ENV-003b (założenie Z17); aktywny, dostępność deklarowana przez ST do 01/2033 | **Decyzja Pawła 25.10.2026: sam akcelerometr, bez żyroskopu** — żyroskopy MEMS są wrażliwe na drgania (przesunięcie zera → dryf kąta), a wywrotka to kąt grawitacji w spoczynku. Zakres **±16 g** (czarna skrzynka), odporność na udar 10 000 g (0,2 ms, bez zasilania), filtr pasma ODR/2…ODR/20 jako antyaliasing, samotest, dryf zera ±0,2 mg/°C, SPI, LGA-12 2×2 mm. Zasilany z szyny 3,3 V — w uśpieniu bez zasilania. **Czego nie robi:** nie liczy kąta (robi to MCU); nie mierzy powyżej ±16 g (wypadek ponad zakres = nasycenie); nie jest elementem bezpieczeństwa funkcjonalnego (ST: zastosowania motoryzacyjne bez funkcji bezpieczeństwa). **Zapasowy:** Murata SCA3300-D01-1 (−40…+125 °C, ±6 g, bez deklaracji AEC-Q). Odrzucone: BMI090L, IAM-20381HT (Grade 2, 105 °C), ADXL317 (I²S, 5 mA), SMA130 (85 °C), AIS3624DQ (wycofany), FXLS8964/67 (105 °C) |
 | Pamięć logów | **W25Q64** (8 MB, SPI NOR) | ⚠️ rodzina, nie numer | ⚠️ klasa przemysłowa | Czarna skrzynka, 8 MB z zapasem; wlutowana, bez slotu. Pełny numer i klasa do ustalenia (O-063) |
 | Wyjścia pomocnicze | BTS7008-2EPA ×3 | ⚠️ do ustalenia | AEC-Q100 | PROFET+2, 6 kanałów, diagnostyka, ochrona zwarciowa i odwrotnej polaryzacji. **7,5 A/kanał to wartość nominalna w określonych warunkach, nie dopuszczalny prąd roboczy dowolnego obciążenia** |
-| Kondycjoner VR/Hall | **MAX9926** | MAX9926UAEE/V+ | ✅ Production, −40…+125 °C, automotive | Adaptacyjny próg 33% poprzedniego szczytu, detekcja przejścia przez zero, czułość od 20 mV, odporność na pominięty ząb. **Pobór 4,7 mA typ./10 mA max, brak trybu shutdown** — musi być odcinany przełącznikiem obciążenia. Wersja dwukanałowa; jednokanałowy MAX9924 jest mniejszy i tańszy. Jedyna pozycja niedostępna w TME (O-033) |
+| Kondycjoner VR/Hall | **MAX9926** | MAX9926UAEE/V+ | ✅ Production, −40…+125 °C, automotive | Adaptacyjny próg 33% poprzedniego szczytu, detekcja przejścia przez zero, czułość od 20 mV, odporność na pominięty ząb. **Pobór 4,7 mA typ./10 mA max, brak trybu shutdown** — w uśpieniu odcinany razem z VDD5 PMIC (od 1.11.2026; wcześniej przełącznikiem obciążenia). Wersja dwukanałowa; jednokanałowy MAX9924 jest mniejszy i tańszy. Jedyna pozycja niedostępna w TME (O-033) |
 | Ciśnienie atmosferyczne | **Infineon KP464** | KP464XTMA1 / KP464EXTMA1 — do ustalenia przy zakupie | ✅ **AEC-Q103-002** (karta rev. 1.20, str. 1) — standard AEC dla czujników MEMS; **−40…+125 °C** | **Montowany od początku na PCB MVP-A** (decyzja Pawła 25.10.2026). W MVP-A tylko logowanie ciśnienia i wysokości; korekta dawki w B/C. Zakres 40–115 kPa, ±1,0 kPa (0…85 °C), ±1,5 kPa na krańcach; SPI 16-bit; zasilanie 3,0–5,25 V, 3,5 mA aktywnie, 10 µA w power-down; start 5–10 ms; diagnostyka toru sygnału, komórki i EEPROM. **Uwagi z karty:** czuły na światło > 1 lx (obudowa nieprzezroczysta, membrana nieprzepuszczająca światła); pin VPROG wyłącznie do programowania EEPROM — podłączenie wg angielskiej karty. **Wymaga otworu ciśnieniowego z membraną IP67 w obudowie.** ⚠️ Dostępność: Farnell — 52 tyg. i MOQ 3400 szt. dla KP464E; dostępność w małych ilościach do sprawdzenia (TME → Mouser → Farnell → DigiKey) w Fazie 4. BMP390 odrzucony (bez kwalifikacji, 85 °C) |
 | Pozycja biegu | MLX90316 | ⚠️ do ustalenia | ⚠️ do potwierdzenia | Triaxis, bezstykowy, kąt magnesu 0–360°, wyjście analogowe. **Wykonalność mechaniczna na Becie niepotwierdzona (O-031)** |
-| **Przetwornica 5,0 V** | do doboru | — | — | Nastawa stała (dzielnik rezystorowy), wyjście Power Good. Zasila VCC transceivera oraz — przez przełącznik obciążenia — czujniki zewnętrzne, MAX9926 i MLX90316. **Wejście EN sterowane z INH TJA1043** — musi znosić napięcie akumulatora i wyłączać przetwornicę przy INH niesterowanym. Prąd w stanie wyłączonym ≤ 5 µA (przydział, rozdz. 6.1) |
-| **Przetwornica 3,3 V** | do doboru | — | — | Nastawa stała, Power Good. Zasila procesor, watchdog, pamięć, IMU i VIO transceivera. **Wejście EN sterowane z INH TJA1043** (te same wymagania co 5 V). Prąd w stanie wyłączonym ≤ 5 µA (przydział). Wymaga filtru LC dla części analogowej procesora |
-| **Czujniki temperatury wnętrza ECU** | 2× termistor NTC, AEC-Q200 | do doboru (Faza 4) | AEC-Q200 | Przy bloku CDI i w sekcji mocy (PROFET-y, przetwornice). Razem z czujnikiem w MCU realizują ochronę termiczną ECU-SAF-020 (T1/T2/T3) i dane do logu z jazdy (A8, Z17). Dzielnik z szyny wyłączanej w uśpieniu — 0 µA w bilansie 6.1 (decyzja Pawła 25.10.2026) |
-| **Komparator kill switcha** | do doboru | — | — | Bramkuje wejścia EN driverów, **wejście PROFET kanału rozrusznika** (ECU-SAF-019) **oraz klucz po stronie masy cewki przekaźnika rozrusznika** (ECU-SAF-022) sygnałem kill switcha, niezależnie od firmware (od 25.10.2026). Jeden próg między poziomem RUN a STOP układu trzypoziomowego — odcina i przy naciśnięciu, i przy przerwie w przewodzie. Zasilany z szyny 5 V za przełącznikiem obciążenia, więc w uśpieniu nie obciąża budżetu. **Komparator wewnętrzny procesora świadomie odrzucony**: jest konfigurowany przez firmware, a to dokładnie ta zależność, którą zakwestionował audyt |
-| **Przełącznik obciążenia 5 V** | do doboru | — | — | Odcina czujniki zewnętrzne, MAX9926 i MLX90316 w uśpieniu. Powinien mieć ograniczanie prądu — izoluje zwarcie w okablowaniu zewnętrznym od reszty układu |
+| **PMIC — zasilanie, nadzór szyn, watchdog** | **TI TPS65381A-Q1** | TPS65381AQDAPRQ1 | ✅ ACTIVE, AEC-Q100 Grade 1, TA −40…+125 °C | **Decyzja Pawła 1.11.2026 (O-018)**, arkusz w rozdz. 4.5. Przetwornica wstępna 6 V → **VDD5** 5,0 V ±2 % (TJA1043 VCC, MAX9926, komparator, bramka AND), **VDD3/5** 3,3 V (procesor, pamięć, AIS2IH, TJA1043 VIO, próg tranzystorowy), **VSOUT1** 5 V ±3 % dla czujników w wiązce (ochrona przed zwarciem do masy i akumulatora, domyślnie wyłączone). Nadzór UV/OV wszystkich szyn z osobnym źródłem odniesienia, watchdog, **ENDRV** → bramka AND zapłonu, blokada PROFET rozrusznika, **(B/C) EN TLE9104 i PROFET pompy**, **NRES** → reset procesora. **Wejście IGN z INH TJA1043** przez ≥ 10 kΩ. STANDBY ≤ 75 µA. Zastępuje: przetwornice 5,0 V i 3,3 V, TPS3430-Q1, przełącznik obciążenia 5 V |
+| **Czujniki temperatury wnętrza ECU** | 2× termistor NTC, AEC-Q200 | do doboru (Faza 4) | AEC-Q200 | Przy bloku CDI i w sekcji mocy (PROFET-y, PMIC). Razem z czujnikiem w MCU realizują ochronę termiczną ECU-SAF-020 (T1/T2/T3) i dane do logu z jazdy (A8, Z17). Dzielnik z szyny wyłączanej w uśpieniu — 0 µA w bilansie 6.1 (decyzja Pawła 25.10.2026) |
+| **Komparator kill switcha** | do doboru | — | — | Daje **zezwolenie dla impulsu bramki tyrystora** (bramka AND, od 1.11.2026), bramkuje wejścia EN driverów i **wejście PROFET kanału rozrusznika** (ECU-SAF-019). **Klucz masy rozrusznika i zwarcie uzwojenia wzbudzającego steruje osobny próg tranzystorowy** (1.11.2026, B.1.3) sygnałem kill switcha, niezależnie od firmware (od 25.10.2026). Jeden próg między poziomem RUN a STOP układu trzypoziomowego — odcina i przy naciśnięciu, i przy przerwie w przewodzie. Zasilany z **VDD5 PMIC** — w uśpieniu wyłączony razem z PMIC (od 1.11.2026). **Komparator wewnętrzny procesora świadomie odrzucony**: jest konfigurowany przez firmware, a to dokładnie ta zależność, którą zakwestionował audyt |
+| **Próg tranzystorowy kill switcha** | dyskretny, do doboru | — | elementy do kwalifikacji (próg zależy od Vbe i rezystorów — pola 4, 6 arkusza) | **Drugi, niezależny od komparatora układ czytający przewód kill switcha** (decyzja Pawła 1.11.2026). Steruje kluczem zwierającym uzwojenie wzbudzające, blokadą klucza masy rozrusznika i **(B/C) wejściem RESN TLE9104**. Utknięcie jednego z progów w RUN nie znosi wszystkich blokad. Zasilanie z innej szyny niż komparator — propozycja VDD3/5 (3,3 V), do potwierdzenia przy schemacie. Wyjście odczytywane przez procesor (ECU-SAF-021) |
+| **Podciągnięcie drabinki kill switcha** | rezystor | — | — | **Z VDD5 (szyna wewnętrzna), nigdy z VSOUT1** (reguła 1.11.2026): kill switch nie może zależeć od zasilania czujników w wiązce. Wariant Hall czujnika wału (zworka, rozdz. 2.4) potrzebuje zasilania — źródło do rozstrzygnięcia przy wariancie Hall: VSOUT1 (zwarcie w wiązce innego czujnika gasi silnik) albo VDD5 (brak ochrony przed zwarciem do akumulatora) |
+| **Klucz masy cewki przekaźnika rozrusznika** | do doboru | — | — | Zamknięty tylko przy **fizycznie wciśniętym przycisku START** i RUN z progu tranzystorowego (ECU-SAF-022, poprawka 1.11.2026). Sygnał przycisku idzie w trzy miejsca: wejście WAKE transceivera, wejście procesora, ten klucz |
+| **Kwarc LSE** | 32,768 kHz | do doboru | AEC-Q200 | Zegar RTC — znaczniki czasu w logach, motogodziny (decyzja Pawła 3.11.2026). LSI ma rozrzut rzędu procent, a errata ES0430 (2.2.4) opisuje jego niestabilność przy taktowaniu RTC. Piny PC14/PC15; PC13 nie może się przełączać (errata 2.2.8) |
 | Rezonator HSE | 8 MHz | do doboru | AEC-Q200, −40…+125 °C | Przy 10 000 obr/min błąd kwarcu ±50 ppm to ~0,3 µs ≈ **0,002° kąta wału** — kilkaset razy mniej niż tolerancje mechaniczne koła (0,5–1°). TCXO niepotrzebny |
-| **Watchdog zewnętrzny** | TPS3430-Q1 | ⚠️ do ustalenia | AEC-Q100, −40…+125 °C | **Okienkowy**, nie prosty timeout — wykrywa też kod działający w złym tempie (uszkodzony PLL), czego zwykły watchdog nie zauważy. Okno programowane kondensatorem, 63 ms–77 s. **Ma wejście wyłączające nadzór — patrz O-013** |
+| ~~Watchdog zewnętrzny TPS3430-Q1~~ | — | — | — | **Usunięty 1.11.2026** razem z przetwornicami i przełącznikiem obciążenia — watchdog i nadzór szyn w PMIC. TPS3430 nie nadzorował napięcia i odcinał wyjścia tylko przez reset procesora (`firmware.md` B.1.3) |
 | Podtrzymanie RTC | Superkondensator 0,1–0,47 F | — | — | Procesor ma wbudowany RTC. Podtrzymanie działa tylko przy odłączonym akumulatorze (serwis, zimowanie); superkondensator zamiast baterii — brak wymiany po latach. **Rozładowany superkondensator przy starcie zachowuje się jak zwarcie** — wymagany rezystor ograniczający. Prąd upływu dolicza się do budżetu uśpienia |
-| Złącze główne | **Molex CMC 28-obwodowy** | ⚠️ wymiary do potwierdzenia | IP6K7/IP6K9K, −40…+125 °C, 25 G | NTSEAL 26 odrzucony — zero rezerwy pinów. Styki hybrydowe: 18× 0,635 mm (2,5 A, sygnały) + 5× 1,50 mm (12 A) + 5× 2,80 mm (21 A) — więcej obwodów w mniejszej obudowie niż złącze z jednakowymi stykami. Istnieje jako header do PCB i receptacle na wiązkę |
+| Złącze główne | **do wyboru przez Pawła — większe niż 28 obwodów** (decyzja 3.11.2026) | — | IP67, −40…+125 °C | Bilans z 3.11.2026 (rozdz. 5): **≥ 22 styki sygnałowe (≤ 2,5 A), ≥ 5 średnie (12 A), 2–3 duże (21 A)**, razem 29–30, plus zapas. Molex CMC 28 (18× 0,635 + 5× 1,50 + 5× 2,80 mm) nie mieści styków sygnałowych. NTSEAL 26 odrzucony wcześniej — zero rezerwy |
+| **Złącze zapłonu** | do wyboru, 3–4 piny | — | IP67, odstępy WN (ECU-IGN-027) | **Decyzja Pawła 3.11.2026:** wysokie napięcie i impulsy prądu zapłonu fizycznie oddzielone od sygnałów. Wyjście na cewkę (CDI w A, TCI w B/C), uzwojenie wzbudzające (A, 1–2 piny), masa mocy zapłonu |
+| **Przełącznik zasilania HMI** | do doboru | — | — | **Domyślnie załączony** (decyzja Pawła 3.11.2026, ECU-PWR-011): HMI zasilane także w uśpieniu, więc jego przyciski budzą system; pracujące ECU może odłączyć HMI (restart, zwarcie w kablu). Ochrona zwarciowa. Pobór w uśpieniu ≤ 5 µA (przydział, rozdz. 6.1) |
 | Złącze USB | USB-C | — | — | Uszczelnione lub standardowe z zaślepką IP67. Wymaga rezystorów 5,1 kΩ na liniach CC (tryb urządzenia) |
 | Ochrona wejścia | TVS, ochrona odwrotnej polaryzacji, filtr LC, PTC | do doboru | — | Patrz rozdz. 4.4 |
 
 **6 kanałów PROFET:** wentylator, przekaźnik rozrusznika, światła, pompa paliwa, aux ×2.
 
+### 3.1 Przydział pinów procesora STM32G474VET3 (O-028, 3.11.2026)
+
+**Metoda:** wszystkie sygnały z dokumentacji (warianty A, B i C) przydzielone programem `scripts/piny_mcu.py` na danych pinów producenta (ST, `STM32_open_pin_data`, baza CubeMX). Wynik: **70 sygnałów na 84 użyteczne piny I/O, 14 wolnych**; wszystkie peryferia mieszczą się jednocześnie.
+
+**Ograniczenia przyjęte w przydziale:**
+- USB zajmuje PA11/PA12, więc **FDCAN1 na PD0/PD1** (trzecia opcja, PB8/PB9, koliduje z BOOT0);
+- **zapłon i oba wtryskiwacze na różnych jednostkach czasowych HRTIM** (E, F, A) — niezależny licznik i okres dla każdej funkcji;
+- sygnał wału na zdarzeniu zewnętrznym HRTIM z filtrem cyfrowym (EEV6–10);
+- **PMIC na osobnej SPI3** (decyzja Pawła 3.11.2026) — usterka magistrali czujników nie zablokuje obsługi watchdoga;
+- **PB8-BOOT0 i NRST nieużywane jako GPIO; PC13 wolny i statyczny** (errata 2.2.8 — przełączanie zaburza kwarc LSE); PB4 (NJTRST) użyty jako GPIO — debug wyłącznie przez SWD (errata 2.2.1);
+- piny PROFET (IN, DEN, DSEL, IS) przyjęte dla BTS7008-2EPA — **do potwierdzenia z kartą** przy arkuszu kwalifikacji (O-063).
+
+| Pin | Nr | Funkcja | Peryferium |
+|---|---|---|---|
+| PF0-OSC_IN | 12 | Kwarc 8 MHz | RCC_OSC_IN |
+| PF1-OSC_OUT | 13 | Kwarc 8 MHz | RCC_OSC_OUT |
+| PC14-OSC32_IN | 8 | Kwarc 32,768 kHz — RTC (decyzja 3.11.2026) | RCC_OSC32_IN |
+| PC15-OSC32_OUT | 9 | Kwarc 32,768 kHz | RCC_OSC32_OUT |
+| PA14 | 77 | SWD | SYS_JTCK-SWCLK |
+| PA13 | 76 | SWD — programowanie bootloadera (ECU-BTL-006) | SYS_JTMS-SWDIO |
+| PA11 | 72 | USB-C | USB_DM |
+| PA12 | 73 | USB-C | USB_DP |
+| PC6 | 65 | Sygnał wału z MAX9926 / Halla — start timera zapłonu (ECU-IGN-023); EEV z filtrem cyfrowym | HRTIM1_EEV10 |
+| PC8 | 67 | Impuls bramki tyrystora (A) / sterowanie drivera TCI (B/C) — przez bramkę AND; timer E | HRTIM1_CHE1 |
+| PB7 | 94 | Przechwycenie rzeczywistego wyzwolenia (ECU-IGN-024) | HRTIM1_EEV3 |
+| PC7 | 66 | TLE9104 IN1 — wtryskiwacz 1 (B/C); timer F | HRTIM1_CHF2 |
+| PA8 | 69 | TLE9104 IN2 — wtryskiwacz 2 (B/C); timer A | HRTIM1_CHA1 |
+| PD4 | 86 | Faza wałka — rezerwa 4T | TIM2_CH2 |
+| PD0 | 82 | TJA1043 RXD (FDCAN1; PA11/PA12 zajęte przez USB) | FDCAN1_RX |
+| PD1 | 83 | TJA1043 TXD | FDCAN1_TX |
+| PA6 | 28 | W25Q64 | SPI1_MISO |
+| PA7 | 29 | W25Q64 | SPI1_MOSI |
+| PA5 | 27 | W25Q64 (pamięć logów) | SPI1_SCK |
+| PB14 | 53 | jw. | SPI2_MISO |
+| PB15 | 54 | jw. | SPI2_MOSI |
+| PF10 | 11 | AIS2IH, KP464, TLE9104 (B/C) | SPI2_SCK |
+| PE1 | 98 | Prędkość koła — przechwytywanie timera | TIM17_CH1 |
+| PC11 | 80 | PMIC | SPI3_MISO |
+| PC12 | 81 | PMIC | SPI3_MOSI |
+| PC10 | 79 | PMIC — osobna magistrala (decyzja 3.11.2026) | SPI3_SCK |
+| PE12 | 43 | Temperatura powietrza | ADC3_IN16, ADC4_IN16 |
+| PC0 | 15 | Napięcie kondensatora zapłonowego, próbka z HRTIM (ECU-IGN-028) | ADC1_IN6, ADC2_IN6 |
+| PC1 | 16 | Temperatura cieczy | ADC1_IN7, ADC2_IN7 |
+| PC4 | 30 | Napięcie uzwojenia wzbudzającego (ECU-SAF-021) | ADC2_IN5 |
+| PD8 | 55 | Pozycja biegu MLX90316 | ADC4_IN12, ADC5_IN12 |
+| PE13 | 44 | PROFET 1 — prąd (IS) | ADC3_IN3 |
+| PD13 | 60 | PROFET 2 — prąd (IS) | ADC3_IN10, ADC4_IN10 |
+| PE14 | 45 | PROFET 3 — prąd (IS) | ADC4_IN1 |
+| PE7 | 38 | Drabinka kill switcha (B.2.5.1) | ADC3_IN4 |
+| PE9 | 40 | NTC przy bloku CDI (ECU-SAF-020) | ADC3_IN2 |
+| PE11 | 42 | NTC w sekcji mocy | ADC3_IN15, ADC4_IN15 |
+| PE8 | 39 | Rezerwa B/C — czujnik ciśnienia (O-060) | ADC3_IN6, ADC4_IN6 |
+| PD9 | 56 | PMIC DIAG_OUT | ADC4_IN13, ADC5_IN13 |
+| PA4 | 26 | TPS (B/C) | ADC2_IN17 |
+| PE15 | 46 | Napięcie akumulatora | ADC4_IN2 |
+| PD14 | 61 | Szyna VDD5 (ECU-PWR-008a) | ADC3_IN11, ADC4_IN11 |
+| PC2 | 17 | Zasilanie czujników VSOUT1 (ECU-PWR-008b) | ADC1_IN8, ADC2_IN8 |
+| PE0 | 97 | AIS2IH — przerwanie danych | GPIO |
+| PD15 | 62 | Odczyt zwrotny komparatora kill (ECU-SAF-021/024) | GPIO |
+| PD7 | 89 | CS AIS2IH | GPIO |
+| PD5 | 87 | CS W25Q64 | GPIO |
+| PF2 | 19 | CS KP464 | GPIO |
+| PD6 | 88 | CS PMIC | GPIO |
+| PD2 | 84 | CS TLE9104 (B/C) | GPIO |
+| PB1 | 33 | Odłączenie zasilania HMI (ECU-PWR-011) | GPIO |
+| PE5 | 4 | Odczyt zwrotny ENDRV | GPIO |
+| PE4 | 3 | PMIC ERROR/WDI — watchdog | GPIO |
+| PB11 | 50 | PROFET 1 — DEN | GPIO |
+| PB6 | 93 | PROFET 2 — DEN | GPIO |
+| PA0 | 20 | PROFET 3 — DEN | GPIO |
+| PB0 | 32 | PROFET — DSEL (wspólny) | GPIO |
+| PF9 | 10 | PROFET — wentylator | GPIO |
+| PD10 | 57 | PROFET — przekaźnik rozrusznika (× komparator × ENDRV) | GPIO |
+| PD12 | 59 | PROFET — światła | GPIO |
+| PE10 | 41 | PROFET — pompa (B/C, × ENDRV) | GPIO |
+| PC3 | 18 | PROFET — aux 1 | GPIO |
+| PC5 | 31 | PROFET — aux 2 | GPIO |
+| PE3 | 2 | Przycisk START | GPIO |
+| PE6 | 5 | Odczyt zwrotny progu tranzystorowego | GPIO |
+| PE2 | 1 | TJA1043 EN | GPIO |
+| PC9 | 68 | TJA1043 ERR_N (pull-up wewn.) | GPIO |
+| PD3 | 85 | TJA1043 STB_N (bez rezystora — Z16) | GPIO |
+| PD11 | 58 | TLE9104 EN — żądanie MCU (× komparator × ENDRV) | GPIO |
+| PB4 | 91 | Prędkość koła — przełączany podciągacz | GPIO |
+
+**Wolne (14):** PA1, PA10, PA15, PA2, PA3, PA9, PB10, PB12, PB13, PB2, PB3, PB5, PB9, PC13.
+
+
+**Do zrobienia przy schemacie:** odtworzenie przydziału w projekcie CubeMX (konfiguracja zegarów, DMA, wyzwalaczy ADC z HRTIM) i potwierdzenie rewizji krzemu (Z, Y albo X) przy zakupie — od niej zależy lista obowiązujących obejść (`firmware.md` I).
+
 ---
 
 ## 4. Zasilanie
 
-### 4.1 Topologia
+### 4.1 Topologia (od 1.11.2026 — PMIC TPS65381A-Q1)
 
 ```
 12 V B+ ─► ochrona wejścia (TVS) ─► dioda Schottky'ego (gałąź logiki) ─► filtr LC ─┬─► 1 kΩ + 10 nF ─► TJA1043 BAT
                                                                                 │       (czuwa zawsze, ~18 µA w Sleep)
-                                                                                │              │ INH
-                                                                                │              ▼
-                                                                                ├─► Przetwornica 5,0 V ◄─ EN ─┐
-                                                                                │   nastawa stała             │
-                                                                                │     └─► TJA1043 VCC,        │
-                                                                                │         przełącznik obciążenia (GPIO) ─► MAX9926,
-                                                                                │         komparator, czujniki zewnętrzne
-                                                                                │                             │
-                                                                                └─► Przetwornica 3,3 V ◄─ EN ─┘
-                                                                                    nastawa stała
-                                                                                      └─► MCU, TPS3430-Q1, flash, IMU, TJA1043 VIO
-                                                                                          └─► filtr LC ─► VDDA/VREF+
+                                                                                │              │ INH ─► ≥ 10 kΩ ─┐
+                                                                                │                                ▼ IGN
+                                                                                └─► TPS65381A-Q1: przetwornica wstępna 6 V
+                                                                                      ├─► VDD5 5,0 V ─► TJA1043 VCC, MAX9926, komparator, bramka AND
+                                                                                      ├─► VDD3/5 3,3 V ─► MCU, pamięć, AIS2IH, TJA1043 VIO, próg tranzystorowy
+                                                                                      │                    └─► filtr LC ─► VDDA/VREF+
+                                                                                      ├─► VSOUT1 5 V ─► czujniki w wiązce (ochrona zwarć, domyślnie wyłączone)
+                                                                                      ├─► ENDRV ─► bramka AND zapłonu, blokada PROFET rozrusznika
+                                                                                      └─► NRES ─► reset MCU
 
-W uśpieniu: INH niesterowane → obie przetwornice wyłączone → procesor i watchdog bez zasilania (rozdz. 6)
+W uśpieniu: INH niesterowane → IGN niski → PMIC w STANDBY, wszystkie szyny wyłączone (rozdz. 6)
 ```
 
-**Dwie przetwornice zamiast przetwornicy i regulatora liniowego.** Regulator liniowy z 5 V na 3,3 V traci ~1/3 mocy w cieple (~0,3 W przy naszym poborze), co przy napiętym budżecie termicznym w szczelnej obudowie jest istotne.
+**PMIC zamiast dwóch przetwornic, watchdoga i przełącznika obciążenia (decyzja Pawła 1.11.2026, O-018).** Powód: w poprzedniej topologii watchdog odcinał wyjścia tylko przez reakcję procesora na reset, nic niezależnego nie nadzorowało szyny 3,3 V, a przełącznik obciążenia był wspólny dla czujników w wiązce i kondycjonera wału (`firmware.md` B.1.3). PMIC daje sprzętowe ENDRV, nadzór wszystkich szyn i osobne, chronione zasilanie czujników. Arkusz kwalifikacji: rozdz. 4.5.
 
-**Koszt tej decyzji:** przetwornica daje napięcie z tętnieniem od przełączania, gorsze dla przetwornika ADC niż gładkie napięcie z regulatora liniowego. Kompensacja: filtr LC na zasilaniu części analogowej plus uśrednianie sprzętowe w ADC.
+**Koszt tej decyzji:** regulatory liniowe pracują z 6 V — ok. +0,2 W strat (szacunek, rozdz. 9.2); zapas bilansu uśpienia spada do 22 µA (rozdz. 6.1); firmware obsługuje PMIC przez SPI i musi przejść stan DIAGNOSTIC w 512 ms przy każdym wybudzeniu (`firmware.md` A.4). Tętnienia przetwornicy wstępnej filtrują regulatory liniowe; filtr LC dla części analogowej procesora zostaje.
 
-**Odrzucona konsolidacja w układ SBC** (transceiver + regulator + watchdog + zarządzanie uśpieniem w jednej obudowie, np. UJA1169A): regulator w SBC jest liniowy i pracuje bezpośrednio z 12 V, co przywraca problem termiczny rozwiązany architekturą dwustopniową. Dodatkowo warianty z regulatorem 3,3 V nie mają wyjścia 5 V dla czujników zewnętrznych, a warianty z tym wyjściem mają regulator 5 V — nie da się mieć obu naraz.
+**Zastąpiona topologia (18.10–1.11.2026):** dwie przetwornice z wejściami EN sterowanymi z INH, TPS3430-Q1, przełącznik obciążenia 5 V.
+
+**Odrzucona konsolidacja w układ SBC** (transceiver + regulator + watchdog + zarządzanie uśpieniem w jednej obudowie, np. UJA1169A): regulator w SBC jest liniowy i pracuje bezpośrednio z 12 V, co przywraca problem termiczny rozwiązany architekturą dwustopniową. Dodatkowo warianty z regulatorem 3,3 V nie mają wyjścia 5 V dla czujników zewnętrznych, a warianty z tym wyjściem mają regulator 5 V — nie da się mieć obu naraz. **PMIC TPS65381A-Q1 tego problemu nie ma:** regulatory liniowe pracują z przetwornicy wstępnej 6 V, nie z 12 V, a szyny 5 V i 3,3 V są osobne.
 
 ### 4.2 Mikrokontroler monitoruje, nie reguluje
 
@@ -129,8 +222,8 @@ W uśpieniu: INH niesterowane → obie przetwornice wyłączone → procesor i w
 | Mechanizm | Działanie |
 |---|---|
 | Pomiar obu szyn przez ADC | Wykrywanie spadków i dryftu, kompensacja pomiarów ratiometrycznych |
-| Sygnał Power Good z przetwornic | Wyjście cyfrowe „szyna w tolerancji"; działa niezależnie od firmware, dostępne przed startem ADC |
-| Sterowanie włączeniem szyny 5 V | Wyłączenie przy uśpieniu lub wykryciu zwarcia w okablowaniu zewnętrznym. Bezpieczny kierunek sterowania |
+| Nadzór szyn w PMIC (od 1.11.2026) | Podnapięcie i przepięcie każdej szyny, z osobnym źródłem odniesienia. **Reakcja sprzętowa**: ENDRV albo reset procesora, bez udziału firmware; stan dostępny dla firmware w rejestrach statusu |
+| Włączanie zasilania czujników VSOUT1 | Bit w PMIC, domyślnie wyłączone; ograniczenie prądu i ochrona przed zwarciem do akumulatora w PMIC. Bezpieczny kierunek sterowania |
 
 Reakcja na wykryty problem: wpis do diagnostyki, ostrzeżenie na HMI, ewentualne przejście w tryb awaryjny — **nigdy zmiana nastawy**.
 
@@ -158,25 +251,69 @@ Magistrala wymaga dokładnie **dwóch** rezystorów 120 Ω — na fizycznych ko�
 
 ⚠️ **Architektura powrotów prądowych i ekranowania musi być ustalona przed PCB (O-039).** Późne wykrycie nieodpornego wejścia VR wymusi zmianę płytki i złączy.
 
+### 4.5 Kandydat: PMIC TI TPS65381A-Q1 — arkusz kwalifikacji (1.11.2026, O-018 punkty 2–4)
+
+**Status: arkusz kompletny z pełnej karty SLVSDJ1A (rev. A, maj 2017; strony wg numeracji PDF) i instrukcji bezpieczeństwa SLVA528D. Przyjęty — decyzja Pawła 1.11.2026 (O-018).**
+
+| # | Pole | Wartość | Źródło |
+|---|---|---|---|
+| 1 | Numer zamówieniowy | **TPS65381AQDAPRQ1** (taśma), TPS65381AQDAPTQ1 (mała taśma); HTSSOP-32 PowerPAD | karta SLVSDJ1A; strona produktu TI |
+| 2 | Cykl życia | **ACTIVE**, sprawdzone 1.11.2026 | strona produktu TI |
+| 3 | Kwalifikacja | **AEC-Q100, Grade 1** | strona produktu TI; karta rozdz. 1 |
+| 4 | Temperatura | TA −40…+125 °C, TJ ≤ 150 °C — obejmuje SYS-ENV-003 (−40…+50 °C) z dużym zapasem. RθJA 26,3 K/W (płytka JEDEC high-K) | karta, warunki zalecane i dane cieplne |
+| 5 | Zasilanie i pobór | Z akumulatora: VBATP, VBAT_SAFING, VSIN. **STANDBY ≤ 75 µA maks.** (R1.5: IGN = CANWU = 0 V, 5,8–20 V, TJ < 85 °C; wartości typowej karta nie podaje). Pobór własny w ACTIVE — **karta nie podaje** (pobór = obciążenia szyn przez przetwornicę 6 V). Praca pełna od 5,8 V przy starcie; po starcie do 4,5 V (VDD3/5 w wersji 3,3 V działa dalej) | karta s. 8 |
+| 6 | Piny sterujące i stan bez sterowania | **IGN:** budzenie stanem wysokim, filtr 7,5–22 ms, opcjonalne podtrzymanie (bit IGN_PWRL). **CANWU:** impuls ≥ 350 µs, zatrzaskiwany. **NRES:** otwarty dren, aktywny niski, pull-up wewn. 3–6 kΩ. **ENDRV:** otwarty dren, pull-up wewn. 4,5 kΩ do VDDIO; wysoki tylko przy WD_FAIL_CNT ≤ 4, ustawionym bicie ENABLE_DRV i braku przepięcia szyn — **wraca sam**, gdy warunki ustąpią. **RSTEXT rozwarty = układ stale w RESET** (bezpieczny kierunek) | karta s. 8, 15, 22–23, 38–39, 62; forum TI E2E |
+| 7 | Zanik szyn | VDD3/5 poza UV/OV → ENDRV niski (VDD3/5 5 V: UV → RESET). VBATP < 4,2–4,5 V → wyłączenie. VBATP > 34,7–36,7 V → domyślnie RESET (maskowalne bitem MASK_VBATP_OV) | karta s. 8, 12, 26–28 |
+| 8 | Limity ochron | UV/OV VDD3/5 3,3 V: 3,00–3,17 / 3,43–3,60 V; VDD5: 4,50–4,85 / 5,20–5,45 V. **VSOUT1:** ograniczenie 120–500 mA, zwarcie do −2…18 V bez uszkodzenia, wyłączenie termiczne 175–210 °C, strata ≤ 0,6 W. Maks. bezwzględne VBATP 40 V, zalecane ≤ 34 V. **Spadki napięcia:** VDD6 ≤ 0,6 V (przy 1,3 A; poniżej 7 V wypełnienie 100 %), VDD5 ≤ 0,3 V, VSOUT1 ≤ 0,75 V (przy 100 mA); VDD6 5,4–6,6 V. **Przy 7 V na złączu** (ECU-IGN-021): 7 − 0,5 (dioda) − 0,6 = 5,9 V na VDD6 w najgorszym przypadku → VDD5 5,0 V ✅, VSOUT1 5,0 V ✅ z zapasem 0,15 V. ⚠️ **VSOUT1 nastawione na 5 V nie ma gwarancji pełnego napięcia przy VDD6 = 5,4 V i obciążeniu 100 mA** (5,4 − 0,75 = 4,65 V) — przy naszym obciążeniu rzędu kilkudziesięciu mA zapas jest większy, ale pomiary ratiometryczne muszą odnosić się do zmierzonego VSOUT1 (O-025) | karta s. 7, 10, 12, 19–20 |
+| 9 | Timery wobec wymagań | WD_FAIL_CNT startuje od 5; dobre zdarzenie −1, złe +1; ENDRV możliwy przy < 5, czyli po pierwszym dobrym zdarzeniu; reset przy 8. **Okna watchdoga:** okno 1 do 127 × 0,55 ms ≈ 70 ms, okno 2 do 32 × 0,55 ms ≈ 17,6 ms (krok 0,55 ms ±5 %). **ENDRV opada dopiero po 5 złych zdarzeniach netto** — przy sekwencji 20 ms to ~100 ms, czyli tyle co dzisiejsze okno TPS3430. Reset przy 8. zdarzeniu (WD_RST_EN). **Stan DIAGNOSTIC: 512 ms (typ.) na wyjście**, inaczej SAFE (ENDRV niski, procesor zasilony). Start z uśpienia: filtr IGN 7,5–22 ms + BIST 21 ms + przedłużenie resetu 1,4–4,5 ms + konfiguracja + jedno dobre zdarzenie watchdoga ≈ **45–65 ms do zezwolenia ENDRV** — mieści się w ≤ 200 ms (ECU-SAF-018) | karta s. 15, 22–23, 38–40, 66–68; SLVA528D rozdz. 5.3.1.2 |
+| 10 | **Czego NIE robi** | (1) **Nie czyta kill switcha** — dwa układy progowe zostają. (2) **Nie ma transceivera CAN** — TJA1043 zostaje, INH → IGN. (3) **Nie chroni przed odwrotną polaryzacją i nie pracuje powyżej 34 V** — dioda i TVS zostają; praca w czasie zrzutu nie jest wymagana (SYS-ENV-009). (4) **ENDRV może utknąć w stanie wysokim** — instrukcja bezpieczeństwa TI sama zaleca drugą, niezależną ścieżkę odcięcia (mamy dwie). (5) Nadzór sygnału błędu MCU tylko w trybie Q&A watchdoga — więcej pracy w firmware. (6) **Nie reaguje natychmiast na zawieszenie procesora** — ENDRV opada po 5 złych sekwencjach watchdoga. (7) Każde wybudzenie wymaga obsługi stanu DIAGNOSTIC w 512 ms, inaczej SAFE | SLVA528D tab. 7-1, rozdz. 5.3.1.1; karta s. 66 |
+| 11 | Dostępność | TME, Mouser, Farnell — nie potwierdzone w wyszukiwaniu 1.11.2026; DigiKey — pozycja 7244182, stan nie sprawdzony | wyszukiwanie 1.11.2026 |
+
+**Zastępuje:** obie przetwornice, TPS3430-Q1 i przełącznik obciążenia 5 V. Rdzeń STM32G474 ma własny regulator — wyjście VDD1 niewykorzystane (karta: VDD1_G i VDD1_SENSE rozwarte, nadzór VDD1 domyślnie wyłączony).
+
+**Co rozwiązuje w O-018:**
+- **Punkt 2:** ENDRV jako trzecie wejście bramki AND i blokada rozrusznika — usterka watchdoga albo szyny odcina zapłon bez udziału procesora.
+- **Punkt 3:** niezależny nadzór podnapięcia i przepięcia wszystkich szyn.
+- **Punkt 4:** MAX9926, komparator i bramka AND na VDD5; czujniki w wiązce na VSOUT1, z ochroną przed zwarciem do masy i do akumulatora.
+
+**Bilans uśpienia po zamianie (rozdz. 6.1):** 63 − 10 (dwie przetwornice) + 75 = **≤ 128 µA** wobec limitu 150 µA; z przełącznikiem zasilania HMI (3.11.2026) **≤ 133 µA**, zapas 17 µA.
+
+**Termika — szacunek:** regulatory liniowe pracują z 6 V zamiast osobnych przetwornic — około +0,2 W względem rozdz. 9.2. Do przeliczenia z drzewa zasilania przy schemacie.
+
+**Alternatywy:**
+- **Infineon TLF35584** — przetwornica wstępna 3–40 V (lepsza przy 7 V), ale projektowany dla większych układów (LDO 600 mA, VQFN-48); poboru w uśpieniu przegląd produktu nie podaje. Odrzucony wstępnie.
+- **Rozwiązanie dyskretne** — obecne przetwornice i TPS3430-Q1 z trzema poprawkami: wyjście watchdoga do bramki AND, Power Good 3,3 V do resetu procesora, kondycjoner i komparator przed przełącznikiem. Mniej pracy w firmware; nadzór szyn zależny od doboru przetwornic (Power Good zwykle tylko podnapięcie), ochrona zasilania czujników przed zwarciem do akumulatora zależna od doboru przełącznika, zwykły watchdog okienkowy.
+
+**Do sprawdzenia przy zakupie:** dostępność TME → Mouser → Farnell (wyszukiwanie nie potwierdziło). **Do rozważenia przy schemacie:** zabezpieczenie przed odwrotną polaryzacją tranzystorem NMOS sterowanym pompą ładunku układu (karta s. 2, 19) zamiast diody Schottky'ego — mniejszy spadek przy niskim napięciu akumulatora.
+
 ---
 
 ## 5. Złącze i sygnały
 
-> Lista wymaga przeliczenia przy schemacie. Usunięcie quickshiftera i czujnika sprzęgła **zwolniło dwa piny**; jeden przechodzi do pozycji O-060 (niezależny sygnał obciążenia dla B/C), jeden zostaje w zapasie.
+**Bilans obwodów — przeliczony 3.11.2026 dla wariantów A, B i C (O-030).** Dwa złącza (decyzja Pawła): **złącze zapłonu** oddziela wysokie napięcie i impulsy prądu od sygnałów; **złącze główne** — większe niż 28 obwodów, typ do wyboru przez Pawła.
 
-| Grupa | Sygnały | Piny | Typ styku |
-|---|---|---|---|
-| Zasilanie | B+ (12 V, stałe z akumulatora), GND | 2 | 2,80 mm |
-| Trigger | Sygnał+, Sygnał− | 2 | sygnałowy |
-| Czujniki analogowe | TPS *(tylko B/C)*, temp. cieczy, temp. powietrza, pozycja biegu | 4 | sygnałowy |
-| Wspólne czujników | +5 V ref, masa analogowa | 2 | sygnałowy |
-| Wejścia cyfrowe | Start, kill switch, czujnik prędkości koła, czujnik fazy wałka *(rezerwa 4T)* | 4 | sygnałowy |
-| Wyjścia mocy silnika | Zapłon, wtryskiwacz 1, wtryskiwacz 2 | 3 | 1,50 mm |
-| Wyjścia pomocnicze | Wentylator, rozrusznik, światła, pompa paliwa, aux ×2 | 6 | średni/duży |
-| CAN | CAN H, CAN L | 2 | sygnałowy |
-| **Razem** | | **27 / 28** | |
+**Złącze główne:**
 
-⚠️ **Bilans dotyczy pinów układu, nie obwodów wiązki (O-030).** Potrzebne są osobne powroty mas, a prąd i temperatura ograniczają liczbę jednocześnie obciążonych styków.
+| Grupa | Obwody | Styki ≤ 2,5 A | Styki 12 A | Styki 21 A |
+|---|---|---|---|---|
+| Zasilanie ECU | B+ (szczyt ~12,6 A + aux), masa ECU | — | — | **2–3** (B+ podwójne, jeśli aux duże) |
+| Zasilanie HMI (ECU-PWR-011) | +12 V przez przełącznik domyślnie załączony, masa HMI | 2 | — | — |
+| Czujnik wału | VR+, VR− | 2 | — | — |
+| Czujniki analogowe | temp. cieczy, temp. powietrza, bieg, TPS *(B/C)* | 4 | — | — |
+| Wspólne czujników | +5 V (VSOUT1), masa czujników | 2 | — | — |
+| Wejścia cyfrowe | start, kill, **wspólny powrót masy obu przycisków** (decyzja 3.11.2026), prędkość koła, faza wałka *(rezerwa 4T)* | 5 | — | — |
+| Wtrysk *(B/C)* | wtryskiwacz 1, 2 (~1 A) | 2 | — | — |
+| Rozrusznik | przekaźnik + (PROFET, ~0,3 A), **klucz masy przekaźnika** (ECU-SAF-022) | 2 | — | — |
+| CAN | H, L | 2 | — | — |
+| Rezerwa B/C | czujnik ciśnienia (O-060) | 1 | — | — |
+| Wyjścia PROFET | wentylator (~6 A), pompa *(B/C, ~4 A)*, światła (~2 A), aux ×2 | — | 5 | — |
+| **Razem** | **29–30** + zapas | **22** | **5** | **2–3** |
+
+**Złącze zapłonu (3–4 piny, odstępy izolacyjne wg ECU-IGN-027):** wyjście na cewkę — wspólny pin, obsadzenie zależne od wariantu (impuls CDI w A, dolny klucz TCI ~6–8 A w B/C); uzwojenie wzbudzające (A; 1 pin, jeśli ma koniec na masie, 2 — jeśli pływające; pomiar krok 2); **masa mocy zapłonu** — wyładowanie CDI to impuls rzędu dziesiątek amperów (typowo, do potwierdzenia pomiarem), w B/C wraca nią prąd cewki; nie może iść przez masę logiki.
+
+**Identyfikacja wariantu HMI — po CAN, bez pinu** (decyzja Pawła 3.11.2026, SYS-COM-009).
+
+⚠️ **Bilans dotyczy obwodów, nie przekrojów** — przekroje, zabezpieczenia i obciążalność styków z deratingiem przy 50 °C (SYS-ENV-003) w O-030.
 
 **Przyciski start i kill switch idą bezpośrednio z kierownicy do ECU** przez główne złącze, niezależnie od kabla przycisków HMI. Podział: 4 przyciski HMI = obsługa systemu; start i kill = sterowanie silnikiem.
 
@@ -202,8 +339,8 @@ Rozważona i odrzucona obsługa kill switcha przez HMI i CAN:
 | Element | Praca | Uśpienie |
 |---|---|---|
 | TJA1043 | Normal | **Sleep** — zasilany z BAT, nasłuch wzorca wybudzenia na magistrali i zbocza na pinie WAKE, INH niesterowane |
-| Przetwornice 5,0 V i 3,3 V | włączone przez INH | **wyłączone** (INH niesterowane, wejście włączania ściągnięte w dół) |
-| STM32G474, TPS3430-Q1, pamięć, IMU, czujniki | zasilane | **bez zasilania** |
+| PMIC TPS65381A-Q1 (od 1.11.2026) | ACTIVE, IGN wysoki z INH | **STANDBY** — IGN niski (INH niesterowane), wszystkie szyny wyłączone |
+| STM32G474, pamięć, AIS2IH, czujniki | zasilane | **bez zasilania** |
 | PROFET-y, driver wtrysku, blok CDI | wg stanu silnika | wyłączone |
 
 **Skutek dla nadzoru (O-013):** watchdog jest zasilany zawsze wtedy, gdy zasilany jest procesor — nie istnieje stan „procesor pracuje, nadzór wyłączony” i nie istnieje programowy wyłącznik nadzoru (ECU-SAF-017).
@@ -218,13 +355,13 @@ Punkt odniesienia: **zaciski akumulatora, 12,0 V, +25 °C** (ECU-PWR-001). Dla e
 |---|---|---|
 | TJA1043, Sleep, pin BAT | 30 | karta (18 typ.) |
 | Pin WAKE, prąd wejściowy | 10 | karta |
-| Przetwornica 5 V, wyłączona | ≤ 5 | przydział |
-| Przetwornica 3,3 V, wyłączona | ≤ 5 | przydział |
+| PMIC TPS65381A-Q1, STANDBY (od 1.11.2026) | 75 | karta R1.5, maks. przy TJ < 85 °C (typowej karta nie podaje) |
 | Zabezpieczenie przed odwrotną polaryzacją — dioda Schottky'ego | 0 | konstrukcja (rozdz. 4.4) |
 | TVS na wejściu, upływ przy 12 V | ≤ 5 | przydział |
 | 3× PROFET, wyłączone | ≤ 3 | przydział |
 | Dzielnik pomiaru akumulatora, podciągnięcia kill switcha i czujników | 0 | **reguła: zasilane wyłącznie z szyn wyłączanych** |
-| **Razem** | **≤ 63** | wobec limitu 150 µA |
+| Przełącznik zasilania HMI, domyślnie załączony (od 3.11.2026) | ≤ 5 | przydział |
+| **Razem** | **≤ 133** | wobec limitu 150 µA (zapas 17 µA; przed PMIC: ≤ 63) |
 
 Do potwierdzenia pomiarem T-PWR-001 na prototypie.
 
@@ -235,7 +372,7 @@ Z karty TJA1043 (rys. 9) i noty AH1014 (rys. 30, rozdz. 6.3–6.4), sprawdzone n
 | Pin / obwód | Reguła |
 |---|---|
 | BAT | Za diodą zabezpieczającą; **ok. 1 kΩ szeregowo + ok. 10 nF** przy pinie |
-| INH → wejścia włączania obu przetwornic | Obciążenie INH **≥ 10 kΩ, ≤ ok. 1 mA** (AH1014). Przy INH niesterowanym przetwornica musi być wyłączona — wewnętrzne ściąganie wejścia albo zewnętrzny rezystor. **Wejście włączania musi znosić napięcie akumulatora** (INH ≈ VBAT) — kryterium doboru przetwornic |
+| INH → wejście IGN PMIC (od 1.11.2026) | Przez rezystor szeregowy **≥ 10 kΩ** (zalecenie karty PMIC; spełnia też obciążenie INH ≥ 10 kΩ wg AH1014). IGN: próg 2–3 V, wewnętrzne ściąganie, odporność −7…40 V, upływ ≤ 50 µA, filtr 7,5–22 ms. **Bit podtrzymania IGN_PWRL nieużywany** — opadnięcie INH wyłącza PMIC |
 | WAKE | Przełącznik do masy (przycisk startu; w HMI drabinka przycisków), **Rexbias ≤ 150 kΩ** do BAT za diodą, **RS ≥ 2,7 kΩ** szeregowo (maks. 15 mA pinu przy utracie masy, U do 40 V) |
 | Linia przycisku startu do MCU | W uśpieniu przy puszczonym przycisku niesie napięcie akumulatora — dzielnik lub ogranicznik do 3,3 V |
 | USB | Tranzystor zwierający węzeł WAKE do masy, sterowany napięciem z USB |
@@ -313,14 +450,35 @@ Kopnięcie i popych przy uśpionym ECU wymagają przycisku — **do zapisania w 
 **Trzy poziomy:**
 
 1. **Watchdog wewnętrzny procesora** — taktowany własnym oscylatorem, niezależnym od zegara głównego. Wykrywa zawieszenie oprogramowania.
-2. **TPS3430-Q1, watchdog okienkowy zewnętrzny** — niezależny od procesora, działa przy awarii zasilania rdzenia, uszkodzeniu kwarcu lub zawieszeniu sprzętowym. **Okienkowy**: sygnał musi przyjść w zdefiniowanym oknie, za wcześnie lub za późno oznacza reset. Wykrywa kod działający w złym tempie, co przy sterowniku zapłonu jest realnym zagrożeniem.
+2. **Watchdog PMIC TPS65381A-Q1** (od 1.11.2026, zastępuje TPS3430-Q1) — własny zegar, okienkowy albo pytanie–odpowiedź. Złe sekwencje opuszczają **ENDRV**: bramka AND zapłonu i PROFET rozrusznika zablokowane **sprzętowo, bez udziału procesora**; ósme złe zdarzenie resetuje procesor. Konfiguracja sekwencji tak, by ENDRV opadało w **≤ 100 ms** od zawieszenia — tyle co dotychczasowe okno.
 3. **Stan bezpieczny przy resecie** — sam reset nie wystarczy, jeśli wyjścia zostaną w przypadkowym stanie. Przy resecie i podczas startu wszystkie wyjścia mocy muszą być domyślnie wyłączone, inaczej reset przy pracującym silniku mógłby wyzwolić tyrystor w przypadkowej chwili albo (B/C) zostawić wtryskiwacz otwarty. W AC-CDI zawieszone wyjście daje najwyżej jedną iskrę (ECU-IGN-005).
 
-⚠️ **Stan bezpieczny per wyjście do zdefiniowania (O-017).** Problem polaryzacji EN drivera VBG08H-E (O-002) zniknął razem z driverem; dla wtrysku (B/C) i PROFET-ów (wejścia aktywne wysokim) rezystory ściągające są poprawne, a bramka tyrystora ma rezystor bramka–katoda.
+**Stan bezpieczny per wyjście (O-017, 1.11.2026).** Zasada: **zanik zasilania = stan niski = wyłączone.** Każda linia sterująca wyjściem ma rezystor ściągający, więc brak zasilania komparatora, PMIC albo procesora daje ten sam skutek co świadome wyłączenie. **Od 1.11.2026 ENDRV z PMIC jest trzecim wejściem bramki AND i blokadą PROFET rozrusznika.**
+
+| Wyjście | Stan bezpieczny | Wymuszenie sprzętowe | Uśpienie / brak zasilania logiki | Reset procesora przy pracującym silniku | Wymaganie |
+|---|---|---|---|---|---|
+| **Wyzwalanie tyrystora** (zapłon) | brak iskry | bramka AND: impuls z HRTIM × zezwolenie z **komparatora** × **ENDRV (PMIC)**, rezystory ściągające na obu wejściach; sprzężenie pojemnościowe (najwyżej 1 iskra); rezystor bramka–katoda | brak impulsu. Kondensator naładowany kopnięciem rozładowuje się do ≤ 60 V w ≤ 5 s | wyjście HRTIM niesterowane (rezystor ściągający na wejściu impulsu) → brak impulsów → silnik gaśnie; przy resecie z watchdoga dodatkowo ENDRV niski — blokada niezależna od procesora; ponowne uruchomienie w ruchu po starcie procesora | ECU-IGN-005, -026, ECU-SAF-001, -007, -016 |
+| **Zwarcie uzwojenia wzbudzającego** (ścieżka 1 kill switcha) | zwarte w STOP | klucz sterowany **progiem tranzystorowym** (nie komparatorem — 1.11.2026) | **rozwarte** — ścieżka wymaga zasilania. Zanik zasilania pokrywa ścieżka 2 (bramka AND) | próg zasilany dalej — działa według kill switcha | ECU-SAF-001, -021 |
+| **Rozrusznik** | wyłączony | PROFET: procesor × komparator × ENDRV; klucz masy: **przycisk START × próg tranzystorowy** (1.11.2026); oba z rezystorami ściągającymi | wyłączony | wyłączony | ECU-SAF-007, -019, -022 |
+| **Wentylator** | wyłączony | rezystor ściągający na wejściu PROFET | wyłączony | wyłączony; silnik gaśnie, więc nie ma źródła ciepła. Strategie programowe — stałe załączenie przy usterce czujnika (DTC-SEN-01), obciążenie przy przepięciu (ECU-PWR-009) — działają tylko przy sprawnym firmware | ECU-SAF-007 |
+| **Światła** | wyłączone | rezystor ściągający | wyłączone | **wyłączone** — ryzyko zaakceptowane (`otwarte.md` rozdz. 9, decyzja Pawła 1.11.2026) | ECU-SAF-007 |
+| **Aux ×2** | wyłączone | rezystor ściągający | wyłączone | wyłączone | ECU-SAF-007 |
+| **Zasilanie czujników VSOUT1** (PMIC) | wyłączone | domyślnie wyłączone (bit VSOUT1_EN) | wyłączone | bez zmian; kondycjoner wału i komparator są na VDD5 i od niego nie zależą | ECU-PWR-010 |
+| Pompa paliwa **[B/C]** | wyłączona | rezystor ściągający; wejście PROFET × **ENDRV** (1.11.2026) | wyłączona | wyłączona | ECU-SAF-007, ECU-INJ-006 |
+| Wtryskiwacze **[B/C]** | zamknięte | **EN TLE9104: komparator × ENDRV; RESN: próg tranzystorowy** (1.11.2026); rezystory ściągające | wyłączone | wyłączone | ECU-SAF-016 |
+
+**Scenariusze negatywne bramki AND:**
+
+| Zdarzenie | Skutek | Zabezpieczenie |
+|---|---|---|
+| Kill switch zwolniony (STOP → RUN) w chwili, gdy wyjście HRTIM jest w stanie wysokim | Bramka AND przepuszcza zbocze → **jedna iskra w przypadkowym kącie** | Firmware trzyma wyjście HRTIM w stanie niskim przez cały czas STOP i zezwala na zapłon dopiero po synchronizacji (spec. FW B.2.3). Impuls bramki trwa mikrosekundy, więc poza błędem firmware okno nie występuje |
+| Wejście impulsu bramki AND pływa podczas resetu procesora | Zakłócenia mogłyby dać zbocza przy zezwoleniu w RUN | Rezystor ściągający na wejściu impulsu; dodatkowo przy resecie z watchdoga ENDRV blokuje bramkę |
+| Bramka AND traci zasilanie | Wyjście niskie → brak impulsu | Bezpieczne z natury |
+| Komparator albo próg tranzystorowy zawieszony w stanie RUN | Połowa blokad nieaktywna | Drugi układ progowy nadal odcina zapłon i rozrusznik (1.11.2026); test przy każdym STOP wykrywa usterkę (ECU-SAF-021, DTC-SAF-06) |
 
 ⚠️ **Watchdog nie jest ochroną toru zapłonu (O-012).** Przy oknie 100 ms i 10 000 obr/min to 16,7 obrotu wału. Dla błędu kąta pojedynczego impulsu dopuszczalny czas reakcji wynosi zero — chroni wyłącznie zapobieganie i ograniczenie tego, co stopień wyjściowy jest w stanie zrobić.
 
-**Wiązka kill switcha — wymóg szczególny:** przycisk podłączony wiązką z **dwoma rezystorami umieszczonymi przy przycisku** — szeregowym i równoległym do styku. Dają trzy rozróżnialne poziomy napięcia, dzięki czemu ECU odróżnia naciśnięcie od przerwania przewodu i potrafi to wskazać kierowcy. Podłączenie zwykłego przycisku bez rezystorów **nie jest niebezpieczne** — odcięcie działa w obu stanach, ale każde naciśnięcie zgłosi się jako przerwa. Wiązka z rezystorami wchodzi w zakres dostawy.
+**Wiązka kill switcha — wymóg szczególny:** przycisk podłączony wiązką **dwuprzewodową z masą prowadzoną z ECU** (przycisk odizolowany od ramy — 1.11.2026), z **dwoma rezystorami zalanymi w module przycisku**, o niskiej rezystancji (setki Ω) — szeregowym i równoległym do styku. Dają trzy rozróżnialne poziomy napięcia, dzięki czemu ECU odróżnia naciśnięcie od przerwania przewodu i potrafi to wskazać kierowcy. Podłączenie zwykłego przycisku bez rezystorów **nie jest niebezpieczne**, ale dla przycisku normalnie otwartego (typowy fabryczny) silnik nie będzie pracował bez wciśniętego przycisku (`firmware.md` B.2.5.1). Wiązka z rezystorami wchodzi w zakres dostawy.
 
 ---
 
@@ -335,7 +493,7 @@ Kopnięcie i popych przy uśpionym ECU wymagają przycisku — **do zapisania w 
 | H.5 | Lokalizacja | **Na kierownicy**, nie w obudowie | Ergonomia obsługi w jeździe |
 | H.6 | Okablowanie przycisków | Drabinka rezystorowa — 4 przyciski na jednym wejściu analogowym | Ogranicza liczbę żył. ⚠️ **Bez analizy najgorszego przypadku (O-035)** |
 | H.7 | Podświetlenie przycisków | ECU wysyła stan świateł po CAN, HMI włącza podświetlenie | Bez dodatkowego okablowania |
-| H.8 | Złącze główne | Deutsch DTM04-4P: CAN H, CAN L, +12 V stałe, GND | DTM to miniaturowa wersja DT, 13 A/pin |
+| H.8 | Złącze główne | Deutsch DTM04-4P: CAN H, CAN L, +12 V **z ECU** (przełącznik domyślnie załączony — 3.11.2026, ECU-PWR-011), GND **do osobnego pinu masy HMI w ECU** | DTM to miniaturowa wersja DT, 13 A/pin |
 | H.9 | Złącze przycisków | Osobne, Deutsch DTM04-3P | Serwisowalność — kierownice wymieniane po upadkach bez ruszania wiązki głównej |
 | H.10 | Transceiver | TJA1043, ten sam co w ECU | Jeden numer katalogowy na oba urządzenia; wybudzanie przez magistralę potrzebne także w HMI |
 | H.11 | Zasilanie | Dwie przetwornice: 5 V (wyświetlacz i koprocesor) i 3,3 V (procesor, flash). **Obie włączane wyjściem INH transceivera HMI; w uśpieniu obie wyłączone** (zmiana 18.10.2026) | Ta sama architektura co ECU (rozdz. 6). TJA1043 HMI zasilany z +12 V stałego ze złącza DTM04 |
@@ -400,22 +558,20 @@ Stator w enduro tej klasy oddaje typowo 150–200 W, więc bilans się domyka; s
 |---|---|
 | **Blok AC-CDI** (prostownik, tyrystor, rezystor rozładowujący) | **≤ 1,5 W — szacunek**, do potwierdzenia pomiarem uzwojenia wzbudzającego |
 | PROFET ×3 | 0,27 W |
-| Przetwornica 5,0 V | 0,17 W |
-| Przetwornica 3,3 V | 0,07 W |
-| Przełącznik obciążenia | 0,05 W |
-| Logika (MCU, czujniki, CAN) | w przetwornicach |
+| PMIC TPS65381A-Q1 (przetwornica 6 V + regulatory liniowe, od 1.11.2026) | **~0,5 W — szacunek** z obciążeń wg Z18 |
+| Logika (MCU, czujniki, CAN) | w PMIC |
 | *Drivery wtryskiwaczy* | *0 W w MVP-A (B/C: ~0,16 W)* |
-| **Razem MVP-A** | **~2,1 W** |
+| **Razem MVP-A** | **~2,3 W** |
 
 Dawna pozycja 4,8 W (driver cewki indukcyjnej VBG08H-E) wypadła razem z zapłonem indukcyjnym.
 
-| Wykonanie obudowy | Przyrost temp. | Wewnątrz przy 85 °C otoczenia |
+| Wykonanie obudowy | Przyrost temp. | Wewnątrz przy 50 °C otoczenia (SYS-ENV-003, od 1.11.2026) |
 |---|---|---|
-| Aluminium + dobry kontakt termiczny (Rth ≈ 3 K/W) | ~6 °C | **~91 °C** ✅ |
-| Aluminium bez padów (Rth ≈ 8 K/W) | ~17 °C | **~102 °C** ⚠️ AIS2IH (115 °C) bez marginesu 15 °C |
-| Tworzywo (Rth ≈ 20 K/W) | ~42 °C | **~127 °C** ❌ ponad Grade 1 |
+| Aluminium + dobry kontakt termiczny (Rth ≈ 3 K/W) | ~7 °C | **~57 °C** ✅ |
+| Aluminium bez padów (Rth ≈ 8 K/W) | ~18 °C | **~68 °C** ✅ |
+| Tworzywo (Rth ≈ 20 K/W) | ~46 °C | **~96 °C** ⚠️ w granicach Grade 1 z marginesem, ale blisko limitu akcelerometru (Z17: 100 °C) |
 
-**Wniosek bez zmian: obudowa aluminiowa z kontaktem termicznym jest wymagana.** Spadek strat z ~5,5 W do ~2,1 W zwiększa zapas, ale przy 85 °C otoczenia tworzywo nadal przekracza klasę Grade 1.
+**Wniosek po zmianie SYS-ENV-003 na +50 °C (1.11.2026):** aluminium z kontaktem termicznym daje duży zapas; tworzywo przestaje być wykluczone, ale jest graniczne wobec akcelerometru. Wybór obudowy — Paweł. Wcześniejszy wniosek „aluminium wymagane” wynikał z +85 °C, czyli klasy automotive zamiast temperatury miejsca montażu.
 
 ⚠️ **Ograniczenia bilansu:** uproszczona rezystancja cieplna obudowy (wymagany pełny łańcuch złącze→pad→interfejs→obudowa→otoczenie); straty bloku CDI to szacunek do pomiaru.
 
@@ -424,16 +580,18 @@ Dawna pozycja 4,8 W (driver cewki indukcyjnej VBG08H-E) wypadła razem z zapłon
 
 ## 10. Obudowy
 
-### ECU
+**Decyzja Pawła 1.11.2026: jedna PCB dla wariantów A, B i C; osobna obudowa dla wariantu A i osobna dla B/C.** Ten rozdział opisuje obudowę wariantu A. Obudowa i termika B/C — przy etapie B/C (O-065). Na wspólnej PCB zostaje miejsce pod kontakt termiczny drivera zapłonu TCI z przyszłą obudową B/C.
+
+### ECU — obudowa wariantu A
 
 | Parametr | Wymaganie |
 |---|---|
 | Szczelność | IP67 minimum — zanurzenie, przeprawy wodne, mycie ciśnieniowe |
 | Wyrównanie ciśnienia | **Membrana odpowietrzająca obowiązkowa** — czujnik ciśnienia atmosferycznego (KP464) w hermetycznej obudowie byłby bezużyteczny. Zapobiega też kondensacji przy zmianach temperatury. **Membrana i obudowa nieprzepuszczające światła** — KP464 jest czuły na światło powyżej 1 lx |
-| Odprowadzanie ciepła | **Aluminium z zapewnionym kontaktem termicznym** (pady lub pasta) między ścianką a blokiem AC-CDI (tyrystor, prostownik), PROFET-ami i przetwornicami. Tworzywo wykluczone (rozdz. 9.2) |
-| Przepusty | Molex CMC 28-obwodowe (header wlutowany) + USB-C uszczelnione lub z zaślepką, IP67 |
+| Odprowadzanie ciepła | Aluminium z kontaktem termicznym (pady lub pasta) z blokiem AC-CDI, PROFET-ami i PMIC — duży zapas. Tworzywo graniczne (~96 °C wewnątrz, Z17) — rozdz. 9.2. Wybór obudowy — Paweł |
+| Przepusty | Złącze główne (≥ 29–30 obwodów + zapas, typ do wyboru) i złącze zapłonu 3–4-pinowe (od 3.11.2026), header wlutowany + USB-C uszczelnione lub z zaślepką, IP67 |
 | Wibracje | Mocowanie PCB w kilku punktach, nie tylko na złączu; silikonowe tuleje w punktach montażu do ramy |
-| Temperatura | **−40…+85 °C otoczenia** (SYS-ENV-003), przechowywanie −40…+105 °C (SYS-ENV-004). Przy 85 °C otoczenia i dobrym kontakcie termicznym wnętrze ~91 °C, przy złym ~102 °C (rozdz. 9.2, przebudowa 25.10.2026) — **kontakt termiczny jest wymaganiem**, bo przy złym akcelerometr AIS2IH traci margines (Z17). Ochrona termiczna: ECU-SAF-020 |
+| Temperatura | **−40…+50 °C otoczenia w miejscu montażu** (SYS-ENV-003, zmiana 1.11.2026 — decyzja Pawła; Z20), przechowywanie −40…+105 °C (SYS-ENV-004). Wnętrze ~57 °C (aluminium, dobry kontakt), ~68 °C (aluminium bez padów), ~96 °C (tworzywo) — rozdz. 9.2. Ochrona termiczna: ECU-SAF-020 |
 | Dostęp serwisowy | Otwarcie bez niszczenia uszczelnienia (uszczelka wymienna, nie klejona) — dostęp do złącza SWD i zworki triggera |
 | Montaż | Odporny na uderzenia; z dala od strumienia błota i gorąca wydechu |
 
@@ -511,7 +669,7 @@ Wartości normowe za: Analog Devices, LT Journal v26n4 (ISO 16750-2, ISO 7637-2,
 **Konsekwencje dla ochrony wejścia (rozdz. 4.4):**
 - **TVS dwukierunkowy** — jednokierunkowy przy odwróconym akumulatorze przewodzi jak dioda i ginie albo przepala bezpiecznik
 - Napięcie pracy TVS powyżej 18 V ciągłej pracy; napięcie ograniczania i energia dobrane pod zrzut 35 V / 400 ms oraz impulsy 1 i 2a — obliczenie energii jako dowód (SYS-ENV-010)
-- **Wszystko na wejściu, przed TVS i za nim, ≥ 40 V**: przetwornice, dioda, kondensatory wejściowe. TJA1043 ma 58 V
+- **Wszystko na wejściu, przed TVS i za nim, ≥ 40 V**: PMIC (VBATP maks. bezwzględne 40 V, IGN −7…40 V), dioda, kondensatory wejściowe. TJA1043 ma 58 V
 - Odrzucony duży kondensator podtrzymujący na zapad 4,5 V: 7–23 mF, upływ elektrolitu do ~1 mA przy limicie uśpienia 150 µA, prąd udarowy, starzenie w +85 °C — przy zysku jednego naciśnięcia przycisku
 
 **Do sesji pomiarowej** (`measurements/pomiar-wzbudzajacego.md`): napięcie i tętnienia na akumulatorze przy kilku obrotach; napięcie przemienne jałowe uzwojenia ładującego z odpiętym regulatorem — najgorszy przypadek awarii regulatora i podstawa korekty 35 V.

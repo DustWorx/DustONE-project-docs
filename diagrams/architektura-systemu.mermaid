@@ -4,6 +4,8 @@
 %% Historia: 2.0 (2026-10-25) MVP-A: tor AC-CDI zamiast VBG08H-E, akcelerometr AIS2IH zamiast BMI090L,
 %%           KP464 zamiast BMP390, zasilanie wyłączane przez INH TJA1043, sprzętowy kill switch,
 %%           usunięty TPS (Z1 obalone), wtrysk oznaczony jako B/C. Źródło: produkt.md rozdz. 3, 4, 6.
+%%           2.2 (2026-11-01) PMIC TPS65381A-Q1 zamiast przetwornic, TPS3430 i przelacznika obciazenia; ENDRV
+%%           2.1 (2026-11-01) dwa uklady progowe kill switcha, klucz masy rozrusznika od przycisku START
 %%           1.2 (2026-09-29) usuniety blok Quickshifter
 %% LEGENDA: linia przerywana = tylko warianty B/C
 
@@ -29,15 +31,16 @@ flowchart LR
 
     subgraph ECU["ECU - STM32G474VET3"]
         CAN1["TJA1043<br/>INH steruje szynami"]
-        PWR["Przetwornice 5,0 V i 3,3 V<br/>EN z INH"]
+        PWR["PMIC TPS65381A-Q1<br/>VDD5, VDD3/5, VSOUT1<br/>watchdog, nadzor szyn"]
         COND["MAX9926<br/>kondycjoner VR"]
         CORE["Rdzen real-time<br/>HRTIM"]
-        WD["Watchdog TPS3430-Q1<br/>okienkowy"]
         ACC["AIS2IH<br/>akcelerometr"]
         BARO["KP464<br/>cisnienie atm."]
         NTC["2x NTC<br/>temp. wnetrza"]
         NVM["W25Q64 8MB<br/>czarna skrzynka"]
         CMP["Komparator<br/>kill switcha"]
+        THR["Prog tranzystorowy<br/>kill switcha"]
+        SKEY["Klucz masy<br/>przekaznika rozrusznika"]
         CDI["Blok AC-CDI<br/>kondensator + tyrystor<br/>bramka impulsowa"]
         PROF["3x BTS7008-2EPA<br/>6 kanalow PROFET"]
         IDRV["TLE9104SH"]
@@ -59,7 +62,7 @@ flowchart LR
     end
 
     BAT --> CAN1
-    CAN1 -->|"INH"| PWR
+    CAN1 -->|"INH -> IGN"| PWR
     BAT --> PWR
     BTNM -->|"WAKE"| CAN1
     BTNM --> CORE
@@ -70,8 +73,13 @@ flowchart LR
     CDI -->|"napiecie wzbudzajacego<br/>przechwycenie wyzwolenia"| CORE
 
     KILL ==> CMP
-    CMP ==>|"zwarcie wzbudzajacego<br/>+ bramki tyrystora"| CDI
+    KILL ==> THR
+    CMP ==>|"zezwolenie bramki AND"| CDI
+    THR ==>|"zwarcie wzbudzajacego"| CDI
     CMP ==>|"blokada"| PROF
+    THR ==>|"blokada"| SKEY
+    BTNM ==>|"wcisniety"| SKEY
+    SKEY ==> STR
     CMP -.-> IDRV
 
     VR --> COND --> CORE
@@ -84,7 +92,9 @@ flowchart LR
     BARO --> CORE
     NTC --> CORE
     CORE <--> NVM
-    CORE <--> WD
+    CORE <-->|"SPI, watchdog"| PWR
+    PWR ==>|"ENDRV"| CDI
+    PWR ==>|"ENDRV"| PROF
 
     CORE -.-> IDRV -.-> INJ
     CORE --> PROF
