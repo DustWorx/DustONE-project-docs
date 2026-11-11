@@ -77,6 +77,14 @@ Firmware w każdej chwili znajduje się w dokładnie jednym zdefiniowanym stanie
 | Zwolnienie przycisku | Natychmiastowe wyłączenie rozrusznika | Kontrola kierowcy |
 | Kill switch rozwarty | Blokada sprzętowa (pin EN drivera) | Rozdz. 9.1 planu naprawczego |
 | Obroty > próg (600-800 obr/min) | **Automatyczne wyłączenie rozrusznika** | Decyzja 12.09.2026 |
+| **Reset w trakcie** | Reset nieplanowany = K4 = rozrusznik zablokowany. Po każdym resecie rozrusznik wymaga **puszczenia i ponownego naciśnięcia START** — wyjątek: wybudzenie z uśpienia (ECU-SAF-018) | ECU-SAF-031, 11.11.2026 |
+| **Rozrusznik kręci bez polecenia** (sklejone styki przekaźnika) | Blokada zapłonu + komunikat „ROZRUSZNIK PRACUJE BEZ POLECENIA — ODŁĄCZ AKUMULATOR” (DTC-PWR-16) | ECU-SAF-030, decyzje Pawła 11.11.2026 |
+
+**Sklejony przekaźnik rozrusznika (O-029, decyzje Pawła 11.11.2026).** Prąd rozrusznika (~100 A, przy starcie kilkaset A) płynie z akumulatora wprost przez styki przekaźnika — **ECU ani kill switch go nie przerwą**. Drugi przekaźnik w szeregu rozważony i odrzucony; zostaje wykrycie i blokada zapłonu, żeby silnik nie odpalił.
+- **Kryterium:** obroty **100–800 obr/min przez > 3 s bez polecenia rozrusznika** i napięcie akumulatora **niższe o > 1,5 V od ostatniego napięcia spoczynkowego** (zapamiętanego przy zatrzymanym wale). Rozrusznik pobiera 60–100 A i wyraźnie obniża napięcie; toczenie na biegu nie.
+- **Zadziałanie bez usterki:** odpalanie na pych przy rozładowanym akumulatorze — dlatego kryterium względne, nie próg bezwzględny (ten blokowałby zapłon w jedynej sytuacji ratunkowej). **Test negatywny:** pych przy akumulatorze 10 V i 12,6 V — bez zadziałania.
+- **To blokada startu, nie zatrzymanie pracującego silnika** — przy pracy silnika ładowanie podnosi napięcie, kryterium nie jest spełnione. Lista zamknięta B.1.1 bez zmian.
+- Ryzyko resztkowe: na biegu przy puszczonym sprzęgle rozrusznik pcha motocykl (rozdz. 9 `otwarte.md`).
 
 ⚠️ **Udokumentowane ryzyko resztkowe:** limit 5 s bez wymuszonej przerwy chroni przed jednorazowym zablokowaniem przycisku, ale nie przed uporczywym odpalaniem — po zwolnieniu i ponownym naciśnięciu licznik startuje od zera. Przyjęte świadomie.
 
@@ -97,17 +105,17 @@ Firmware w każdej chwili znajduje się w dokładnie jednym zdefiniowanym stanie
 1. Transceiver w **Listen-only** → odczyt **Pwon** z ERR_N (zasilanie BAT zanikło — akumulator był odłączony; zegar i dane nie są ciągłe). Odczekanie ok. 8 µs po każdej zmianie trybu (jednostka do potwierdzenia w oryginale karty)
 2. Transceiver w **Normal** → odczyt **źródła wybudzenia** z ERR_N przed czwartym zboczem nadawania (lokalne: przycisk lub USB; brak: magistrala). Flaga jest też ustawiana przy pierwszym zasileniu — interpretacja razem z Pwon
 3. Zapis przyczyny wybudzenia do logu — diagnoza rozładowań akumulatora
-4. Odtworzenie stanu z pamięci nieulotnej (motogodziny, przebieg, zatrzask K4, usterki)
+4. Rozpoznanie resetu i odtworzenie zatrzasku K4 z domeny podtrzymywanej (tabela w B.4), potem ustawienie znacznika „ECU pracuje”; motogodziny, przebieg i usterki z W25Q64
 5. **Wybudzenie HMI** — gdy ECU nie śpi, HMI też nie śpi
 6. **PMIC (od 1.11.2026):** odczekanie końca autotestu BIST (~21 ms — w tym czasie PMIC nie odpowiada po SPI); konfiguracja watchdoga i nadzoru; wyczyszczenie flag WD_FAIL i ERROR_PIN_FAIL; **wyjście ze stanu DIAGNOSTIC w ≤ 512 ms**, inaczej PMIC przechodzi w SAFE (ENDRV niski); w ACTIVE pierwsze dobre zdarzenie watchdoga, potem ustawienie ENABLE_DRV
 7. Załączenie zasilania czujników VSOUT1 (bit w PMIC), odczekanie na start czujników (~1–2 ms). MAX9926 pracuje od włączenia VDD5
 
 **Wymagania FW przy usypianiu** (sekwencja: `produkt.md` rozdz. 6.4):
 1. Żądanie uśpienia do HMI; potwierdzenie **i** cisza na magistrali dłuższa niż timeout ramki HMI
-2. Zapis stanu do pamięci nieulotnej i zakończenie zapisów w toku
+2. Zapis stanu do pamięci nieulotnej i zakończenie zapisów w toku; **ostatnia czynność przed rozkazem uśpienia: skasowanie znacznika „ECU pracuje”** (B.4)
 3. Wyłączenie zasilania czujników VSOUT1
 4. Transceiver w **Go-to-Sleep** (STB_N niski, EN wysoki)
-5. **Jeśli zasilanie nie zanikło w określonym czasie po rozkazie** — wybudzenie przyszło równocześnie i rozkaz został zignorowany (AH1014, rozdz. 6.2.5). Firmware wraca do pracy i traktuje to jak wybudzenie
+5. **Jeśli zasilanie nie zanikło w określonym czasie po rozkazie** — wybudzenie przyszło równocześnie i rozkaz został zignorowany (AH1014, rozdz. 6.2.5). Firmware wraca do pracy, ustawia ponownie znacznik „ECU pracuje” i traktuje to jak wybudzenie
 
 **Usunięte z poprzedniej wersji:** wprowadzanie IMU i pamięci flash w tryby niskiego poboru, przerwania EXTI w trybie Stop — w uśpieniu te układy są bez zasilania.
 
@@ -124,7 +132,7 @@ Firmware w każdej chwili znajduje się w dokładnie jednym zdefiniowanym stanie
 
 *Opracowywane od 2026-09-20. Domyka pozycje audytu F-023 (macierz usterek) i część F-011.*
 
-**Wymaganie wiążące (z decyzji L1):** reakcja watchdoga rzędu ~100 ms — od 1.11.2026 watchdog PMIC TPS65381A-Q1: sekwencja ~20 ms, ENDRV opada po 5 złych sekwencjach. Kill switch jest równolegle wejściem GPIO i sygnałem bramkującym drivery sprzętowo (rozdz. 9.1 planu naprawczego), więc jego działanie nie zależy od stanu firmware.
+**Wymaganie wiążące (z decyzji L1):** reakcja watchdoga rzędu ~100 ms — od 1.11.2026 watchdog PMIC TPS65381A-Q1: sekwencja ~20 ms, ENDRV opada po 5 złych sekwencjach. **Od 4.11.2026 tryb pytanie–odpowiedź z sygnaturą punktów kontrolnych funkcji bezpieczeństwa** (I.2, ECU-SAF-026). Kill switch jest równolegle wejściem GPIO i sygnałem bramkującym drivery sprzętowo (rozdz. 9.1 planu naprawczego), więc jego działanie nie zależy od stanu firmware.
 
 ---
 
@@ -192,6 +200,7 @@ Uzasadnienie: w enduro silnik pełni również funkcję hamulca silnikowego i st
 | **Element zwierający uzwojenie wzbudzające** | **przerwa** | Kill działa tylko przez blokadę tyrystora | **Uszkodzenie ukryte → test przy każdym zgaszeniu (ECU-SAF-021)** |
 | **Blokada wyzwalania tyrystora** | **nie blokuje** | Kill działa tylko przez zwarcie wzbudzającego | **Uszkodzenie ukryte → ECU-SAF-021** |
 | **PROFET rozrusznika** | **zwarcie wyjścia** | Bez drugiego klucza rozrusznik kręci bez przerwy, bramkowanie wejścia nie pomaga | **Klucz masy cewki przekaźnika sterowany przyciskiem START (ECU-SAF-022, poprawka 1.11.2026)** — rozrusznik tylko przy wciśniętym przycisku, jak fabrycznie |
+| **Przekaźnik rozrusznika** (fabryczny) | **sklejone styki** | Rozrusznik kręci bez polecenia; ECU i kill go nie zatrzymają; na biegu przy puszczonym sprzęgle pcha motocykl | Wykrycie i blokada zapłonu (DTC-PWR-16, ECU-SAF-030); **ryzyko zaakceptowane — decyzja Pawła 11.11.2026** (drugi przekaźnik w szeregu odrzucony) |
 | **Klucz masy rozrusznika** | **zwarcie** | Rozrusznik tylko na polecenie firmware przy RUN | Bezpieczne — drugi klucz (PROFET) zostaje |
 | **Komparator kill switcha** | **utknięty w RUN** | Bramka AND i PROFET rozrusznika bez blokady STOP | Próg tranzystorowy nadal zwiera wzbudzające i blokuje klucz masy rozrusznika; wykrywa test przy STOP (ECU-SAF-021) |
 | **Próg tranzystorowy kill switcha** | **utknięty w RUN** | Zwarcie wzbudzającego i blokada klucza masy nieaktywne | Komparator nadal blokuje bramkę AND i PROFET; wykrywa ECU-SAF-021 |
@@ -317,7 +326,9 @@ W dwusuwie nie występuje też **utrata synchronizacji** w sensie czterosuwowym:
 | Tyrystor | Rozładowanie kondensatora przez uzwojenie pierwotne = iskra. Wyłącza się sam po spadku prądu poniżej prądu podtrzymania | — |
 | **Bramka tyrystora sprzężona pojemnościowo** (kondensator szeregowy + dioda rozładowująca + rezystor bramka–katoda) | Zbocze z HRTIM daje jeden krótki impuls prądu bramki; **zawieszone wyjście w stanie wysokim daje najwyżej jedną iskrę** | **ECU-IGN-005** |
 | **Bramka AND w torze impulsu:** impuls z HRTIM × zezwolenie z komparatora kill switcha, rezystory ściągające na obu wejściach | Druga ścieżka odcięcia (obok zwarcia uzwojenia wzbudzającego). **Komparator jest zezwoleniem, nie wetem:** zanik jego zasilania blokuje iskrę sprzętowo. Zastępuje tranzystor zwierający bramkę do katody (decyzja Pawła 1.11.2026) | ECU-SAF-001, -016 |
-| **Klucz zwierający uzwojenie wzbudzające**, sterowany **progiem tranzystorowym** kill switcha (nie komparatorem — 1.11.2026) | Pierwsza ścieżka odcięcia: odcina energię kolejnych iskier. Bez zasilania rozwiera się — zanik zasilania pokrywa bramka AND | ECU-SAF-001 |
+| **Klucz zwierający uzwojenie wzbudzające**, sterowany **progiem tranzystorowym** kill switcha (nie komparatorem — 1.11.2026) **oraz ogranicznikiem ładowania** (suma logiczna, 9.11.2026) | Pierwsza ścieżka odcięcia: odcina energię kolejnych iskier. Bez zasilania rozwiera się — zanik zasilania pokrywa bramka AND | ECU-SAF-001 |
+| **Ogranicznik ładowania kondensatora** (próg WN zasilany z obwodu WN → klucz zwierający uzwojenie wzbudzające) | Zatrzymuje ładowanie, gdy napięcie kondensatora przekroczy próg; **bez firmware i bez zasilania ECU**. Szczegóły niżej | **ECU-IGN-034** |
+| **Obwód tłumiący RC na tyrystorze + rezystor bramka–katoda** | Odporność na zakłócenia z przewodu cewki | **ECU-IGN-035** |
 | Dzielnik napięcia uzwojenia wzbudzającego → ADC | Test obu ścieżek kill switcha przy zgaszeniu; diagnostyka utraty wzbudzającego | ECU-SAF-021, DTC-IGN-08 |
 | Przechwytywanie wyzwolenia (wejście timera) | Porównanie rzeczywistego wyzwolenia ze zleconym | ECU-IGN-024 |
 | Rozładowanie kondensatora po zatrzymaniu | Bezpieczeństwo serwisu | ECU-IGN-026 |
@@ -330,9 +341,17 @@ W dwusuwie nie występuje też **utrata synchronizacji** w sensie czterosuwowym:
 
 **MPU (od 1.11.2026, ECU-SAF-023):** rejestry HRTIM w obszarze dostępnym tylko dla modułu zapłonu w trybie uprzywilejowanym. Wymaga systemu czasu rzeczywistego z obsługą MPU (np. FreeRTOS-MPU) i podziału zadań na uprzywilejowane i zwykłe.
 
-**Ogranicznik obrotów w CDI:** pominięcie impulsu bramki — kondensator pozostaje naładowany i rozładuje się przy najbliższym dopuszczonym zapłonie. Dawna kwestia „ładowania zbyt długo przy odcięciu” (O-011) w tej topologii nie istnieje.
+**Pominięta iskra przeładowuje kondensator — poprawka 9.11.2026 (O-003).** Dawny zapis („kondensator pozostaje naładowany”) był błędny: uzwojenie wzbudzające ładuje kondensator dalej w każdym półokresie, a napięcie dąży do szczytu uzwojenia, który rośnie z obrotami. Bez rozładowania przekracza 1000 V i niszczy tyrystor (opis projektanta AC-CDI, transmic.fr). Dotyczy **każdej** pominiętej iskry: ogranicznik obrotów, K4 przy toczeniu, ENDRV, komparator, zawieszony procesor, przerwa w obwodzie cewki, a także **uśpione ECU przy wale obracanym na biegu**. Kill switch tego problemu nie ma — zwiera uzwojenie.
 
-**Wartości elementów bramki** (kondensator, rezystory) — z karty wybranego tyrystora: prąd bramki, prąd podtrzymania, czas narastania prądu anody, oraz z indukcyjności uzwojenia pierwotnego cewki (pomiar).
+**Ogranicznik ładowania (ECU-IGN-034, decyzja Pawła 9.11.2026):** próg wysokonapięciowy (łańcuch diod Zenera) na kondensatorze załącza **ten sam klucz, który zwiera uzwojenie wzbudzające przy kill** — suma logiczna z progiem tranzystorowym. Prąd sterujący pobiera z obwodu WN, więc **działa bez firmware i bez zasilania ECU**. Klucz w stanie zwarcia prawie nie grzeje. Odrzucony sam ogranicznik przepięć (TVS/warystor): przy długim odcięciu musiałby stale rozpraszać moc uzwojenia — szacunek z energii iskry ½·C·U² × liczba iskier: rzędu 10 W przy 10 000 obr/min.
+- **Pokrywa:** wszystkie przyczyny pominiętej iskry wymienione wyżej. **Nie pokrywa:** rozwarcia klucza zwierającego (traci się wtedy też ścieżka 1 kill — wykrywa test przy zgaszeniu, ECU-SAF-021); zakłóceń szybszych niż reakcja klucza — zostaje ochrona przepięciowa na kondensatorze.
+- **Próg:** powyżej najwyższego napięcia kondensatora fabrycznego CDI w całym zakresie obrotów (pomiar, krok 4), z zapasem ustalonym po pomiarze; **≤ 60 % VDRM tyrystora (720 V)** i poniżej napięcia znamionowego kondensatora. Wartość do zatwierdzenia przez Pawła po pomiarze. Reakcja w obrębie półokresu — przeładowanie narasta przez wiele obrotów.
+- **Zasób współdzielony:** klucz zwierający ze ścieżką 1 kill switcha. Nie zależy od zasilania ECU, zegara ani procesora.
+- **Zadziałanie bez usterki:** za niski próg przy wysokich obrotach obciąłby energię iskry (narusza ECU-IGN-025). **Test negatywny:** pełny zakres obrotów przy normalnym zapłonie — ogranicznik nie działa ani razu (zapaść napięcia uzwojenia widoczna na ADC).
+
+**Samoczynne załączenie tyrystora przy przełączaniu odcięć — wykluczone (O-003).** Napięcie anody rośnie najwyżej z szybkością prąd uzwojenia / pojemność kondensatora, a prąd ogranicza od góry szczyt napięcia / rezystancja uzwojenia (pomiar, kroki 2 i 4; Z23). Szacunkowo pojedyncze V/µs wobec ≥ 1000 V/µs tyrystora. Realne zagrożenie to **zakłócenie z wiązki na przewodzie cewki**, które kondensator sprzęga wprost na anodę — stąd obwód RC i rezystor bramka–katoda (ECU-IGN-035). Pojedyncza iskra w złym kącie może dać odbicie kopniaka, więc chroni zapobieganie, nie wykrywanie.
+
+**Wartości elementów bramki** — tyrystor ST TN3050H-12GY-TR (`produkt.md` 3.2): impuls ≥ 2 × IGT maks. w −40 °C, narastanie ≤ 100 ns, tranzystor wzmacniający z VDD5 przed kondensatorem sprzęgającym, rezystor bramka–katoda 100–220 Ω. Indukcyjność uzwojenia pierwotnego cewki — pomiar (Z22).
 
 ##### Decyzja architektoniczna: impuls zapłonu generuje peryferium, nie program
 
@@ -357,6 +376,9 @@ Dawne domknięcie (rejestr okresu HRTIM jako sufit czasu ładowania cewki) **prz
 | DTC-COM-02a | Seria odrzuceń — pogorszona jakość magistrali | > 10 odrzuceń w 1 s | — | **K1** | Komunikat „ZAKŁÓCENIA MAGISTRALI" |
 | DTC-COM-03 | Kontroler CAN w stanie bus-off | flaga peryferium FDCAN | — | **K1** | Automatyczne odzyskiwanie; 3 wystąpienia w 10 s → komunikat |
 | DTC-COM-04 | Niezgodność wersji protokołu ECU↔HMI | wymiana numerów wersji przy nawiązaniu połączenia (SYS-COM-005) | natychmiast | **K1** | **HMI wygasza wszystkie dane i wyświetla wyłącznie komunikat o niezgodności** — patrz decyzja niżej |
+| **DTC-COM-05** | **HMI nie odpowiada mimo restartów zasilania** | 3 kolejne restarty zasilania HMI (SYS-COM-010) bez odzyskania ramek | — | **K1** | Log; dalej jedna próba restartu co 60 s; praca silnika bez zmian |
+| **DTC-COM-06** | **Przyciski HMI — stan nieprawidłowy lub zwarcie kabla** (od 9.11.2026, O-035) | zgłoszenie z HMI: odczyt drabinki poza oknami albo r < 0,016 przez > 1 s | 1 s | **K1** | Log; przyciski nieaktywne do ustąpienia; odblokowanie K4 kill switchem |
+| **DTC-COM-07** | **Przycisk HMI zablokowany** (od 9.11.2026, O-035) | zgłoszenie z HMI: przycisk trzymany > 30 s | 30 s | **K1** | Log; przycisk ignorowany do zwolnienia |
 | DTC-PWR-05 | Napięcie akumulatora niskie przy pracującym silniku | < 11,0 V **przy obrotach > 2000 obr/min** | 5 s | **K1** | Ostrzeżenie „ŁADOWANIE — AWARIA" |
 | DTC-PWR-06 | Napięcie krytycznie niskie | < 9,0 V | 2 s | **K1** | Ostrzeżenie krytyczne; poniżej 9,0 V wychodzimy poza SYS-ENV-001 |
 | DTC-PWR-07 | Przepięcie | > 16,5 V | 200 ms | **K1** | Ostrzeżenie + **załączenie wentylatora jako obciążenia**; wyłączenie po spadku poniżej 15,5 V |
@@ -368,12 +390,25 @@ Dawne domknięcie (rejestr okresu HRTIM jako sufit czasu ładowania cewki) **prz
 | **DTC-PWR-12** | Temperatura wnętrza ECU — próg T2 | **> 105 °C** | 5 s | **K1** | Wyłączenie świateł i wyjść aux; wentylator chłodnicy i rozrusznik pozostają (ECU-SAF-020) |
 | **DTC-PWR-13** | Temperatura wnętrza ECU — próg T3 | **> 120 °C na dwóch niezależnych czujnikach naraz** (NTC i czujnik MCU) | 10 s | **K4** | Zgaszenie silnika, zatrzask; odblokowanie po ostygnięciu poniżej 95 °C (ECU-SAF-020, zatrzymanie nr 9 z listy B.1.1) |
 | **DTC-PWR-14** | Czujnik temperatury ECU niewiarygodny | odczyt poza zakresem fizycznym (przerwa/zwarcie NTC) albo rozbieżność NTC–MCU > 20 °C | 1 s | **K1** | Kod usterki; **czujnik nie może uczestniczyć w T3** — zgaszenie termiczne nieczynne do usunięcia usterki |
+| **DTC-PWR-15** | **Niezgodność odniesień ADC** (od 9.11.2026, O-025) | VREF+ z VREFINT różni się od VREF+ z VMON_BG PMIC o **> 5 %** | 1 s | **K1** | Ostrzeżenie; wstrzymane diagnostyki oparte na wartościach bezwzględnych (pomiar kondensatora ECU-IGN-028/029, spójność drabinki kill B.2.5.1); wartości bezwzględne w logu oznaczone jako niepewne; pomiary stosunkowe bez zmian; **na silnik bez wpływu** |
+| **DTC-PWR-16** | **Rozrusznik pracuje bez polecenia — sklejone styki przekaźnika** (od 11.11.2026, O-029) | obroty 100–800 obr/min > 3 s bez polecenia rozrusznika **i** napięcie akumulatora niższe o > 1,5 V od ostatniego spoczynkowego | 3 s | — | **Blokada startu (zapłon zablokowany)** + komunikat „ROZRUSZNIK PRACUJE BEZ POLECENIA — ODŁĄCZ AKUMULATOR”; ustępuje po zatrzymaniu wału |
 
 **Warunek obrotów przy DTC-PWR-05 jest konieczny.** Przy rozruchu zapad napięcia do 9 V jest normalny — rozrusznik pobiera kilkadziesiąt amperów. Bez warunku `obroty > 2000` ECU zgłaszałoby awarię ładowania przy każdym odpaleniu i kierowca przestałby zwracać uwagę na ten komunikat, co jest gorsze niż jego brak.
 
 **Rozdzielenie DTC-PWR-08 — korekta wprowadzona 2026-09-22 po uwadze Pawła.** Pierwotnie awaria szyny 5 V miała jedną klasę K3 z ograniczeniem obrotów. To było niepełne: **MAX9926 jest zasilany z tej szyny**, więc przy jej zaniku nie ma czego ograniczać — silnik gaśnie z braku sygnału obrotów. Ograniczenie ma sens wyłącznie w paśmie, w którym szyna jest poza tolerancją, a układ dalej pracuje (4,50–5,50 V wg karty katalogowej MAX9926, przy progu wykrycia 4,75–5,25 V). Stąd dwie pozycje zamiast jednej.
 
 Klasa K4 dla DTC-PWR-08b nie narusza zamkniętej listy zdarzeń odcinających z B.1.1 — odcięcie następuje przez zdarzenie 6 (utrata sygnału synchronizacji), które na tej liście jest. DTC-PWR-08b wskazuje przyczynę źródłową, nie tworzy nowego zdarzenia odcinającego.
+
+##### Nadzór odniesienia ADC (O-025, decyzje Pawła 9.11.2026)
+
+Sprzęt: `produkt.md` 5.1. VREF+ = VDDA (VDD3/5 przez filtr LC).
+
+- **Korekcja:** VREFINT w każdej sekwencji skanowania: VREF+ = 3,0 V × VREFINT_CAL / VREFINT_DATA; tym VREF+ przeliczane są wszystkie pomiary bezwzględne. Pomiary stosunkowe (czujniki na VSOUT1, NTC na płytce) korekcji nie potrzebują.
+- **Kontrola krzyżowa co 100 ms:** VMON_BG PMIC (2,5 V ±2 %, multiplekser PMIC A.8, pin PD9) daje VREF+ drugą drogą. **Rozbieżność > 5 % przez 1 s → DTC-PWR-15** (decyzja Pawła 9.11.2026). Najgorszy przypadek tolerancji: VMON_BG ±2 % + VREFINT ±0,6 % (Z24) + offset ADC i ustalanie ±0,3 % ≈ 2,9 %; błąd wzmocnienia ADC się znosi, bo oba odniesienia mierzy ten sam przetwornik.
+- **Druga droga pomiaru szyn** (VDD5/2, VSOUT1/4, VBATP/10 z multipleksera PMIC) służy do rozstrzygnięcia, czy przy DTC-PWR-08a/08b uszkodzona jest szyna, czy dzielnik — bez własnego progu.
+- **Multiplekser PMIC:** przełączanie od wysokich napięć do niskich (karta 5.4.9.1), czas ustalania przed próbką, czas próbkowania ADC dopasowany do rezystancji wyjścia (3–15 kΩ dla VMON_BG, do 200 kΩ dla VBATP). Pin DIAG_OUT wspólny z multiplekserem cyfrowym — podział czasowy.
+- **Próbki poza chwilą wyładowania CDI** — chwila iskry jest znana z HRTIM.
+- **Zadziałanie bez usterki:** skrajne temperatury, stan przejściowy po przełączeniu multipleksera, za krótki czas próbkowania, zakłócenie od iskry. Przeciwdziała filtr 1 s, czas ustalania i próbkowanie poza iskrą. **Test negatywny:** −40…+85 °C i praca do 10 000 obr/min — brak DTC-PWR-15.
 
 ##### Decyzja — niezgodność wersji protokołu (2026-09-20)
 
@@ -418,9 +453,9 @@ Zapis ten zostaje w dokumencie jako ostrzeżenie: rozdz. 6.4 dokumentu procesu *
 |---|---|---|---|---|---|
 | DTC-SAF-01 | **Przerwa w przewodzie kill switcha lub rozłączona wtyczka** | napięcie na wejściu w górnym oknie (powyżej poziomu STOP) | 50 ms | **K4** | Odcięcie sprzętowe (komparator) + zatrzask + komunikat „PRZERWA W PRZEWODZIE KILL SWITCHA" |
 | DTC-SAF-01a | Kill switch naciśnięty | napięcie w oknie środkowym | 50 ms | — | Normalne gaszenie silnika, **bez zatrzasku**, bez usterki |
-| DTC-SAF-02 | Reset watchdoga | rejestr przyczyny resetu w STM32G474 | natychmiast | **K4** | Zatrzask + zapis migawki (B.2.5.3) + inkrementacja licznika |
+| DTC-SAF-02 | Reset watchdoga | rejestr przyczyny resetu w STM32G474 (IWDG, WWDG) **albo reset z PMIC przy ostatnim zapisanym WD_FAIL_CNT ≥ 5** (B.4) | natychmiast | **K4** | Zatrzask + zapis migawki (B.2.5.3) + inkrementacja licznika |
 | DTC-SAF-03 | Trzeci reset watchdoga | licznik ≥ 3, zerowany po 60 s bezawaryjnej pracy silnika (ECU-SAF-006) | — | **K4** | Stan AWARIA trwały, koniec prób startu, kasowanie wyłącznie aplikacją desktop |
-| DTC-SAF-04 | Zapaść napięcia (brown-out) | flaga BOR w STM32G474 | natychmiast | **K4** | Zatrzask + zapis migawki |
+| DTC-SAF-04 | Zapaść napięcia (brown-out) | **reset nieplanowany:** zasilenie lub NRES z PMIC przy ustawionym znaczniku „ECU pracuje” (B.4). **Sama flaga BOR nie wystarcza** — ustawia się przy każdym włączeniu zasilania (poprawka 4.11.2026) | natychmiast | **K4** | Zatrzask + zapis migawki |
 | DTC-SAF-05 | **Potwierdzona wywrotka** | kąt przechyłu **> 65°** z AIS2IH, **ważny tylko przy 0,8–1,2 g** (ECU-SAF-005) | **3 s nieprzerwanie; kąt nieważny zeruje licznik** | **K4** | Odcięcie + zatrzask |
 | **DTC-SAF-06** | **Jedna ścieżka odcięcia kill switcha nie zadziałała** | przy przejściu w STOP: napięcie uzwojenia wzbudzającego nie zanikło **albo** linia wyzwalania tyrystora nie jest zablokowana (odczyt zwrotny) | 1 zdarzenie | **K1** | Ostrzeżenie „KILL SWITCH — USTERKA JEDNEJ ŚCIEŻKI”; kolejny start dozwolony — druga ścieżka działa (ECU-SAF-021) |
 | **DTC-SAF-07** | **Kill switch: poziom poniżej RUN** — zwarcie przewodu do masy albo przerwa podciągnięcia w ECU | ADC poniżej dolnej granicy poziomu RUN (wartość z Fazy 4) | 50 ms | **K1** | **Bez odcięcia** (decyzja Pawła 1.11.2026). Ostrzeżenie „KILL SWITCH NIE DZIAŁA — GAŚ SPRZĘGŁEM” na HMI do usunięcia usterki; zapis w logu |
@@ -432,10 +467,11 @@ Zapis ten zostaje w dokumencie jako ostrzeżenie: rozdz. 6.4 dokumentu procesu *
 | DTC-SYS-05 | Brak komunikacji z pamięcią W25Q64 | 3 nieudane odczyty SPI | 3 próby | **K1** | Logowanie i czarna skrzynka nieczynne, silnik pracuje |
 | DTC-SYS-06 | Błąd zapisu do pamięci | weryfikacja odczytem po zapisie | 3 próby na różnych sektorach | **K1** | Po wyczerpaniu prób jak DTC-SYS-05 |
 | DTC-SYS-07 | Brak wolnych sektorów lub zużycie pamięci | licznik cykli kasowania sektora | — | **K0** | Nadpisywanie najstarszych wpisów, zapis zdarzenia |
-| DTC-SYS-08 | Zegar utracił czas | superkondensator rozładowany, rejestr zegara niezainicjalizowany | — | **K0** | Znaczniki czasu względne od startu, **oznaczone w logu jako niepewne** |
+| DTC-SYS-08 | Zegar utracił czas | domena podtrzymywana nieważna **po odłączeniu akumulatora** dłuższym, niż wytrzyma superkondensator | — | **K0** | Znaczniki czasu względne od startu, **oznaczone w logu jako niepewne**; czas ustawia aplikacja desktop |
 | DTC-SYS-09 | Driver wtrysku zgłasza utratę konfiguracji | rejestr stanu SPI TLE9104SH | 3 próby ponownej konfiguracji | **K3** | Po wyczerpaniu prób ograniczenie obrotów |
 | DTC-SYS-10 | Niespójny licznik motogodzin | suma kontrolna rekordu | — | **K1** | Odtworzenie z ostatniego spójnego zapisu, zdarzenie w logu |
 | **DTC-SYS-11** | **Naruszenie ochrony pamięci (MPU)** | wyjątek MemManage — zapis do chronionego obszaru, np. rejestrów HRTIM spoza modułu zapłonu (ECU-SAF-023) | natychmiast | **K4** | Reset z zapisem migawki i przyczyny, jak DTC-SAF-02; wlicza się do licznika resetów (ECU-SAF-006) |
+| **DTC-SYS-12** | **Utrata domeny podtrzymywanej przy podłączonym akumulatorze** (od 4.11.2026) | domena nieważna przy starcie bez flagi Pwon (B.4) | — | **K1** | Log, ostrzeżenie; czas niepewny jak DTC-SYS-08. Wskazuje usterkę stałego stabilizatora, diody lub superkondensatora |
 
 **Zakres autotestu pełnego:** DTC-SYS-02, 03a, 03b, 04. Wykonywany po podłączeniu akumulatora i po aktualizacji firmware.
 
@@ -540,7 +576,7 @@ Kryterium podziału: **czy wartość wpływa na to, co ECU robi z silnikiem.** P
 
 | Etap | Gdzie | Kiedy zapis |
 |---|---|---|
-| **Ślad bieżący** | rejestry domeny podtrzymywanej w STM32 (superkondensator) | **w trakcie pracy**, przy każdym punkcie kontrolnym — zero zapisów do Flash |
+| **Ślad bieżący** | rejestry domeny podtrzymywanej w STM32 (stały stabilizator, przy całkowitym zaniku zasilania superkondensator — od 4.11.2026) | **w trakcie pracy**, przy każdym punkcie kontrolnym — zero zapisów do Flash |
 | **Migawka** | W25Q64 | **raz, po resecie**, w trakcie startu — ślad bieżący przepisywany do pamięci trwałej razem z licznikiem |
 
 Zużycie Flash jest z definicji ograniczone: zapis następuje wyłącznie po resecie watchdoga, a trzeci reset przenosi ECU w trwały stan awarii i kończy dalsze próby. **Scenariusz pętli resetów, który licznik ma wykrywać, daje najwyżej trzy zapisy.**
@@ -669,15 +705,39 @@ Poza zatrzaskiem pozostają: zdarzenie 1 — naciśnięcie kill switcha, bo jest
 | Droga | Warunek | Uwaga |
 |---|---|---|
 | Kill switch STOP → RUN | Przełączenie w pozycję stop i z powrotem | Pod kciukiem, działa przy uszkodzonym lub odłączonym HMI |
-| Potwierdzenie na HMI | Naciśnięcie przycisku potwierdzenia przy wyświetlonym komunikacie o przyczynie | Czytelna informacja o powodzie zatrzasku |
+| Potwierdzenie na HMI | Przytrzymanie przycisku potwierdzenia **≥ 1 s**, rozpoczęte po wyświetleniu komunikatu o przyczynie; ramka niesie identyfikator wyświetlonego komunikatu (J, HMI-UI-010, 9.11.2026) | Czytelna informacja o powodzie zatrzasku; przypadkowe naciśnięcie albo potwierdzenie starego ekranu nie odblokowuje |
 
-**Warunek wspólny, wymagany dla obu dróg:** wał zatrzymany (brak sygnału obrotów przez zdefiniowany czas, z histerezą). Odblokowanie przy obracającym się wale jest niedopuszczalne.
+**Warunek wspólny, wymagany dla obu dróg (ECU-SAF-029, decyzja Pawła 4.11.2026):** wał zatrzymany = **≥ 2 s bez zbocza z czujnika wału**, spełnione w chwili przełączenia STOP→RUN albo potwierdzenia na HMI. Dotyczy A i B/C, niezależnie od typu czujnika (VR albo Hall, ECU-SEN-002). **Bez drugiego, niezależnego kanału** — ryzyko w rozdz. 9 `otwarte.md`.
+
+**Uzbrojenie nie opiera się na domniemanym zerze.** Brak zboczy nie dowodzi, że wał stoi (uszkodzony czujnik; bardzo wolny obrót, przy którym VR nie daje sygnału). Dlatego po odblokowaniu zapłon i wtrysk wracają **dopiero po pełnej, świeżej synchronizacji — jak przy zimnym starcie** (C.1, ECU-IGN-019). Przy martwym czujniku po odblokowaniu iskry po prostu nie ma.
+
+**Odblokowanie nie sprawdza, czy przyczyna ustąpiła.** Jeśli trwa, jej detektor zatrzaśnie K4 ponownie. Inaczej uszkodzony detektor (np. akcelerometr) unieruchomiłby motocykl na stałe. Wyjątki: DTC-PWR-13 — odblokowanie dopiero po ostygnięciu poniżej 95 °C (ECU-SAF-020); DTC-SAF-03 — kasowanie wyłącznie aplikacją desktop (ECU-SAF-006).
+
+**Trwałość zatrzasku (ECU-SAF-028, decyzja Pawła 4.11.2026):**
+- Zapis zatrzasku (flaga, przyczyna, suma kontrolna) w **rejestrach domeny podtrzymywanej**, natychmiast przy wejściu w K4 — bez Flash. Zerowany przy odblokowaniu. **Przeżywa każdy reset procesora.**
+- **Zapis nieczytelny (zła suma kontrolna) = zatrzask aktywny.**
+- Zapisu przed uśpieniem nie trzeba: ECU w AWARII nie usypia (rozdz. 9 `otwarte.md`).
+- **Odłączenie akumulatora kończy zatrzask:** flaga Pwon z TJA1043 przy starcie kasuje go celowo, z wpisem do logu. Bez tego superkondensator trzymałby zatrzask jeszcze kilka dni i wynik zależałby od czasu odłączenia. Przyczyna zostaje w logu usterek (W25Q64).
+
+**Rozpoznanie resetu przy starcie — poprawka 4.11.2026.** Flaga BOR procesora **ustawia się przy każdym włączeniu zasilania** (STM32G4: zaniku zasilania i zapaści nie da się rozróżnić flagami — potwierdzenie ST). PMIC wyłącza 3,3 V w uśpieniu, więc wykrywanie zapaści samą flagą BOR (dawne DTC-SAF-04) dawałoby K4 po każdym wybudzeniu. Rozróżnienie daje znacznik **„ECU pracuje”** w domenie podtrzymywanej: ustawiany po starcie, kasowany jako ostatnia czynność przed rozkazem uśpienia i przed planowym resetem programowym.
+
+| Warunek przy starcie (w tej kolejności) | Interpretacja | Reakcja |
+|---|---|---|
+| Pwon z TJA1043, znacznik „ECU pracuje” ustawiony, w śladzie bieżącym stan ROZRUCH lub PRACA | Zasilanie zniknęło całkowicie przy pracującym silniku (wtyczka, bezpiecznik, klema); domenę utrzymał superkondensator | DTC-SAF-04, migawka ze śladu bieżącego, K4 |
+| Pwon w pozostałych przypadkach | Akumulator odłączony, także w AWARII | Zatrzask skasowany, start normalny; przy domenie nieważnej DTC-SYS-08 |
+| Flaga IWDG lub WWDG | Reset watchdoga procesora | DTC-SAF-02, K4 |
+| Reset programowy, w domenie zapisana przyczyna MPU | Naruszenie ochrony pamięci | DTC-SYS-11, K4 |
+| Zasilenie lub NRES z PMIC, **znacznik „ECU pracuje” ustawiony** | ECU było obudzone i straciło zasilanie albo PMIC wymusił reset | Ostatni zapisany licznik WD_FAIL_CNT PMIC ≥ 5 → reset watchdoga PMIC (DTC-SAF-02); inaczej zapaść napięcia (DTC-SAF-04). K4 |
+| Znacznik skasowany | Wybudzenie z uśpienia albo planowy reset | Start normalny |
+| Domena nieważna bez Pwon | Usterka zasilania domeny podtrzymywanej (stabilizator, dioda, superkondensator) albo uszkodzenie domeny (errata 2.2.5) | Start normalny, DTC-SYS-12 |
+
+Uszkodzenie domeny po spadku napięcia bez resetu (errata 2.2.5, I.1) wykrywa suma kontrolna; w trakcie pracy zapis nieczytelny oznacza zatrzask aktywny.
 
 **Konsekwencja testowa:** wymaganie ECU-SAF-003 weryfikuje się **dwoma wariantami testu** — T-SAF-003a (odblokowanie kill switchem) i T-SAF-003b (odblokowanie z HMI). To dwie różne ścieżki w kodzie i obie muszą przechodzić przez ten sam warunek zatrzymania wału.
 
 **Zachowanie licznika resetów — doprecyzowane 2026-09-22:** licznik i migawka stanu w pamięci nieulotnej W25Q64, mechanizm dwustopniowy opisany w B.2.5.3. Licznik zerowany po 60 s bezawaryjnej pracy silnika (ECU-SAF-006); po trzecim resecie stan AWARIA trwały, kasowany wyłącznie aplikacją desktop.
 
-*Do doprecyzowania: czas braku sygnału obrotów uznawany za zatrzymanie wału, treść komunikatów.*
+*Do doprecyzowania: treść komunikatów (punkt J).*
 
 ---
 
@@ -1016,6 +1076,41 @@ Pozostaje do rozpisania w punkcie H: format pakietu, sekwencja komend USB, kolej
 
 *Do opracowania*
 
+### I.2 Nadzór funkcji — watchdog i odzyskiwanie (O-012, decyzje Pawła 4.11.2026)
+
+**Dwa poziomy watchdoga:**
+
+| Poziom | Gdzie | Co wykrywa | Reakcja |
+|---|---|---|---|
+| 1 | Watchdog wewnętrzny procesora (własny oscylator) | Całkowite zawieszenie procesora | Reset |
+| 2 | **Watchdog PMIC TPS65381A-Q1** (zewnętrzny; zastąpił TPS3430-Q1) | **Brak postępu funkcji bezpieczeństwa**, zły czas lub kolejność, usterka zgłoszona przez procesor | ENDRV niski — sprzętowa blokada zapłonu, rozrusznika, wtrysku i pompy; po 8 złych zdarzeniach reset |
+
+Watchdog PMIC jest zaprojektowany do nadzoru procesora (karta PMIC rozdz. 5.4.10: *„monitors the correct operation of the MCU”*); **innych układów, np. HMI, nie nadzoruje.**
+
+**Tryb pytanie–odpowiedź z sygnaturą (ECU-SAF-026).** Każda nadzorowana funkcja przy każdym przebiegu zapisuje punkt kontrolny. Zadanie nadzorcze sprawdza w każdej sekwencji, czy wszystkie funkcje odmeldowały się w swoim czasie i we właściwej kolejności. **Odpowiedź dla PMIC liczona jest z pytania i sygnatury punktów kontrolnych** i wysyłana po SPI3 — samo przerwanie timera nie wygeneruje poprawnej odpowiedzi. Sekwencja ~20 ms, więc ENDRV opada w ≤ 100 ms od zawieszenia funkcji. Wykrytą usterkę wewnętrzną (np. wyjątek MPU) procesor zgłasza impulsem niskim na pinie ERROR/WDI (monitor błędów PMIC w trybie impulsu niskiego, aktywny tylko w trybie pytanie–odpowiedź) — PMIC przechodzi w stan SAFE i od razu opuszcza ENDRV (karta 5.4.16, 5.4.24). Licznik błędów PMIC: ENDRV niski od 5 złych zdarzeń, reset przy kolejnym po 7 (karta 5.4.11).
+
+**Nadzorowane funkcje bezpieczeństwa:**
+
+| Funkcja | Punkt kontrolny | Uwagi |
+|---|---|---|
+| Tor zapłonu: synchronizacja, model kąta, planowanie iskry | każde zbocze wału | **tylko przy ważnej synchronizacji** — przy kopnięciu wał obraca się raz na ~200 ms |
+| Zadanie bezpieczeństwa: kill switch, zatrzaski, ogranicznik obrotów | stały okres | — |
+| Pomiary ADC: kill, uzwojenie wzbudzające, temperatury | stały okres | — |
+| Wykrywanie wywrotki (AIS2IH) | stały okres | — |
+| Wtrysk **[B/C]** | każdy cykl wtrysku | tylko przy ważnej synchronizacji |
+
+**Poza watchdogiem — z własnym odzyskiwaniem (ECU-SAF-027):** CAN i HMI, USB, logi. Ich awaria nie gasi silnika (SYS-COM-008). Jeśli zablokuje procesor, funkcje bezpieczeństwa przestaną się odmeldowywać i watchdog zadziała pośrednio.
+
+**Drabinka odzyskiwania (zasada, decyzja Pawła):** ponowienie → sprzętowy reset układu (kontroler CAN i transceiver przez STB_N/EN, stos USB, pamięć logów) → kod usterki i praca ograniczona, **z limitem prób**. Wartości dla każdej funkcji — przy specyfikacji zadań (punkt I).
+
+**Odzyskiwanie HMI (SYS-COM-010):** (1) watchdog wewnętrzny procesora HMI (HMI-SYS-001); (2) brak ramek z HMI przez **5 s** przy obudzonym ECU → ECU odcina zasilanie HMI na **0,5 s** (ECU-PWR-011); (3) najwyżej **3 próby pod rząd**, potem DTC-COM-05 i **jedna próba co 60 s**. Nadzór wstrzymany podczas aktualizacji firmware HMI.
+
+**Reguły przeciw fałszywemu odcięciu w jeździe:**
+- kasowanie wewnętrznej pamięci Flash (wstrzymuje procesor) — tylko przy stojącym silniku;
+- autotest logiczny PMIC w stanie ACTIVE opuszcza ENDRV na 21 ms — wyłącznie w stanie DIAGNOSTIC przy starcie;
+- zadania wyzwalane zboczem wału nadzorowane tylko przy ważnej synchronizacji;
+- priorytety przerwań tak, by CAN, USB i logi nie mogły zagłodzić funkcji bezpieczeństwa (punkt I).
+
 ### I.1 Errata STM32G474 (ES0430) — obejścia obowiązkowe (O-028, 3.11.2026)
 
 Rewizje krzemu: Z, Y, X. Lista obowiązujących pozycji do potwierdzenia dla rewizji kupionej partii.
@@ -1052,5 +1147,20 @@ Zakres: priorytety przerwań, budżet czasowy, obsługa watchdoga okienkowego, r
 - **Wybudzanie przyciskiem (od 18.10.2026):** drabinka przycisków jest węzłem WAKE transceivera HMI; naciśnięcie włącza szyny HMI, firmware startuje od zera i dopiero wtedy ADC określa, który przycisk. **Nacisk budzący tylko budzi.** Przy starcie ta sama sekwencja odczytu ERR_N co w ECU (A.4)
 - **Zarządzanie jasnością wg temperatury** (decyzja H.13, analiza w rozdz. 7.2): panel LCD czernieje powyżej ~70°C, a na słońcu potrzeba maksymalnej jasności — firmware musi wyważyć czytelność i ochronę wyświetlacza. Progi i charakterystyka do ustalenia
 - Przy zasypianiu: zakończenie zapisów, potwierdzenie do ECU, TJA1043 w Go-to-Sleep — szyny HMI gasną przez INH
+
+**Przyciski (O-035, decyzje Pawła 9.11.2026; sprzęt: `produkt.md` 8.3):**
+- Odczyt r co 5 ms; stan przyjęty po **4 kolejnych próbkach w tym samym oknie** (20 ms) — mieści się w HMI-UI-001.
+- Stan **nieprawidłowy** (kombinacja bez P4, wartość poza oknami) — brak komendy. Trwa **> 1 s → DTC-COM-06**.
+- **Zwarcie kabla** (r < 0,016) **> 1 s → DTC-COM-06**.
+- Przycisk trzymany **> 30 s** — uznany za zablokowany, ignorowany do zwolnienia, **DTC-COM-07**.
+- Przycisk trzymany w chwili wybudzenia — ignorowany do zwolnienia (nacisk budzący tylko budzi).
+- Zgłoszenia DTC idą po CAN do logu ECU.
+
+**Potwierdzenie odblokowania K4 (HMI-UI-010)** — jedyna komenda z HMI wpływająca na silnik (start i kill idą wprost do ECU):
+- naciśnięcie P1 **rozpoczęte po wyświetleniu komunikatu**, trzymane **≥ 1 s**, bez stanu nieprawidłowego w trakcie;
+- ramka potwierdzenia niesie **identyfikator komunikatu, który był wyświetlony**, i licznik; ECU przyjmuje ją tylko dla komunikatu aktywnego w tej chwili — potwierdzenie starego ekranu nie działa na nowy;
+- warunek zatrzymanego wału i pozostałe zasady odblokowania — B.4.
+
+**Dane nieaktualne (HMI-UI-011):** każda wartość ma znacznik świeżości z licznika ramki, z której pochodzi. Wartość z ramki starszej niż **3 okresy nadawania** — kreski `---` w miejscu tej wartości, niezależnie od pozostałych. Utrata całej komunikacji — HMI-UI-003 (300 ms).
 
 Zakres do rozpisania: maszyna stanów HMI, struktura menu, format konfiguracji wyglądu z aplikacji desktop, obsługa heartbeat z ECU.

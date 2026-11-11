@@ -46,6 +46,8 @@ Na złączach między silnikiem a sterownikiem zapłonu zapisz **kolory** i zmie
 | Pick-up (osobna wtyczka) | …… Ω | …… |
 | Każdy z przewodów powyżej względem masy silnika | …… (zwarty / izolowany) | — |
 | **Przycisk kill:** przewód kill względem masy — przycisk puszczony / wciśnięty (dodane 1.11.2026, O-015) | …… / …… Ω | …… |
+| **Uzwojenie pierwotne cewki zapłonowej** — rezystancja; **indukcyjność miernikiem LCR, jeśli dostępny** (dodane 9.11.2026, O-003, Z22) | …… Ω / …… µH | …… |
+| **Cewka przekaźnika rozrusznika** — rezystancja **w obie strony** (różnica = wbudowana dioda); indukcyjność miernikiem LCR, jeśli dostępny (dodane 11.11.2026, O-029, Z25) | …… / …… Ω, …… mH | …… |
 
 Ostatni wiersz rozstrzyga, czy uzwojenie wzbudzające i pick-up są pływające, czy mają jeden koniec na masie. Potrzebne do projektu wejść ECU.
 
@@ -102,6 +104,10 @@ Jeśli wysokie napięcie wychodzi poza ekran — zwiększ V/dz na CH1–CH3 i po
 | Kąt iskry względem pick-upu w funkcji obrotów | CH3 vs CH4 | **Fabryczna krzywa wyprzedzenia** — punkt startowy naszej mapy |
 | Kształt i biegunowość sygnału pick-upu | CH4 | Weryfikacja ustawień MAX9926, O-005 |
 | Kształt impulsu na pierwotnym cewki | CH3 | Napięcie i czas impulsu — wymagania dla tyrystora |
+| **Najwyższe napięcie kondensatora fabrycznego CDI w funkcji obrotów** | CH3, szczyt impulsu | **Próg ogranicznika ładowania** (ECU-IGN-034) |
+| Ograniczenie prądu ładowania: szczyt napięcia uzwojenia / jego rezystancja | MATH + krok 2 | Narastanie napięcia na tyrystorze (Z23) |
+| Indukcyjność uzwojenia pierwotnego cewki | Krok 2 (LCR) | Narastanie prądu tyrystora (Z22) |
+| Cewka przekaźnika rozrusznika | Krok 2 | Prąd kanału i klucza masy, energia wyłączenia, Zener (ECU-PWR-013, Z25) |
 | Napięcie i tętnienia akumulatora | Krok 5a | Wymaganie odporności na tętnienia (×2 zmierzonych) |
 | Napięcie jałowe uzwojenia ładującego | Krok 5b | Korekta wartości 35 V w SYS-ENV-009, dobór TVS |
 | Pick-up przy cofnięciu wobec obrotu do przodu | Krok 6a, CH4 | Czy kierunek da się rozpoznać z sygnału (ECU-IGN-019, O-009) |

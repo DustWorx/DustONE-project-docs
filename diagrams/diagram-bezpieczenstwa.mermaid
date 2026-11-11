@@ -6,6 +6,7 @@
 %% LEGENDA: strzalka gruba = sciezka sprzetowa, dziala przy zawieszonym firmware.
 %%          strzalka cienka = sciezka programowa, nadzorowana watchdogiem.
 %% Objasnienia i uzasadnienia kazdej sciezki: faza2-fw-specyfikacja.md punkt B.
+%% Zmiana 1.3 (09.11.2026): ogranicznik ladowania kondensatora AC-CDI (ECU-IGN-034).
 %% Zmiana 1.2 (29.09.2026): pokazany mechanizm wykrycia szyny 5 V (ADC + Power Good)
 %%   oraz rezystory sciagajace na linii bramkujacej EN (ECU-SAF-016).
 %% Zmiana 2.0 (25.10.2026): tor AC-CDI — bramka impulsowa zamiast sufitu HRTIM, dwie sciezki kill switcha,
@@ -68,6 +69,8 @@ flowchart TB
 
     HRT["Bramka tyrystora sprzezona<br/>pojemnosciowo (ECU-IGN-005)<br/>NIE gasi silnika"]
     HRT ==> LIMIT["Zawieszone wyjscie<br/>= najwyzej jedna iskra"]
+    CHG["Ogranicznik ladowania kondensatora<br/>prog WN, bez firmware i zasilania ECU<br/>zwiera wzbudzajace (ECU-IGN-034)"]
+    CHG ==> CHG_L["Pominieta iskra<br/>nie przeladuje kondensatora"]
 
     classDef hw fill:#1f6feb,stroke:#0b3d91,color:#ffffff,stroke-width:2px
     classDef fw fill:#8957e5,stroke:#4c2889,color:#ffffff
@@ -75,8 +78,8 @@ flowchart TB
     classDef latch fill:#cf222e,stroke:#82071e,color:#ffffff,stroke-width:2px
     classDef soft fill:#bf8700,stroke:#7d4e00,color:#ffffff
 
-    class KS_PRESS,KS_BREAK,WDG,BOR,HRT hw
+    class KS_PRESS,KS_BREAK,WDG,BOR,HRT,CHG hw
     class IMU_F,SYNC,INJ_S,RAIL,REV fw
     class CMP,RST,FWT mech
     class CUT_L latch
-    class CUT_T,LIMIT soft
+    class CUT_T,LIMIT,CHG_L soft

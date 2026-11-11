@@ -24,14 +24,14 @@ Generowane przez `scripts/kontrola.py`, nie wpisywane ręcznie.
 
 | Pozycja | Stan |
 |---|---|
-| Wymagania z identyfikatorem | 141 |
-| Pokrycie w tabeli traceability | 141 / 141 |
+| Wymagania z identyfikatorem | 161 |
+| Pokrycie w tabeli traceability | 161 / 161 |
 | Wymagania bez ustalonej wartości — **blokują G0** | **3** |
 | Wymagania bez ustalonej wartości — wariant B/C, poza G0 | 8 |
-| Kody usterek w macierzy | 57 |
-| Identyfikatory testów | 134 |
-| Pozycje otwarte | 65 |
-| Założenia (3 obalone, 2 potwierdzone, 15 niepotwierdzonych) | 20 |
+| Kody usterek w macierzy | 67 |
+| Identyfikatory testów | 163 |
+| Pozycje otwarte | 66 |
+| Założenia (3 obalone, 2 potwierdzone, 20 niepotwierdzonych) | 25 |
 
 ---
 
@@ -50,7 +50,7 @@ Pięć plików. Każdy odpowiada na jedno pytanie.
 | Plik | Odpowiada na pytanie |
 |---|---|
 | [`produkt.md`](produkt.md) | **Co budujemy i jak to jest zbudowane?** Zakres, warianty, decyzje sprzętowe z uzasadnieniami i odrzuconymi alternatywami, komponenty, zasilanie, złącze, uśpienie, HMI, budżety, obudowy, obwiednia środowiskowa |
-| [`wymagania.md`](wymagania.md) | **Co musi być spełnione i czym to udowodnimy?** 141 wymagań z wartościami i metodą weryfikacji + tabela pokrycia od wymagania do dowodu |
+| [`wymagania.md`](wymagania.md) | **Co musi być spełnione i czym to udowodnimy?** 161 wymagań z wartościami i metodą weryfikacji + tabela pokrycia od wymagania do dowodu |
 | [`firmware.md`](firmware.md) | **Jak firmware ma się zachowywać?** Maszyna stanów, bezpieczeństwo i macierz usterek, trigger i synchronizacja, punkty C.2–J otwarte |
 | [`otwarte.md`](otwarte.md) | **Czego jeszcze nie wiemy i co może być fałszywe?** Jedyny rejestr pozycji otwartych, założenia, ryzyka zaakceptowane świadomie |
 | [`proces.md`](proces.md) | **W jakiej kolejności i kiedy można przejść dalej?** Fazy, bramki, kryteria odbioru wyrobu, plan prac |

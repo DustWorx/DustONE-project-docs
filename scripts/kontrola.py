@@ -114,8 +114,8 @@ def liczniki(wymagania, firmware, otwarte):
         'wymagania': len(unikalne(RE_WYMAGANIE, czesc_wymagan)),
         'wymagania otwarte MVP-A (blokują G0)': len(otwarte_wymagania),
         'wymagania otwarte B/C (poza G0)': len(otwarte_bc),
-        'kody usterek DTC': len(unikalne(r'\bDTC-[A-Z]{3}-\d{2}\b', firmware, 0) - set(WYCOFANE)),
-        'identyfikatory testów': len(unikalne(r'\bT-[A-Z]{3}-\d{3}[a-z]?\b', wymagania, 0)),
+        'kody usterek DTC': len(set(re.findall(r'^\|\s*\*{0,2}(DTC-[A-Z]{3}-\d{2}[a-z]?)\*{0,2}[^|]*\|', firmware, re.M)) - set(WYCOFANE)),  # wiersze macierzy
+        'identyfikatory testów': len(unikalne(r'\bT-[A-Z]{2,4}-\d{3}[a-z]?\b', wymagania, 0)),
         'pozycje otwarte': len(pozycje),
         'założenia': len(zalozenia),
     }, sorted(otwarte_wymagania), pozycje, sorted(otwarte_bc)

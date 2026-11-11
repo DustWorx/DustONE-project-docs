@@ -4,6 +4,7 @@
 %% Historia: 2.0 (2026-10-25) MVP-A: tor AC-CDI zamiast VBG08H-E, akcelerometr AIS2IH zamiast BMI090L,
 %%           KP464 zamiast BMP390, zasilanie wyłączane przez INH TJA1043, sprzętowy kill switch,
 %%           usunięty TPS (Z1 obalone), wtrysk oznaczony jako B/C. Źródło: produkt.md rozdz. 3, 4, 6.
+%%           2.3 (2026-11-09) blok AC-CDI: sprzetowy ogranicznik ladowania kondensatora (ECU-IGN-034)
 %%           2.2 (2026-11-01) PMIC TPS65381A-Q1 zamiast przetwornic, TPS3430 i przelacznika obciazenia; ENDRV
 %%           2.1 (2026-11-01) dwa uklady progowe kill switcha, klucz masy rozrusznika od przycisku START
 %%           1.2 (2026-09-29) usuniety blok Quickshifter
@@ -41,7 +42,7 @@ flowchart LR
         CMP["Komparator<br/>kill switcha"]
         THR["Prog tranzystorowy<br/>kill switcha"]
         SKEY["Klucz masy<br/>przekaznika rozrusznika"]
-        CDI["Blok AC-CDI<br/>kondensator + tyrystor<br/>bramka impulsowa"]
+        CDI["Blok AC-CDI<br/>kondensator + tyrystor<br/>bramka impulsowa<br/>ogranicznik ladowania"]
         PROF["3x BTS7008-2EPA<br/>6 kanalow PROFET"]
         IDRV["TLE9104SH"]
         USB["USB-C"]

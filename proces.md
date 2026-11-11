@@ -80,7 +80,7 @@ Wyrób uznaje się za gotowy, gdy **wszystkie** poniższe są spełnione i udoku
 | A3 | Praca ciągła w całym zakresie obrotów bez przerw w zapłonie | 800–10 000 obr/min | Rejestracja przerw |
 | A4 | Dokładność momentu zapłonu | wg ECU-IGN-002 (≤ 1,0° w 99,9 %) **oraz ECU-IGN-022: w 100 % zapłonów wcześniej ≤ 1°, później ≤ 2°**; w rozruchu iskra w GMP (ECU-IGN-019) | T-IGN-002, T-IGN-019, T-IGN-022 |
 | A5 | Każdy mechanizm klasy K4 zweryfikowany wstrzykiwaniem usterki | 100% pozycji | Protokoły T-SAF-* |
-| A6 | Pobór prądu w uśpieniu | ECU ≤ 150 µA, zestaw ≤ 250 µA (bilans: ≤ 63 / ≤ 123 µA) | T-PWR-001, T-PWR-002 |
+| A6 | Pobór prądu w uśpieniu | ECU ≤ 150 µA, zestaw ≤ 250 µA (bilans: ≤ 140,5 / ≤ 200,5 µA — przeliczone 9.11.2026) | T-PWR-001, T-PWR-002 |
 | A7 | Przejazd terenowy bez usterki krytycznej i bez fałszywego odcięcia | **10 godzin** pracy silnika w terenie | Log czarnej skrzynki |
 | A8 | Temperatura wewnątrz obudów w granicach klas komponentów z marginesem SYS-ENV-003b | **Komora klimatyczna +50 °C otoczenia** (SYS-ENV-003, zmiana 1.11.2026) oraz **dane z czujników temperatury ECU z przejazdu A7**; w miejscu akcelerometru **≤ 100 °C** (Z17); żadne zadziałanie progu T3 (ECU-SAF-020) | Protokół z komory + log |
 | A9 | Czytelność wyświetlacza w pełnym słońcu | wg HMI-UI-005 | T-UI-005 |
@@ -125,6 +125,8 @@ Kolejność wynika z jednej reguły: **dane wejściowe przed decyzjami, które o
 | ST-LINK na płytce Nucleo | Programowanie i debugowanie przez SWD | jest |
 | Zasilacz laboratoryjny 0–30 V / 5 A | 7 V (A14), 18 V, −14 V (zamiana przewodów), zapady | do kupienia |
 | **Symulator VR na Nucleo z DAC** | Testy zapłonu na stanowisku: obroty, hamowanie wału, zakłócenia, **wyjście cyfrowe „prawdziwego kąta” jako niezależne odniesienie** | do zbudowania |
+| **Stanowisko zakłóceń** (O-039, 11.11.2026): fabryczna cewka RC01 IG5128 z iskrownikiem, makieta wiązki wg `produkt.md` 4.4.1, przekaźniki jako obciążenia indukcyjne, symulator VR z wyjściem analogowym do 100 V szczytowo | SYS-ENV-011: 0 fałszywych i 0 zgubionych zboczy na 10 mln, zero resetów | do zbudowania |
+| **Generator ESD własny** (O-039, 11.11.2026): moduł WN do ~10 kV, rezystor ładujący ~100 MΩ, kondensator WN 150 pF, 330 Ω z kilku rezystorów szeregowo, końcówka kulista; sonda WN 1000:1; **zapalarka piezoelektryczna** do prób przesiewowych | SYS-ENV-012 | do zbudowania |
 | Adapter USB-CAN (typu CANable) | Podgląd i wstrzykiwanie ramek — **niezależny od ECU** | do kupienia |
 | STEVAL-MKI218V1 + STEVAL-MKI109D | Drgania w miejscu montażu (O-047) | do kupienia |
 | Własna komora grzewcza (+50 °C, SYS-ENV-003 od 1.11.2026) | A8, SYS-ENV-003 strona gorąca, progi ECU-SAF-020 | do zbudowania |
@@ -135,6 +137,7 @@ Kolejność wynika z jednej reguły: **dane wejściowe przed decyzjami, które o
 **Świadomie przyjęte luki w dowodach:**
 - **−40 °C (SYS-ENV-003) bez pomiaru.** Zamrażarka daje ok. −20…−30 °C. Dolna granica wykazywana analizą klas temperaturowych elementów (SYS-ENV-003b)
 - **EMC bez laboratorium akredytowanego** (decyzja 18.10.2026, SYS-ENV-010)
+- **ESD generatorem własnym, bez kalibracji** (decyzja Pawła 11.11.2026, SYS-ENV-012) — kształt impulsu odbiega od normy przez pasożyty; wyłącznie wyładowania przez powietrze
 - **Jedna iteracja PCB.** Warunek: pełny przegląd schematu i płytki przed zamówieniem, w tym niezależny przegląd ludzki toru zapłonu i odcięcia (O-057)
 
 ## 6. Dokumenty
