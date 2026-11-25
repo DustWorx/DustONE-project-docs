@@ -146,6 +146,40 @@ def odwolania(pozycje):
     return uzyte
 
 
+# ------------------------------------------ 5. kody usterek użyte dwukrotnie
+# Wiersz macierzy kodów ma co najmniej 6 kolumn (kod, nazwa, wykrycie, czas,
+# klasa, reakcja); krótsze tabele (np. C.1.7) tylko przywołują kody.
+RE_WIERSZ_DTC = r'^\|\s*\*{0,2}(DTC-[A-Z]{3}-\d{2}[a-z]?)\*{0,2}\s*\|(?:[^|\n]*\|){5,}'
+
+
+def kody_dwukrotnie(firmware):
+    kody = re.findall(RE_WIERSZ_DTC, firmware, re.M)
+    podwojne = sorted({k for k in kody if kody.count(k) > 1})
+    if podwojne:
+        bledy.append('Kod usterki zdefiniowany w macierzy więcej niż raz: %s' % ', '.join(podwojne))
+
+
+# ------------------------------------------------- 6. liczniki w README
+def readme(licz, pokryte, zdefiniowane):
+    if not os.path.exists('README.md'):
+        return
+    tekst = io.open('README.md', encoding='utf-8').read()
+    oczekiwane = {
+        'Wymagania z identyfikatorem': str(licz['wymagania']),
+        'Pokrycie w tabeli traceability': '%d / %d' % (len(pokryte), len(zdefiniowane)),
+        'Kody usterek w macierzy': str(licz['kody usterek DTC']),
+        'Identyfikatory testów': str(licz['identyfikatory testów']),
+        'Pozycje otwarte': str(licz['pozycje otwarte']),
+    }
+    for etykieta, wartosc in oczekiwane.items():
+        m = re.search(r'^\|\s*%s\s*\|\s*([^|]+?)\s*\|' % re.escape(etykieta), tekst, re.M)
+        if m and m.group(1).strip('* ') != wartosc:
+            bledy.append('README: „%s” = %s, wyliczone %s' % (etykieta, m.group(1).strip(), wartosc))
+    m = re.search(r'^\|\s*Założenia \([^)]*\)\s*\|\s*(\d+)\s*\|', tekst, re.M)
+    if m and int(m.group(1)) != licz['założenia']:
+        bledy.append('README: założenia = %s, wyliczone %d' % (m.group(1), licz['założenia']))
+
+
 # ------------------------------------------------- 4. osierocone odwołania
 def osierocone():
     for sciezka in pliki_tekstowe():
@@ -168,6 +202,8 @@ def main():
     licz, otwarte_wym, pozycje, otwarte_bc = liczniki(wymagania, firmware, otwarte)
     uzyte = odwolania(pozycje)
     osierocone()
+    kody_dwukrotnie(firmware)
+    readme(licz, pokryte, zdefiniowane)
 
     print('LICZNIKI — wartości do wstawienia do dokumentów')
     for k, v in licz.items():

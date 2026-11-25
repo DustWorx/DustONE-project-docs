@@ -58,6 +58,16 @@ Samodzielna, programowalna jednostka sterująca silnika do motocykli enduro i ad
 
 Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez potwierdzonej kwalifikacji i pełnego numeru są otwarte (O-027, O-063).
 
+**Polityka zaopatrzenia (decyzja Pawła 25.11.2026, O-033):** element dopuszczony, gdy ma status **Active** i jest **na stanie u co najmniej dwóch autoryzowanych dystrybutorów z listy TME, Mouser, Farnell, DigiKey** (kolejność preferencji jak na liście). Kraj producenta, fabryki i montażu nie jest kryterium. Element jednego producenta jest dopuszczony na tych samych warunkach; brak zamiennika — w rejestrze ryzyk. Pole 11 arkusza kwalifikacji ocenia się wobec tej polityki.
+
+| Element (arkusz) | Stan pola 11 wobec polityki (25.11.2026) |
+|---|---|
+| MAX9926UAEE/V+ | ✅ Active; Mouser, Farnell, DigiKey — na stanie; czas dostawy ~10 tygodni. Jeden producent, **bez zamiennika** (decyzja Pawła) |
+| TPS7B8133QDRVRQ1 (4.6) | ✅ Mouser i DigiKey — na stanie (4.11.2026) |
+| TN3050H-12GY-TR (3.2) | ⚠️ Farnell w ofercie, DigiKey — stan nie sprawdzony; do potwierdzenia przy zakupie |
+| STGB25N40LZAG (3.4, B/C) | ⚠️ Farnell i DigiKey w ofercie, stan nie sprawdzony |
+| TPS65381A-Q1 (4.5) | ⚠️ DigiKey — stan nie sprawdzony; reszta nie potwierdzona |
+
 | Funkcja | Układ | Pełny numer | Kwalifikacja / zakres | Uwagi |
 |---|---|---|---|---|
 | Mikrokontroler | **STM32G474VET3** | STM32G474VET3 | −40…+125 °C | Wybrany za HRTIM. **Sufiks T3, nie T6** — T6 ma tylko −40…+85 °C, a analiza termiczna daje do 84 °C wewnątrz obudowy. **LQFP100, nie LQFP64** — bilans wykazał 55 potrzebnych sygnałów wobec ~50 użytkowych w LQFP64; LQFP100 daje ~82 piny, zapas ~27. 512 KB Flash, 128 KB RAM, 170 MHz, HRTIM, FDCAN, USB |
@@ -68,7 +78,7 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | Akcelerometr (dawniej IMU) | **ST AIS2IH** | AIS2IHTR | ✅ **AEC-Q100** (karta DS12421 rev. 4, str. 1); **−40…+115 °C** — warunkowo wobec SYS-ENV-003b (założenie Z17); aktywny, dostępność deklarowana przez ST do 01/2033 | **Decyzja Pawła 25.10.2026: sam akcelerometr, bez żyroskopu** — żyroskopy MEMS są wrażliwe na drgania (przesunięcie zera → dryf kąta), a wywrotka to kąt grawitacji w spoczynku. Zakres **±16 g** (czarna skrzynka), odporność na udar 10 000 g (0,2 ms, bez zasilania), filtr pasma ODR/2…ODR/20 jako antyaliasing, samotest, dryf zera ±0,2 mg/°C, SPI, LGA-12 2×2 mm. Zasilany z szyny 3,3 V — w uśpieniu bez zasilania. **Czego nie robi:** nie liczy kąta (robi to MCU); nie mierzy powyżej ±16 g (wypadek ponad zakres = nasycenie); nie jest elementem bezpieczeństwa funkcjonalnego (ST: zastosowania motoryzacyjne bez funkcji bezpieczeństwa). **Zapasowy:** Murata SCA3300-D01-1 (−40…+125 °C, ±6 g, bez deklaracji AEC-Q). Odrzucone: BMI090L, IAM-20381HT (Grade 2, 105 °C), ADXL317 (I²S, 5 mA), SMA130 (85 °C), AIS3624DQ (wycofany), FXLS8964/67 (105 °C) |
 | Pamięć logów | **W25Q64** (8 MB, SPI NOR) | ⚠️ rodzina, nie numer | ⚠️ klasa przemysłowa | Czarna skrzynka, 8 MB z zapasem; wlutowana, bez slotu. Pełny numer i klasa do ustalenia (O-063) |
 | Wyjścia pomocnicze | BTS7008-2EPA **×4** (od 16.11.2026, O-055) | ⚠️ do ustalenia | AEC-Q100 | PROFET+2, **8 kanałów**, diagnostyka, ochrona zwarciowa i odwrotnej polaryzacji. **7,5 A/kanał to wartość nominalna w określonych warunkach, nie dopuszczalny prąd roboczy dowolnego obciążenia** |
-| Kondycjoner VR/Hall | **MAX9926** | MAX9926UAEE/V+ | ✅ Production, −40…+125 °C, automotive | Adaptacyjny próg 33% poprzedniego szczytu, detekcja przejścia przez zero, czułość od 20 mV, odporność na pominięty ząb. **Pobór 4,7 mA typ./10 mA max, brak trybu shutdown** — w uśpieniu odcinany razem z VDD5 PMIC (od 1.11.2026; wcześniej przełącznikiem obciążenia). Wersja dwukanałowa; jednokanałowy MAX9924 jest mniejszy i tańszy. Jedyna pozycja niedostępna w TME (O-033) |
+| Kondycjoner VR/Hall | **MAX9926** | MAX9926UAEE/V+ | ✅ Production, −40…+125 °C, automotive | Adaptacyjny próg 33% poprzedniego szczytu, detekcja przejścia przez zero, czułość od 20 mV, odporność na pominięty ząb. **Pobór 4,7 mA typ./10 mA max, brak trybu shutdown** — w uśpieniu odcinany razem z VDD5 PMIC (od 1.11.2026; wcześniej przełącznikiem obciążenia). Wersja dwukanałowa; jednokanałowy MAX9924 jest mniejszy i tańszy. Dostępność wg polityki zaopatrzenia — spełniona (Mouser, Farnell, DigiKey; 25.11.2026); TME nie potwierdzone. Zamienniki odrzucone: TI LM1815 (bez kwalifikacji automotive), onsemi NCV1124 (bez progu adaptacyjnego i przełączania w zerze — inna kalibracja zbocza, słabsza odporność na zakłócenia) — O-033 |
 | Ciśnienie atmosferyczne | **Infineon KP464** | KP464XTMA1 / KP464EXTMA1 — do ustalenia przy zakupie | ✅ **AEC-Q103-002** (karta rev. 1.20, str. 1) — standard AEC dla czujników MEMS; **−40…+125 °C** | **Montowany od początku na PCB MVP-A** (decyzja Pawła 25.10.2026). W MVP-A tylko logowanie ciśnienia i wysokości; korekta dawki w B/C. Zakres 40–115 kPa, ±1,0 kPa (0…85 °C), ±1,5 kPa na krańcach; SPI 16-bit; zasilanie 3,0–5,25 V, 3,5 mA aktywnie, 10 µA w power-down; start 5–10 ms; diagnostyka toru sygnału, komórki i EEPROM. **Uwagi z karty:** czuły na światło > 1 lx (obudowa nieprzezroczysta, membrana nieprzepuszczająca światła); pin VPROG wyłącznie do programowania EEPROM — podłączenie wg angielskiej karty. **Wymaga otworu ciśnieniowego z membraną IP67 w obudowie.** ⚠️ Dostępność: Farnell — 52 tyg. i MOQ 3400 szt. dla KP464E; dostępność w małych ilościach do sprawdzenia (TME → Mouser → Farnell → DigiKey) w Fazie 4. BMP390 odrzucony (bez kwalifikacji, 85 °C) |
 | Pozycja biegu | MLX90316 | ⚠️ do ustalenia | ⚠️ do potwierdzenia | Triaxis, bezstykowy, kąt magnesu 0–360°, wyjście analogowe. **Wykonalność mechaniczna na Becie niepotwierdzona (O-031)** |
 | **PMIC — zasilanie, nadzór szyn, watchdog** | **TI TPS65381A-Q1** | TPS65381AQDAPRQ1 | ✅ ACTIVE, AEC-Q100 Grade 1, TA −40…+125 °C | **Decyzja Pawła 1.11.2026 (O-018)**, arkusz w rozdz. 4.5. Przetwornica wstępna 6 V → **VDD5** 5,0 V ±2 % (TJA1043 VCC, MAX9926, komparator, bramka AND), **VDD3/5** 3,3 V (procesor, pamięć, AIS2IH, TJA1043 VIO, próg tranzystorowy), **VSOUT1** 5 V ±3 % dla czujników w wiązce (ochrona przed zwarciem do masy i akumulatora, domyślnie wyłączone). Nadzór UV/OV wszystkich szyn z osobnym źródłem odniesienia, watchdog, **ENDRV** → bramka AND zapłonu, blokada PROFET rozrusznika, **(B/C) EN TLE9104 i PROFET pompy**, **NRES** → reset procesora. **Wejście IGN z INH TJA1043** przez ≥ 10 kΩ. STANDBY ≤ 75 µA. Zastępuje: przetwornice 5,0 V i 3,3 V, TPS3430-Q1, przełącznik obciążenia 5 V |
@@ -92,7 +102,7 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 
 ### 3.1 Przydział pinów procesora STM32G474VET3 (O-028, 3.11.2026)
 
-**Metoda:** wszystkie sygnały z dokumentacji (warianty A, B i C) przydzielone programem `scripts/piny_mcu.py` na danych pinów producenta (ST, `STM32_open_pin_data`, baza CubeMX). Wynik: **70 sygnałów na 84 użyteczne piny I/O, 14 wolnych**; **16.11.2026 dopisane ręcznie na wolne piny** (bez zmiany przydziału): czwarty PROFET (IN ×2, DEN, IS) i rezerwa czujnika prądu akumulatora — **75 sygnałów, 9 wolnych**; wszystkie peryferia mieszczą się jednocześnie.
+**Metoda:** wszystkie sygnały z dokumentacji (warianty A, B i C) przydzielone programem `scripts/piny_mcu.py` na danych pinów producenta (ST, `STM32_open_pin_data`, baza CubeMX). Wynik: **70 sygnałów na 84 użyteczne piny I/O, 14 wolnych**; **16.11.2026 dopisane ręcznie na wolne piny** (bez zmiany przydziału): czwarty PROFET (IN ×2, DEN, IS) i rezerwa czujnika prądu akumulatora — **75 sygnałów, 9 wolnych**; 25.11.2026 kod wariantu obsadzenia (PB2) — **76 sygnałów, 8 wolnych**; wszystkie peryferia mieszczą się jednocześnie.
 
 **Ograniczenia przyjęte w przydziale:**
 - USB zajmuje PA11/PA12, więc **FDCAN1 na PD0/PD1** (trzecia opcja, PB8/PB9, koliduje z BOOT0);
@@ -140,6 +150,7 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | PE14 | 45 | PROFET 3 — prąd (IS) | ADC4_IN1 |
 | PB12 | 51 | PROFET 4 — prąd (IS) (16.11.2026) | ADC1_IN11, ADC4_IN3 |
 | PB13 | 52 | Prąd akumulatora — rezerwa, opcja (ECU-AUX-003) | ADC3_IN5 |
+| PB2 | 34 | Kod wariantu obsadzenia A/B/C (ECU-SAF-033, 25.11.2026) | ADC2_IN12 |
 | PE7 | 38 | Drabinka kill switcha (B.2.5.1) | ADC3_IN4 |
 | PE9 | 40 | NTC przy bloku CDI (ECU-SAF-020) | ADC3_IN2 |
 | PE11 | 42 | NTC w sekcji mocy | ADC3_IN15, ADC4_IN15 |
@@ -180,7 +191,7 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | PD11 | 58 | TLE9104 EN — żądanie MCU (× komparator × ENDRV) | GPIO |
 | PB4 | 91 | Prędkość koła — przełączany podciągacz | GPIO |
 
-**Wolne (9, po 16.11.2026):** PA1, PA15, PA2, PA3, PA9, PB10, PB2, PB3, PC13. Numery wyprowadzeń z bazy CubeMX (`STM32_open_pin_data`).
+**Wolne (8, po 25.11.2026):** PA1, PA15, PA2, PA3, PA9, PB10, PB3, PC13. Numery wyprowadzeń z bazy CubeMX (`STM32_open_pin_data`).
 
 
 **Do zrobienia przy schemacie:** odtworzenie przydziału w projekcie CubeMX (konfiguracja zegarów, DMA, wyzwalaczy ADC z HRTIM) i potwierdzenie rewizji krzemu (Z, Y albo X) przy zakupie — od niej zależy lista obowiązujących obejść (`firmware.md` I).
@@ -205,7 +216,7 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | 10 | **Czego NIE robi** | (1) **Nie wyłącza się bramką** — przewodzi, aż prąd spadnie poniżej IH. (2) **Nie ogranicza napięcia kondensatora** — przy pominiętych iskrach chroni go wyłącznie ogranicznik ładowania (ECU-IGN-034). (3) **IGT przy −40 °C karta podaje tylko krzywą względną** (rys. 10) — impuls bramki liczony z odczytu krzywej. (4) Nie jest odporny na szybsze zakłócenia niż 1000 V/µs — przewód cewki sprzęga je przez kondensator wprost na anodę; obwód RC i test ESD (ECU-IGN-035) | karta s. 2, 5 |
 | 11 | Dostępność | TME, Mouser — nie potwierdzone; **Farnell — w ofercie**; DigiKey — pozycje 6677807/6677808, stan nie sprawdzony | OEMsecrets, wyszukiwanie 9.11.2026 |
 
-**Sterowanie bramką (wynika z karty):** impuls **≥ 2 × IGT maks. w −40 °C** (odczyt z rys. 10), narastanie **≤ 100 ns** — warunek, przy którym obowiązuje 200 A/µs. Z bramki AND (logika 5 V) wymaga to **tranzystora wzmacniającego zasilanego z VDD5** z lokalnym kondensatorem magazynującym. **Kondensator sprzęgający zostaje za tranzystorem** — ECU-IGN-005 (zawieszone wyjście = najwyżej jedna iskra) bez zmian. Zanik VDD5 = brak impulsu = brak iskry.
+**Sterowanie bramką (wynika z karty):** impuls **≥ 2 × IGT maks. w −40 °C** (odczyt z rys. 10), narastanie **≤ 100 ns** — warunek, przy którym obowiązuje 200 A/µs. Z bramki AND (logika 5 V) wymaga to **tranzystora wzmacniającego zasilanego z VDD5** z lokalnym kondensatorem magazynującym. **Kondensator sprzęgający zostaje za tranzystorem** — ECU-IGN-005 (zawieszone wyjście = najwyżej jedna iskra) bez zmian. Zanik VDD5 = brak impulsu = brak iskry. **Wymiarowanie przy VDD5 = 4,50 V** — dolna granica pracy (O-044, `firmware.md` B.2.4).
 
 **Rezystor bramka–katoda:** rzędu 100–220 Ω — zakłócenie musiałoby wymusić ~1–2 mA, żeby przekroczyć VGD 0,2 V; strata impulsu bramki ≤ 13 mA. Wartość przy schemacie.
 
@@ -218,6 +229,7 @@ Jedna płytka dla A/B/C (rozdz. 1); różnią się obsadzeniem i obudową.
 | Blok AC-CDI: tyrystor TN3050H, kondensator, ogranicznik ładowania, klucz zwierający uzwojenie wzbudzające | ✔ | — | — | rozdz. 3.2 |
 | **Stopień TCI:** IGBT STGB25N40LZAG (D²PAK) + miękkie wyłączenie, ograniczenie prądu, sprzętowy limit czasu ładowania | — | ✔ | ✔ | rozdz. 3.4 (O-065); miejsce pod kontakt termiczny z obudową B/C |
 | Kanał HRTIM zapłonu i piny złącza zapłonu | ✔ | ✔ | ✔ | wspólne, obsadzenie stopnia wariantowe (O-065 pkt 7) |
+| Rezystor kodujący wariant (PB2, ECU-SAF-033) | wartość A | wartość B | wartość C | obsadzany razem ze stopniem zapłonu; wartości przy schemacie (okna rozłączne w najgorszym przypadku) |
 | Wejście wału (zworka, 2.4) | VR → MAX9926 | Hall (prawdopodobnie — informacja Pawła) | Hall | potwierdzenie przy etapie B/C |
 | Driver wtrysku TLE9104SH | — | ✔ | ✔ | EN = komparator × ENDRV, RESN = próg tranzystorowy (decyzja Pawła 1.11.2026) |
 | Kanał PROFET pompy paliwa (× ENDRV) | aux | ✔ | ✔ | — |
@@ -461,13 +473,13 @@ Rozważona i odrzucona obsługa kill switcha przez HMI i CAN:
 
 **Czujnik fazy wałka rozrządu (4T):** nie znaleziono potwierdzenia, że jednocylindrowe enduro 4T go mają — dokumentacja diagnostyczna wymienia tylko czujnik wału korbowego, co jest zgodne z praktyką dla jednocylindrowców. **Pin zarezerwowany mimo to** — koszt jednego pinu wobec przeprojektowania płytki, gdyby okazał się potrzebny.
 
-**Czujnik prędkości koła:** wykorzystujemy fabryczny, założono pasywny (kontaktron lub Hall z otwartym kolektorem), 2 przewody, masa wspólna z GND. ECU dostarcza konfigurowalny programowo rezystor podciągający. **Jeśli czujnik wymaga własnego zasilania, potrzebny dodatkowy pin (O-032).**
+**Czujnik prędkości koła — potwierdzone 25.11.2026 (Paweł, O-032):** fabryczny **kontaktron**, 2 przewody; fabryczny licznik podciąga linię do 3,3 V, przejście magnesu zwiera ją do 0 V. Dodatkowy pin niepotrzebny. **Czujnik podłączony wyłącznie do ECU** (decyzja Pawła) — fabryczny licznik odłączony od czujnika, prędkość i przebieg pokazuje HMI; równoległe połączenie wprowadziłoby 5 V z ECU na wejście 3,3 V licznika. Podciągnięcie z VSOUT1 przełączane programowo (PB4), ~2 mA — w budżecie VSOUT1 (3.3) i wystarczające jako prąd styku kontaktronu. **Koło przednie 21" (Paweł):** opona 90/90-21 — średnica ~695 mm, **obwód ~2180 mm** — wartość domyślna w konfiguracji, do kalibracji pomiarem toczenia. Jeden magnes = jeden impuls na obrót: przy 1 km/h obrót koła trwa ~8 s. **Drgania styku:** filtr RC na wejściu, stała ~100 µs, i blokada 5 ms po przyjętym zboczu — przy 200 km/h impulsy co ~39 ms, więc blokada nie gubi impulsów.
 
 ---
 
 ### 5.1 Wejścia analogowe — odniesienie, dzielniki, ochrona (O-025, 9.11.2026)
 
-**Odniesienie (decyzja Pawła 9.11.2026):** VREF+ = VDDA, czyli VDD3/5 przez filtr LC. Bez wewnętrznego bufora VREFBUF i bez zewnętrznego źródła. Pomiary bezwzględne korygowane w każdym cyklu przez **VREFINT** procesora; VREF+ sprawdzane względem **VMON_BG PMIC 2,5 V ±2 %** (karta PMIC tab. 5-4) — `firmware.md` B.2.4, DTC-PWR-15.
+**Odniesienie (decyzja Pawła 9.11.2026):** VREF+ = VDDA, czyli VDD3/5 przez filtr LC. Bez wewnętrznego bufora VREFBUF i bez zewnętrznego źródła. Pomiary bezwzględne korygowane w każdym cyklu przez **VREFINT** procesora; VREF+ sprawdzane względem **VMON_BG PMIC 2,5 V ±2 %** (karta PMIC tab. 5-4) — `firmware.md` B.2.4, DTC-SYS-17.
 
 **Każda szyna krytyczna ma dwie niezależne drogi pomiaru i sprzętowy nadzór PMIC:**
 
@@ -502,6 +514,7 @@ Rozważona i odrzucona obsługa kill switcha przez HMI i CAN:
 | PA4 | TPS (B/C) | VSOUT1 | stosunek do VSOUT1 | ≤ 0,6 | 0,5 % (ECU-SEN-003, kalibracja) | RC, fg ≈ 200 Hz | wiązka |
 | PE8 | Ciśnienie (B/C, rezerwa O-060) | VSOUT1 | stosunek do VSOUT1 | ≤ 0,6 | 0,5 % | RC, fg ≈ 200 Hz | wiązka |
 | PB13 | Prąd akumulatora (opcja, ECU-AUX-003) | VSOUT1 | stosunek do VSOUT1 (2,5 V = 0 A) | ≤ 0,6 | 1 % | RC, fg ≈ 100 Hz | wiązka |
+| PB2 | Kod wariantu A/B/C | VDDA | dzielnik rezystorowy, okna rozłączne | — | rezystory 1 % | RC | płytka |
 | wewn. | VREFINT | procesor | — | — | kalibracja fabryczna (Z24) | — | — |
 | wewn. | Czujnik temperatury procesora (T1–T3) | procesor | bezwzględne, VREFINT, kalibracja TS_CAL | — | — | — | — |
 | wewn. | VBAT/3 — zasilanie domeny podtrzymywanej | stały stabilizator / superkondensator | bezwzględne, VREFINT | 1/3 | — | — | — |
@@ -680,9 +693,10 @@ Kopnięcie i popych przy uśpionym ECU wymagają przycisku — **do zapisania w 
 | H.9 | Złącze przycisków | Osobne, Deutsch DTM04-3P | Serwisowalność — kierownice wymieniane po upadkach bez ruszania wiązki głównej |
 | H.10 | Transceiver | TJA1043, ten sam co w ECU | Jeden numer katalogowy na oba urządzenia; wybudzanie przez magistralę potrzebne także w HMI |
 | H.11 | Zasilanie | Dwie przetwornice: 5 V (wyświetlacz i koprocesor) i 3,3 V (procesor, flash). **Obie włączane wyjściem INH transceivera HMI; w uśpieniu obie wyłączone** (zmiana 18.10.2026) | Ta sama architektura co ECU (rozdz. 6). TJA1043 HMI zasilany z +12 V stałego ze złącza DTM04 |
-| H.12 | Pamięć zasobów | Zewnętrzna flash SPI NOR, rodzina W25Q | Koprocesor wymaga trwałego przechowywania bitmap, czcionek i animacji; dwubankowy bootloader zostawia ~256 KB na bank — za mało na firmware i zasoby |
+| H.12 | Pamięć zasobów | Zewnętrzna flash SPI NOR, rodzina W25Q | Koprocesor wymaga trwałego przechowywania bitmap, czcionek i animacji — **od 25.11.2026 także układu ekranu i obrazów użytkownika** (HMI-UI-013), więc pojemność dobierana z zapasem na tło 320×240; dwubankowy bootloader zostawia ~256 KB na bank — za mało na firmware i zasoby |
 | H.13 | Czujnik temperatury | Cyfrowy na PCB, blisko wyświetlacza | Ograniczenie jasności dopiero powyżej 70 °C i zapis przekroczeń (HMI-UI-004, 11.11.2026); przesunięcie czujnik–panel wyznaczane w T-UI-004 |
 | H.14 | Nadzór | **Watchdog wewnętrzny procesora HMI** (HMI-SYS-001) + **restart zasilania przez ECU** po 5 s ciszy, 3 próby, potem co 60 s (SYS-COM-010) — decyzja Pawła 4.11.2026 | Zawieszone HMI wraca bez udziału kierowcy; ECU pracuje dalej bez HMI (SYS-COM-008) |
+| H.15 | Czujnik światła (od 25.11.2026, O-055) | Cyfrowy, I²C (wspólna magistrala z czujnikiem temperatury), AEC-Q100 — **do doboru przy schemacie HMI** (arkusz 11 pól); rozdzielczość ≤ 1 lx w dolnym zakresie, nasycenie powyżej ~1000 lx dopuszczalne. Zasilany z szyn HMI — w uśpieniu wyłączony | Automatyczna jasność (HMI-UI-014). **Montaż za szybą ekranu, poza polem aktywnym** — bez dodatkowego otworu; w szybie przezroczyste miejsce nad czujnikiem (konstrukcja obudowy — Paweł) |
 
 ### 8.1 Uśpienie HMI
 

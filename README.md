@@ -20,16 +20,16 @@ Zero wykonanych testów jest stanem oczekiwanym — nie zbudowano jeszcze żadne
 
 ### Liczby
 
-Generowane przez `scripts/kontrola.py`, nie wpisywane ręcznie.
+Wpisywane z wyniku `scripts/kontrola.py`; od 25.11.2026 skrypt sprawdza, że ta tabela zgadza się z dokumentami.
 
 | Pozycja | Stan |
 |---|---|
-| Wymagania z identyfikatorem | 173 |
-| Pokrycie w tabeli traceability | 173 / 173 |
+| Wymagania z identyfikatorem | 186 |
+| Pokrycie w tabeli traceability | 186 / 186 |
 | Wymagania bez ustalonej wartości — **blokują G0** | **3** |
 | Wymagania bez ustalonej wartości — wariant B/C, poza G0 | 8 |
-| Kody usterek w macierzy | 69 |
-| Identyfikatory testów | 175 |
+| Kody usterek w macierzy | 74 |
+| Identyfikatory testów | 188 |
 | Pozycje otwarte | 66 |
 | Założenia (3 obalone, 2 potwierdzone, 25 niepotwierdzonych) | 30 |
 
@@ -61,7 +61,7 @@ Pięć plików. Każdy odpowiada na jedno pytanie.
 | `diagrams/` | Architektura systemu, łańcuch odcięcia zapłonu, zatrzask K4 — źródło Mermaid i render PNG |
 | `measurements/` | Procedury pomiarowe do wykonania na sprzęcie i ich wyniki |
 | `audit/` | Otrzymane raporty audytowe w formie dostarczonej |
-| `scripts/` | Kontrola spójności i liczniki; modele: kąt zapłonu (`model_kata.py`), termika i czytelność HMI (`termika_hmi.py`), drabinka przycisków HMI, przydział pinów |
+| `scripts/` | Kontrola spójności i liczniki; modele: kąt zapłonu (`model_kata.py`), termika i czytelność HMI (`termika_hmi.py`), czarna skrzynka (`bilans_logu.py`), drabinka przycisków HMI, przydział pinów |
 
 
 **Od czego zacząć:** `otwarte.md` rozdz. „Co blokuje bramkę G0" i `proces.md` rozdz. 5. Dają aktualny obraz stanu na dwóch stronach.

@@ -91,7 +91,7 @@ Jeśli wysokie napięcie wychodzi poza ekran — zwiększ V/dz na CH1–CH3 i po
 
 ## Krok 6 — Obrót wsteczny i liczba obrotów na kopnięcie (dodane 1.11.2026, O-009, ECU-IGN-019)
 
-**6a. Cofnięcie wału.** Podłączenie jak w kroku 3. Tryb Single, 50 ms/dz, wyzwalanie na CH4 (pick-up). **Wolne, niepełne kopnięcie**: wał przechodzi przez wypust, nie pokonuje sprężania i **cofa się przez wypust**. Zapis 3–5 razy. Interesuje mnie: kształt pick-upu przy cofnięciu wobec obrotu do przodu (CH4), czy uzwojenie wzbudzające ładuje wtedy kondensator (MATH) i **czy fabryczne CDI daje iskrę przy cofnięciu** (CH3). Zwykła technika kopania, buty — jak przy normalnym odpalaniu.
+**6a. Cofnięcie wału.** Podłączenie jak w kroku 3. Tryb Single, 50 ms/dz, wyzwalanie na CH4 (pick-up). **Wolne, niepełne kopnięcie**: wał przechodzi przez wypust, nie pokonuje sprężania i **cofa się przez wypust**. Zapis 3–5 razy. Interesuje mnie: kształt pick-upu przy cofnięciu wobec obrotu do przodu (CH4), **znak i faza napięcia wzbudzającego (MATH) w chwili każdego zbocza pick-upu — przy obrocie w przód i przy cofnięciu** (kandydat na wykrywanie kierunku, firmware C.1.12), czy uzwojenie wzbudzające ładuje wtedy kondensator (MATH) i **czy fabryczne CDI daje iskrę przy cofnięciu** (CH3). Zwykła technika kopania, buty — jak przy normalnym odpalaniu.
 
 **6b. Obroty na kopnięcie.** Kill switch wciśnięty (silnik nie odpali, pick-up dalej widoczny). Tryb Single, 200 ms/dz, wyzwalanie na CH4. Jedno pełne, energiczne kopnięcie — zliczę przejścia wypustu. Powtórzyć 3 razy.
 
