@@ -28,7 +28,7 @@ Samodzielna, programowalna jednostka sterująca silnika do motocykli enduro i ad
 |---|---|
 | **Quickshifter i czujnik sprzęgła** | Usunięte. Najgorszy stosunek złożoności do wartości: 9 wymagań, 3 kody usterek, 2 komponenty, 2 piny. **Jedyna funkcja wymagająca wnioskowania o intencji kierowcy** zamiast o mierzalnym stanie — stąd trzy kolejne błędy specyfikacji. W technicznym terenie sprzęgło jest w ciągłym użyciu, więc realna wartość jest niska. Zwolnione dwa piny przechodzą do bilansu |
 | **Blokada rozrusznika na biegu** | Odpowiedzialność po stronie kierowcy, jak w części motocykli sportowych. Czujnik sprzęgła jako warunek rozruchu mógłby przy awarii przełącznika w klamce unieruchomić motocykl w terenie. Wymaga ostrzeżenia w instrukcji |
-| **Automatyczne ograniczenie mocy przy przegrzaniu silnika** | Tylko ostrzeżenie na HMI. W zawodach automatyczna redukcja mocy może być groźniejsza od przegrzania — decyzja o zatrzymaniu należy do kierowcy, który widzi sytuację |
+| **Automatyczne ograniczenie mocy przy przegrzaniu silnika** | Tylko ostrzeżenie na HMI (> 100 °C, ECU-DIA-005; potwierdzone 16.11.2026). W zawodach automatyczna redukcja mocy może być groźniejsza od przegrzania — decyzja o zatrzymaniu należy do kierowcy, który widzi sytuację |
 | **Regulacja napięcia szyn przez mikrokontroler** | Patrz rozdz. 4.2 — błąd firmware mógłby zniszczyć czujniki i sam procesor |
 | Pełne logowanie sesji jazdy | Zawężone do czarnej skrzynki (zdarzenia krytyczne). Ograniczenie w firmware, nie w sprzęcie — 8 MB daje zapas |
 | Sygnalizacja stanu na samym ECU | Brak diody. Diagnostyka wyłącznie przez HMI i aplikację |
@@ -62,11 +62,12 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 |---|---|---|---|---|
 | Mikrokontroler | **STM32G474VET3** | STM32G474VET3 | −40…+125 °C | Wybrany za HRTIM. **Sufiks T3, nie T6** — T6 ma tylko −40…+85 °C, a analiza termiczna daje do 84 °C wewnątrz obudowy. **LQFP100, nie LQFP64** — bilans wykazał 55 potrzebnych sygnałów wobec ~50 użytkowych w LQFP64; LQFP100 daje ~82 piny, zapas ~27. 512 KB Flash, 128 KB RAM, 170 MHz, HRTIM, FDCAN, USB |
 | Tor zapłonu | **AC-CDI — blok dyskretny** | tyrystor **ST TN3050H-12GY-TR** (arkusz 3.2, 9.11.2026); pozostałe do doboru | tyrystor AEC-Q101; reszta ⚠️ do kwalifikacji | Prostownik WN, kondensator zapłonowy, tyrystor, rezystor rozładowujący, ochrona przepięciowa; **sprzętowy ogranicznik ładowania kondensatora** — próg WN zasilany z obwodu WN załącza klucz zwierający uzwojenie wzbudzające, działa bez firmware i bez zasilania ECU (ECU-IGN-034, decyzja Pawła 9.11.2026); **obwód tłumiący RC na tyrystorze i rezystor bramka–katoda** (ECU-IGN-035); **bramka tyrystora sprzężona pojemnościowo** (ECU-IGN-005), **bramka AND w torze impulsu**: impuls z HRTIM × zezwolenie z komparatora kill switcha, rezystory ściągające na obu wejściach (ECU-SAF-001, -016; decyzja Pawła 1.11.2026 — zastępuje tranzystor zwierający bramkę do katody), **dzielnik napięcia uzwojenia wzbudzającego** do ADC (ECU-SAF-021); **dwa łańcuchy rezystorów na kondensatorze**: rozładowujący (ECU-IGN-026) i pomiarowy do ADC, próbkowany sprzętowo przed iskrą (ECU-IGN-028, -029; decyzja Pawła 1.11.2026). Dobór i arkusze kwalifikacji w O-001 — elementy istotne dla bezpieczeństwa. **VBG08H-E usunięty 15.10.2026** |
+| Tor zapłonu **[B/C]** | **DC-TCI — IGBT zapłonowy + zabezpieczenia dyskretne** | **ST STGB25N40LZAG** (D²PAK); zamienniki w tym samym footprincie: onsemi FGB3040G2-F085, ISL9V3040S3ST | AEC-Q101 (ST) | **Decyzja Pawła 11.11.2026 (O-065).** Miękkie wyłączenie, ograniczenie prądu i sprzętowy limit czasu ładowania na płytce — arkusz i zasady w rozdz. 3.4. Obsadzany tylko w B/C (rozdz. 3.3) |
 | Driver wtryskiwaczy | **TLE9104SH** | TLE9104SHXUMA1 | ✅ Aktywny, AEC-Q100/101 | Historia doboru: L9960 (błąd — mostek H do silników DC) → TLE8104E (funkcjonalnie dobry, **status NRND**) → TLE9104SH. Dane wtryskiwaczy KTM TPI/TBI: 11,7 Ω nom., prąd ~1,23 A przy 14,4 V = wysokoimpedancyjne, **peak-and-hold niepotrzebne, wystarcza tryb nasycony**. 4 kanały low-side (2 na wtryskiwacze, 2 zapas), 3 A/kanał, SPI z diagnostyką. Pin EN jest punktem sprzętowego bramkowania od kill switcha |
 | Transceiver CAN ×2 | **TJA1043** | ⚠️ do ustalenia | ✅ Aktywny, AEC-Q100 (strona NXP) | TJA1051T/3 odrzucony — nie ma wybudzania przez magistralę. **Od 18.10.2026 steruje zasilaniem: wyjście INH włącza obie przetwornice, w uśpieniu (Sleep) czuwa sam z pinu BAT, 18 µA typ. / 30 µA maks.** Reguły schematu: rozdz. 6.2. Ten sam układ w ECU i HMI. **NXP wskazuje TJA1443A jako następcę** — zgodność do sprawdzenia przy doborze pełnego numeru (Faza 4) |
 | Akcelerometr (dawniej IMU) | **ST AIS2IH** | AIS2IHTR | ✅ **AEC-Q100** (karta DS12421 rev. 4, str. 1); **−40…+115 °C** — warunkowo wobec SYS-ENV-003b (założenie Z17); aktywny, dostępność deklarowana przez ST do 01/2033 | **Decyzja Pawła 25.10.2026: sam akcelerometr, bez żyroskopu** — żyroskopy MEMS są wrażliwe na drgania (przesunięcie zera → dryf kąta), a wywrotka to kąt grawitacji w spoczynku. Zakres **±16 g** (czarna skrzynka), odporność na udar 10 000 g (0,2 ms, bez zasilania), filtr pasma ODR/2…ODR/20 jako antyaliasing, samotest, dryf zera ±0,2 mg/°C, SPI, LGA-12 2×2 mm. Zasilany z szyny 3,3 V — w uśpieniu bez zasilania. **Czego nie robi:** nie liczy kąta (robi to MCU); nie mierzy powyżej ±16 g (wypadek ponad zakres = nasycenie); nie jest elementem bezpieczeństwa funkcjonalnego (ST: zastosowania motoryzacyjne bez funkcji bezpieczeństwa). **Zapasowy:** Murata SCA3300-D01-1 (−40…+125 °C, ±6 g, bez deklaracji AEC-Q). Odrzucone: BMI090L, IAM-20381HT (Grade 2, 105 °C), ADXL317 (I²S, 5 mA), SMA130 (85 °C), AIS3624DQ (wycofany), FXLS8964/67 (105 °C) |
 | Pamięć logów | **W25Q64** (8 MB, SPI NOR) | ⚠️ rodzina, nie numer | ⚠️ klasa przemysłowa | Czarna skrzynka, 8 MB z zapasem; wlutowana, bez slotu. Pełny numer i klasa do ustalenia (O-063) |
-| Wyjścia pomocnicze | BTS7008-2EPA ×3 | ⚠️ do ustalenia | AEC-Q100 | PROFET+2, 6 kanałów, diagnostyka, ochrona zwarciowa i odwrotnej polaryzacji. **7,5 A/kanał to wartość nominalna w określonych warunkach, nie dopuszczalny prąd roboczy dowolnego obciążenia** |
+| Wyjścia pomocnicze | BTS7008-2EPA **×4** (od 16.11.2026, O-055) | ⚠️ do ustalenia | AEC-Q100 | PROFET+2, **8 kanałów**, diagnostyka, ochrona zwarciowa i odwrotnej polaryzacji. **7,5 A/kanał to wartość nominalna w określonych warunkach, nie dopuszczalny prąd roboczy dowolnego obciążenia** |
 | Kondycjoner VR/Hall | **MAX9926** | MAX9926UAEE/V+ | ✅ Production, −40…+125 °C, automotive | Adaptacyjny próg 33% poprzedniego szczytu, detekcja przejścia przez zero, czułość od 20 mV, odporność na pominięty ząb. **Pobór 4,7 mA typ./10 mA max, brak trybu shutdown** — w uśpieniu odcinany razem z VDD5 PMIC (od 1.11.2026; wcześniej przełącznikiem obciążenia). Wersja dwukanałowa; jednokanałowy MAX9924 jest mniejszy i tańszy. Jedyna pozycja niedostępna w TME (O-033) |
 | Ciśnienie atmosferyczne | **Infineon KP464** | KP464XTMA1 / KP464EXTMA1 — do ustalenia przy zakupie | ✅ **AEC-Q103-002** (karta rev. 1.20, str. 1) — standard AEC dla czujników MEMS; **−40…+125 °C** | **Montowany od początku na PCB MVP-A** (decyzja Pawła 25.10.2026). W MVP-A tylko logowanie ciśnienia i wysokości; korekta dawki w B/C. Zakres 40–115 kPa, ±1,0 kPa (0…85 °C), ±1,5 kPa na krańcach; SPI 16-bit; zasilanie 3,0–5,25 V, 3,5 mA aktywnie, 10 µA w power-down; start 5–10 ms; diagnostyka toru sygnału, komórki i EEPROM. **Uwagi z karty:** czuły na światło > 1 lx (obudowa nieprzezroczysta, membrana nieprzepuszczająca światła); pin VPROG wyłącznie do programowania EEPROM — podłączenie wg angielskiej karty. **Wymaga otworu ciśnieniowego z membraną IP67 w obudowie.** ⚠️ Dostępność: Farnell — 52 tyg. i MOQ 3400 szt. dla KP464E; dostępność w małych ilościach do sprawdzenia (TME → Mouser → Farnell → DigiKey) w Fazie 4. BMP390 odrzucony (bez kwalifikacji, 85 °C) |
 | Pozycja biegu | MLX90316 | ⚠️ do ustalenia | ⚠️ do potwierdzenia | Triaxis, bezstykowy, kąt magnesu 0–360°, wyjście analogowe. **Wykonalność mechaniczna na Becie niepotwierdzona (O-031)** |
@@ -87,11 +88,11 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | Złącze USB | USB-C | — | — | Uszczelnione lub standardowe z zaślepką IP67. Wymaga rezystorów 5,1 kΩ na liniach CC (tryb urządzenia) |
 | Ochrona wejścia | TVS, ochrona odwrotnej polaryzacji, filtr LC, PTC | do doboru | — | Patrz rozdz. 4.4 |
 
-**6 kanałów PROFET:** wentylator, przekaźnik rozrusznika, światła, pompa paliwa, aux ×2.
+**8 kanałów PROFET** (od 16.11.2026, O-055 — światła na trzech kanałach): wentylator, przekaźnik rozrusznika, światła postojowe, światła mijania, światła drogowe, pompa paliwa, aux ×2.
 
 ### 3.1 Przydział pinów procesora STM32G474VET3 (O-028, 3.11.2026)
 
-**Metoda:** wszystkie sygnały z dokumentacji (warianty A, B i C) przydzielone programem `scripts/piny_mcu.py` na danych pinów producenta (ST, `STM32_open_pin_data`, baza CubeMX). Wynik: **70 sygnałów na 84 użyteczne piny I/O, 14 wolnych**; wszystkie peryferia mieszczą się jednocześnie.
+**Metoda:** wszystkie sygnały z dokumentacji (warianty A, B i C) przydzielone programem `scripts/piny_mcu.py` na danych pinów producenta (ST, `STM32_open_pin_data`, baza CubeMX). Wynik: **70 sygnałów na 84 użyteczne piny I/O, 14 wolnych**; **16.11.2026 dopisane ręcznie na wolne piny** (bez zmiany przydziału): czwarty PROFET (IN ×2, DEN, IS) i rezerwa czujnika prądu akumulatora — **75 sygnałów, 9 wolnych**; wszystkie peryferia mieszczą się jednocześnie.
 
 **Ograniczenia przyjęte w przydziale:**
 - USB zajmuje PA11/PA12, więc **FDCAN1 na PD0/PD1** (trzecia opcja, PB8/PB9, koliduje z BOOT0);
@@ -137,6 +138,8 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | PE13 | 44 | PROFET 1 — prąd (IS) | ADC3_IN3 |
 | PD13 | 60 | PROFET 2 — prąd (IS) | ADC3_IN10, ADC4_IN10 |
 | PE14 | 45 | PROFET 3 — prąd (IS) | ADC4_IN1 |
+| PB12 | 51 | PROFET 4 — prąd (IS) (16.11.2026) | ADC1_IN11, ADC4_IN3 |
+| PB13 | 52 | Prąd akumulatora — rezerwa, opcja (ECU-AUX-003) | ADC3_IN5 |
 | PE7 | 38 | Drabinka kill switcha (B.2.5.1) | ADC3_IN4 |
 | PE9 | 40 | NTC przy bloku CDI (ECU-SAF-020) | ADC3_IN2 |
 | PE11 | 42 | NTC w sekcji mocy | ADC3_IN15, ADC4_IN15 |
@@ -159,13 +162,16 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | PB11 | 50 | PROFET 1 — DEN | GPIO |
 | PB6 | 93 | PROFET 2 — DEN | GPIO |
 | PA0 | 20 | PROFET 3 — DEN | GPIO |
+| PA10 | 71 | PROFET 4 — DEN (16.11.2026) | GPIO |
 | PB0 | 32 | PROFET — DSEL (wspólny) | GPIO |
 | PF9 | 10 | PROFET — wentylator | GPIO |
 | PD10 | 57 | PROFET — przekaźnik rozrusznika (× komparator × ENDRV) | GPIO |
-| PD12 | 59 | PROFET — światła | GPIO |
+| PD12 | 59 | PROFET — światła postojowe | GPIO |
 | PE10 | 41 | PROFET — pompa (B/C, × ENDRV) | GPIO |
 | PC3 | 18 | PROFET — aux 1 | GPIO |
 | PC5 | 31 | PROFET — aux 2 | GPIO |
+| PB5 | 92 | PROFET — światła mijania (16.11.2026) | GPIO |
+| PB9 | 96 | PROFET — światła drogowe (16.11.2026) | GPIO |
 | PE3 | 2 | Przycisk START | GPIO |
 | PE6 | 5 | Odczyt zwrotny progu tranzystorowego | GPIO |
 | PE2 | 1 | TJA1043 EN | GPIO |
@@ -174,7 +180,7 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | PD11 | 58 | TLE9104 EN — żądanie MCU (× komparator × ENDRV) | GPIO |
 | PB4 | 91 | Prędkość koła — przełączany podciągacz | GPIO |
 
-**Wolne (14):** PA1, PA10, PA15, PA2, PA3, PA9, PB10, PB12, PB13, PB2, PB3, PB5, PB9, PC13.
+**Wolne (9, po 16.11.2026):** PA1, PA15, PA2, PA3, PA9, PB10, PB2, PB3, PC13. Numery wyprowadzeń z bazy CubeMX (`STM32_open_pin_data`).
 
 
 **Do zrobienia przy schemacie:** odtworzenie przydziału w projekcie CubeMX (konfiguracja zegarów, DMA, wyzwalaczy ADC z HRTIM) i potwierdzenie rewizji krzemu (Z, Y albo X) przy zakupie — od niej zależy lista obowiązujących obejść (`firmware.md` I).
@@ -202,6 +208,61 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 **Sterowanie bramką (wynika z karty):** impuls **≥ 2 × IGT maks. w −40 °C** (odczyt z rys. 10), narastanie **≤ 100 ns** — warunek, przy którym obowiązuje 200 A/µs. Z bramki AND (logika 5 V) wymaga to **tranzystora wzmacniającego zasilanego z VDD5** z lokalnym kondensatorem magazynującym. **Kondensator sprzęgający zostaje za tranzystorem** — ECU-IGN-005 (zawieszone wyjście = najwyżej jedna iskra) bez zmian. Zanik VDD5 = brak impulsu = brak iskry.
 
 **Rezystor bramka–katoda:** rzędu 100–220 Ω — zakłócenie musiałoby wymusić ~1–2 mA, żeby przekroczyć VGD 0,2 V; strata impulsu bramki ≤ 13 mA. Wartość przy schemacie.
+
+### 3.3 Obsadzenie wariantowe wspólnej PCB (11.11.2026, odtworzone 25.11.2026, O-064)
+
+Jedna płytka dla A/B/C (rozdz. 1); różnią się obsadzeniem i obudową.
+
+| Blok | A (gaźnik, AC-CDI) | B (TPI) | C (TBI) | Uwagi |
+|---|---|---|---|---|
+| Blok AC-CDI: tyrystor TN3050H, kondensator, ogranicznik ładowania, klucz zwierający uzwojenie wzbudzające | ✔ | — | — | rozdz. 3.2 |
+| **Stopień TCI:** IGBT STGB25N40LZAG (D²PAK) + miękkie wyłączenie, ograniczenie prądu, sprzętowy limit czasu ładowania | — | ✔ | ✔ | rozdz. 3.4 (O-065); miejsce pod kontakt termiczny z obudową B/C |
+| Kanał HRTIM zapłonu i piny złącza zapłonu | ✔ | ✔ | ✔ | wspólne, obsadzenie stopnia wariantowe (O-065 pkt 7) |
+| Wejście wału (zworka, 2.4) | VR → MAX9926 | Hall (prawdopodobnie — informacja Pawła) | Hall | potwierdzenie przy etapie B/C |
+| Driver wtrysku TLE9104SH | — | ✔ | ✔ | EN = komparator × ENDRV, RESN = próg tranzystorowy (decyzja Pawła 1.11.2026) |
+| Kanał PROFET pompy paliwa (× ENDRV) | aux | ✔ | ✔ | — |
+| TPS (PA4) | — | ✔ | ✔ | ECU-SEN-003 |
+| Ciśnienie (PE8) | — | rezerwa | rezerwa | O-060 |
+| Pozostałe: PMIC, procesor, CAN, USB, PROFET-y, czujniki wspólne, HMI | ✔ | ✔ | ✔ | — |
+
+**Budżet zasilania czujników VSOUT1 (Z18, Z28).** VSOUT1 PMIC ma 100 mA, ale jest zasilane z akumulatora: przy 16 V strata (16 − 5) V × I ≤ 0,6 W daje **≤ 50 mA**.
+
+| Odbiornik | mA (przydział) | A | B/C |
+|---|---|---|---|
+| NTC cieczy i powietrza — podciągnięcia | 2 × 2,5 | ✔ | ✔ |
+| Czujnik biegu MLX90316 | ≤ 12 | ✔ | ✔ |
+| Podciągnięcie czujnika koła | 2 | ✔ | ✔ |
+| TPS | ≤ 10 | — | ✔ |
+| Ciśnienie (rezerwa O-060) | ≤ 10 | — | ✔ |
+| Czujnik Halla wału | ≤ 8 | — | ✔ |
+| **Razem** | | **≤ 19 mA** | **≤ 47 mA** |
+
+W B/C zapas 3 mA — każdy dodatkowy odbiornik na VSOUT1 w B/C wymaga osobnego zasilania albo rezygnacji z innego. Wartości przydziałów do potwierdzenia kartami czujników B/C.
+
+### 3.4 Stopień zapłonu TCI [B/C] — IGBT ST STGB25N40LZAG, arkusz kwalifikacji i zasady zabezpieczeń (11.11.2026, odtworzone 25.11.2026, O-065)
+
+**Decyzja Pawła 11.11.2026:** IGBT zapłonowy D²PAK z drugim źródłem w tym samym footprincie + zabezpieczenia dyskretne. **Odrzucone po przeszukaniu rynku:** ST VBG08H-E (aktywny, ale tylko rolki po 2500 szt., brak na stanie, ST zapowiada możliwe NRND; karta nie podaje AEC-Q100; brak limitu czasu ładowania; opadnięcie wejścia w trakcie miękkiego wyłączenia daje iskrę), onsemi FGBS3040E1-F085 (wycofany), ST VB525SP-E (wycofany), NXP MC33810 (koniec produkcji, ostatnie zamówienia 04/2027), onsemi FAD1100/1101A/1110 (po limicie czasu twarde wyłączenie = iskra), układy systemowe ST L9779WD, L9177A, Infineon TLE8888 (L9177A bez drivera zapłonu; pozostałe zastąpiłyby PMIC, MAX9926, TLE9104 i CAN — inna architektura). Referencyjny zestaw ST dla małych silników steruje cewkę zwykłym IGBT STGB25N40LZ.
+
+| # | Pole | Wartość | Źródło |
+|---|---|---|---|
+| 1 | Numer zamówieniowy | **STGB25N40LZAG** — D²PAK, taśma. Zamienniki w tym samym footprincie: onsemi FGB3040G2-F085, ISL9V3040S3ST — **równoważność do sprawdzenia przy schemacie** | karta ST DocID030975 Rev 2 (09.2017) s. 1 |
+| 2 | Cykl życia | **Active**, dostępność deklarowana do 07/2030, sprawdzone 11.11.2026 | strona produktu ST |
+| 3 | Kwalifikacja | **AEC-Q101** | karta s. 1 |
+| 4 | Temperatura | warunki tabel −40…175 °C, przechowywanie −55…175 °C | karta s. 3–4 |
+| 5 | Zasilanie i pobór | Brak zasilania. Upływ ICES ≤ 20 µA (VCE 15 V, Tj 175 °C) | karta s. 4 |
+| 6 | Pin sterujący i stan bez sterowania | Bramka „logic level”: VGE(th) **1,3–2,1 V** (1,05 V przy 175 °C); wewnętrzny RG 120 Ω, **RGE 11–22 kΩ — bramka niesterowana ściągnięta do emitera, IGBT wyłączony**; zabezpieczenie bramki 12–16 V | karta s. 4 |
+| 7 | Zanik szyn | **Zanik sterowania w trakcie ładowania = szybkie wyłączenie przez RGE = iskra w przypadkowej chwili** — stąd zasada domyślnie uzbrojonego ograniczenia napięcia kolektora (niżej) | karta s. 4 (RGE) |
+| 8 | Limity ochron | Ograniczenie VCE **375–435 V** (2 mA, −40…175 °C); **ESCIS 320 mJ (25 °C) / 180 mJ (150 °C)** przy L 3 mH; IC 25 A, ICP 50 A; td(off) 4,6 µs, tf 8,4 µs (300 V, 1 mH, 10 A) | karta s. 3–5 |
+| 9 | Zakresy wobec wymagań | Prąd cewki TPI/TBI `[DO USTALENIA]`, szacunek 6–8 A (Z29) — daleko poniżej 25 A; VCE(sat) 1,1 V przy 6 A; td(off) 4,6 µs wchodzi w budżet kąta B/C jak opóźnienia w C.1.9 | karta s. 4–5 |
+| 10 | **Czego NIE robi** | (1) **Nie ma miękkiego wyłączenia.** (2) **Nie ogranicza prądu** i nie ma pomiaru prądu. (3) **Nie ma limitu czasu ładowania.** (4) Nie daje diagnostyki. Wszystkie cztery — na płytce | karta |
+| 11 | Dostępność | Farnell i DigiKey — pozycje w ofercie, stan nie sprawdzony; TME, Mouser — nie sprawdzone | wyszukiwanie 11.11.2026 |
+
+**Zasady zabezpieczeń stopnia TCI (do schematu, przegląd ludzki O-057):**
+- **Ograniczenie napięcia kolektora (LVC) uzbrojone domyślnie** — dioda Zenera kolektor → bramka ogranicza napięcie kolektora, więc wyłączenie przy uzbrojonym LVC rozładowuje cewkę powoli, bez iskry. **Kryterium progu:** (U_LVC − U_akum) × przekładnia cewki < napięcie przebicia świecy przy ciśnieniu atmosferycznym (silnik stoi — najniższe przebicie) z zapasem; przy przekładni ~100 i przebiciu ~3 kV daje to U_LVC − U_akum rzędu 15–20 V. Wartość z pomiaru przekładni (Z29). **Rozbrajane wyłącznie na czas zamierzonej iskry**, aktywnym sygnałem; brak zasilania, reset, zanik VDD5 = LVC uzbrojone (ECU-IGN-031).
+- **Miękkie wyłączenie wyzwalają sprzętowo:** kill switch (oba układy progowe), ENDRV, NRES, sprzętowy limit czasu ładowania, zanik zasilania logiki.
+- **Sprzętowy limit czasu ładowania** — układ czasowy niezależny od zegara procesora, startowany narastającym zboczem sterowania bramki; po przekroczeniu — miękkie wyłączenie (ECU-IGN-032). Wartość z charakterystyki cewki przy etapie B/C.
+- **Ograniczenie prądu** — rezystor pomiarowy w emiterze i pętla na bramce; prąd także do diagnostyki przez ADC.
+- **Energia w IGBT przy miękkim wyłączeniu** = ½·L·I² · U_LVC / (U_LVC − U_akum) — akumulator dokłada energię przez cały czas rozładowania. Dla L 2–5 mH, I 6–8 A, U_LVC − U_akum 15–20 V: **60–310 mJ w 0,6–2,7 ms, średnio 90–140 W**. Górny kraniec przekracza ESCIS 180 mJ (150 °C); ESCIS dotyczy jednak krótkiego impulsu przy ~400 V, więc właściwe sprawdzenie to **przejściowa impedancja termiczna z karty przy schemacie**, z L i I z pomiaru (Z29). Jeśli nie przejdzie — niższy prąd ładowania albo krótszy limit czasu.
 
 ## 4. Zasilanie
 
@@ -381,8 +442,9 @@ Magistrala wymaga dokładnie **dwóch** rezystorów 120 Ω — na fizycznych ko�
 | Rozrusznik | cewka przekaźnika + (PROFET, **2–5 A**, O-029), **klucz masy przekaźnika** (ECU-SAF-022) | — | **2** | — |
 | CAN | H, L | 2 | — | — |
 | Rezerwa B/C | czujnik ciśnienia (O-060) | 1 | — | — |
-| Wyjścia PROFET | wentylator (~6 A), pompa *(B/C, ~4 A)*, światła (~2 A), aux ×2 | — | 5 | — |
-| **Razem** | **29–30** + zapas | **20** | **7** | **2–3** |
+| Rezerwa — opcja | czujnik prądu akumulatora (ECU-AUX-003, O-055) | 1 | — | — |
+| Wyjścia PROFET | wentylator (~6 A), pompa *(B/C, ~4 A)*, światła postojowe (~0,5 A), mijania (~1,5–3 A), drogowe (~2–3 A), aux ×2 | — | 7 | — |
+| **Razem** | **32–33** + zapas | **21** | **9** | **2–3** |
 
 **Złącze zapłonu (3–4 piny, odstępy izolacyjne wg ECU-IGN-027):** wyjście na cewkę — wspólny pin, obsadzenie zależne od wariantu (impuls CDI w A, dolny klucz TCI ~6–8 A w B/C); uzwojenie wzbudzające (A; 1 pin, jeśli ma koniec na masie, 2 — jeśli pływające; pomiar krok 2); **masa mocy zapłonu** — wyładowanie CDI to impuls rzędu dziesiątek amperów (typowo, do potwierdzenia pomiarem), w B/C wraca nią prąd cewki; nie może iść przez masę logiki.
 
@@ -433,12 +495,13 @@ Rozważona i odrzucona obsługa kill switcha przez HMI i CAN:
 | PC2 | VSOUT1 | VSOUT1 | bezwzględne, VREFINT | **≤ 0,18** (18 V przy zwarciu → ≤ 3,24 V) | 0,5 % | RC, fg ≈ 100 Hz | dzielnik sam ogranicza |
 | PE15 | Akumulator | B+ za przełącznikiem — bez poboru w uśpieniu (rozdz. 6.1) | bezwzględne, VREFINT | ≤ 0,08 (40 V → 3,2 V) | **0,1 %, ≤ 25 ppm/K** | RC, fg ≈ 10 Hz | TVS wejścia (rozdz. 4.4) |
 | PD9 | PMIC DIAG_OUT | PMIC | bezwzględne; dostarcza VMON_BG | bez dzielnika (PMIC ogranicza do VDDIO) | karta PMIC tab. 5-4 | bez filtra; **długi czas próbkowania** — rezystancja wyjścia 3–200 kΩ | płytka |
-| PE13, PD13, PE14 | PROFET 1–3, prąd IS | wyjście prądowe PROFET | bezwzględne, VREFINT | rezystor IS: napięcie przy prądzie usterki ≤ 3,3 V | rezystor 1 %; rozrzut współczynnika IS z karty BTS7008 | RC, fg ≈ 1 kHz | płytka |
+| PE13, PD13, PE14, PB12 | PROFET 1–4, prąd IS | wyjście prądowe PROFET | bezwzględne, VREFINT | rezystor IS: napięcie przy prądzie usterki ≤ 3,3 V | rezystor 1 %; rozrzut współczynnika IS z karty BTS7008 | RC, fg ≈ 1 kHz | płytka |
 | PE9, PE11 | NTC przy bloku CDI, NTC w sekcji mocy | VDDA | **stosunek do VREF+** | NTC + rezystor | NTC ±1 %, rezystor 0,5 % | RC, fg ≈ 10 Hz | płytka |
 | PC1, PE12 | NTC cieczy, NTC powietrza | **VSOUT1** | stosunek do VSOUT1 | podciągnięcie + dzielnik ≤ 0,6 | 1 % (ECU-SEN-004/005: ±3 °C) | RC, fg ≈ 10 Hz | wiązka |
 | PD8 | Bieg MLX90316 | VSOUT1 | stosunek do VSOUT1 | ≤ 0,6 | 1 % | RC, fg ≈ 200 Hz | wiązka |
 | PA4 | TPS (B/C) | VSOUT1 | stosunek do VSOUT1 | ≤ 0,6 | 0,5 % (ECU-SEN-003, kalibracja) | RC, fg ≈ 200 Hz | wiązka |
 | PE8 | Ciśnienie (B/C, rezerwa O-060) | VSOUT1 | stosunek do VSOUT1 | ≤ 0,6 | 0,5 % | RC, fg ≈ 200 Hz | wiązka |
+| PB13 | Prąd akumulatora (opcja, ECU-AUX-003) | VSOUT1 | stosunek do VSOUT1 (2,5 V = 0 A) | ≤ 0,6 | 1 % | RC, fg ≈ 100 Hz | wiązka |
 | wewn. | VREFINT | procesor | — | — | kalibracja fabryczna (Z24) | — | — |
 | wewn. | Czujnik temperatury procesora (T1–T3) | procesor | bezwzględne, VREFINT, kalibracja TS_CAL | — | — | — | — |
 | wewn. | VBAT/3 — zasilanie domeny podtrzymywanej | stały stabilizator / superkondensator | bezwzględne, VREFINT | 1/3 | — | — | — |
@@ -475,13 +538,13 @@ Punkt odniesienia: **zaciski akumulatora, 12,0 V, +25 °C** (ECU-PWR-001). Dla e
 | PMIC TPS65381A-Q1, STANDBY (od 1.11.2026) | 75 | karta R1.5, maks. przy TJ < 85 °C (typowej karta nie podaje) |
 | Zabezpieczenie przed odwrotną polaryzacją — dioda Schottky'ego | 0 | konstrukcja (rozdz. 4.4) |
 | TVS na wejściu, upływ przy 12 V | ≤ 5 | przydział |
-| 3× PROFET, wyłączone | ≤ 3 | przydział |
+| 4× PROFET, wyłączone (od 16.11.2026) | ≤ 4 | przydział |
 | Dzielnik pomiaru akumulatora, podciągnięcia kill switcha i czujników | 0 | **reguła: zasilane wyłącznie z szyn wyłączanych** |
 | Przełącznik zasilania HMI, domyślnie załączony (od 3.11.2026) | ≤ 5 | przydział |
 | Stały stabilizator domeny podtrzymywanej TPS7B8133QDRVRQ1 (od 4.11.2026) | 4,5 | karta SBVS370F s. 5: IOUT 0,2 mA, obudowa DRV, TJ −40…150 °C |
 | Domena podtrzymywana STM32G474 (RTC, LSE, rejestry) z pinu VBAT | ≤ 3 | przydział — do potwierdzenia kartą STM32G474 (IDD_VBAT) |
 | Upływ superkondensatora przy ~3 V | ≤ 5 | przydział — kryterium doboru |
-| **Razem** | **≤ 140,5** | wobec limitu 150 µA, zapas 9,5 µA. *Poprawka 4.11.2026: poprzednia suma 133 była zawyżona o 5 µA przez błąd dodawania (rzeczywiście 128); suma sprawdzana skryptem* |
+| **Razem** | **≤ 141,5** | wobec limitu 150 µA, zapas 8,5 µA (16.11.2026: +1 µA czwarty PROFET). *Poprawka 4.11.2026: poprzednia suma 133 była zawyżona o 5 µA przez błąd dodawania (rzeczywiście 128); suma sprawdzana skryptem* |
 
 Do potwierdzenia pomiarem T-PWR-001 na prototypie.
 
@@ -581,7 +644,7 @@ Kopnięcie i popych przy uśpionym ECU wymagają przycisku — **do zapisania w 
 | **Zwarcie uzwojenia wzbudzającego** (ścieżka 1 kill switcha) | zwarte w STOP | klucz sterowany **progiem tranzystorowym** (nie komparatorem — 1.11.2026) | **rozwarte** — ścieżka wymaga zasilania. Zanik zasilania pokrywa ścieżka 2 (bramka AND) | próg zasilany dalej — działa według kill switcha | ECU-SAF-001, -021 |
 | **Rozrusznik** | wyłączony | PROFET: procesor × komparator × ENDRV; klucz masy: **przycisk START × próg tranzystorowy** (1.11.2026); oba z rezystorami ściągającymi | wyłączony | wyłączony | ECU-SAF-007, -019, -022 |
 | **Wentylator** | wyłączony | rezystor ściągający na wejściu PROFET | wyłączony | wyłączony; silnik gaśnie, więc nie ma źródła ciepła. Strategie programowe — stałe załączenie przy usterce czujnika (DTC-SEN-01), obciążenie przy przepięciu (ECU-PWR-009) — działają tylko przy sprawnym firmware | ECU-SAF-007 |
-| **Światła** | wyłączone | rezystor ściągający | wyłączone | **wyłączone** — ryzyko zaakceptowane (`otwarte.md` rozdz. 9, decyzja Pawła 1.11.2026) | ECU-SAF-007 |
+| **Światła** (postojowe, mijania, drogowe) | wyłączone | rezystor ściągający na każdym wejściu | wyłączone | **wyłączone** — ryzyko zaakceptowane (`otwarte.md` rozdz. 9, decyzja Pawła 1.11.2026) | ECU-SAF-007 |
 | **Aux ×2** | wyłączone | rezystor ściągający | wyłączone | wyłączone | ECU-SAF-007 |
 | **Zasilanie czujników VSOUT1** (PMIC) | wyłączone | domyślnie wyłączone (bit VSOUT1_EN) | wyłączone | bez zmian; kondycjoner wału i komparator są na VDD5 i od niego nie zależą | ECU-PWR-010 |
 | Pompa paliwa **[B/C]** | wyłączona | rezystor ściągający; wejście PROFET × **ENDRV** (1.11.2026) | wyłączona | wyłączona | ECU-SAF-007, ECU-INJ-006 |
@@ -618,7 +681,7 @@ Kopnięcie i popych przy uśpionym ECU wymagają przycisku — **do zapisania w 
 | H.10 | Transceiver | TJA1043, ten sam co w ECU | Jeden numer katalogowy na oba urządzenia; wybudzanie przez magistralę potrzebne także w HMI |
 | H.11 | Zasilanie | Dwie przetwornice: 5 V (wyświetlacz i koprocesor) i 3,3 V (procesor, flash). **Obie włączane wyjściem INH transceivera HMI; w uśpieniu obie wyłączone** (zmiana 18.10.2026) | Ta sama architektura co ECU (rozdz. 6). TJA1043 HMI zasilany z +12 V stałego ze złącza DTM04 |
 | H.12 | Pamięć zasobów | Zewnętrzna flash SPI NOR, rodzina W25Q | Koprocesor wymaga trwałego przechowywania bitmap, czcionek i animacji; dwubankowy bootloader zostawia ~256 KB na bank — za mało na firmware i zasoby |
-| H.13 | Czujnik temperatury | Cyfrowy na PCB, blisko wyświetlacza | Analiza termiczna wykazała ryzyko przekroczenia 70 °C na słońcu, przy którym panel czernieje |
+| H.13 | Czujnik temperatury | Cyfrowy na PCB, blisko wyświetlacza | Ograniczenie jasności dopiero powyżej 70 °C i zapis przekroczeń (HMI-UI-004, 11.11.2026); przesunięcie czujnik–panel wyznaczane w T-UI-004 |
 | H.14 | Nadzór | **Watchdog wewnętrzny procesora HMI** (HMI-SYS-001) + **restart zasilania przez ECU** po 5 s ciszy, 3 próby, potem co 60 s (SYS-COM-010) — decyzja Pawła 4.11.2026 | Zawieszone HMI wraca bez udziału kierowcy; ECU pracuje dalej bez HMI (SYS-COM-008) |
 
 ### 8.1 Uśpienie HMI
@@ -627,7 +690,7 @@ Kopnięcie i popych przy uśpionym ECU wymagają przycisku — **do zapisania w 
 
 **Zabezpieczenie przed utratą polecenia:** gdyby ramka zaginęła, HMI zostałoby wybudzone na stałe i rozładowało akumulator. Dlatego **HMI ma własny timeout awaryjny** — brak jakiejkolwiek ramki z ECU przez **30 s** skutkuje samodzielnym zaśnięciem.
 
-W uśpieniu (od 18.10.2026): **obie szyny HMI wyłączone przez INH transceivera**; czuwa tylko TJA1043 zasilany z +12 V stałego. Bilans uśpienia HMI na zaciskach akumulatora: transceiver 30 µA maks., pin WAKE 10, dwie wyłączone przetwornice ≤ 10, TVS ≤ 5, dioda polaryzacji 0 — **razem ≤ 60 µA**. System ECU + HMI **≤ 200,5 µA** (ECU ≤ 140,5 — rozdz. 6.1; HMI ≤ 60) wobec SYS-PWR-002 (250 µA). *Poprawka 9.11.2026: dawna suma 123 µA nie uwzględniała PMIC i domeny podtrzymywanej.*
+W uśpieniu (od 18.10.2026): **obie szyny HMI wyłączone przez INH transceivera**; czuwa tylko TJA1043 zasilany z +12 V stałego. Bilans uśpienia HMI na zaciskach akumulatora: transceiver 30 µA maks., pin WAKE 10, dwie wyłączone przetwornice ≤ 10, TVS ≤ 5, dioda polaryzacji 0 — **razem ≤ 60 µA**. System ECU + HMI **≤ 201,5 µA** (ECU ≤ 141,5 — rozdz. 6.1; HMI ≤ 60) wobec SYS-PWR-002 (250 µA). *Poprawka 9.11.2026: dawna suma 123 µA nie uwzględniała PMIC i domeny podtrzymywanej.*
 
 **Wybudzenie przyciskiem:** drabinka przycisków jest węzłem WAKE transceivera HMI, podciągniętym do akumulatora przez Rexbias. Naciśnięcie dowolnego przycisku ściąga węzeł w dół, transceiver włącza szyny, procesor startuje, dopiero potem ADC określa, **który** przycisk. Linia do ADC wymaga separacji od napięcia akumulatora — dzielniki odcinane w uśpieniu (rozdz. 8.3). **Warunek budzenia: najwyższa rezystancja drabinki < 1,33 × Rexbias** — przy 7 V węzeł musi zejść poniżej VBAT − 3 V; z Rexbias 150 kΩ i drabinką ≤ 2,3 kΩ spełniony z dużym zapasem. Nacisk budzący tylko budzi.
 
@@ -664,21 +727,52 @@ W uśpieniu (od 18.10.2026): **obie szyny HMI wyłączone przez INH transceivera
 
 **Czego układ nie wykrywa:** przerwy w kablu przycisków — wygląda jak brak naciśnięcia. Kierowca widzi brak reakcji; odblokowanie K4 zostaje dostępne kill switchem. **Zablokowany przycisk lub zwarcie kabla w uśpieniu:** ~93 µA przez Rexbias do usunięcia usterki (ryzyko zaakceptowane).
 
-### 8.2 Termika HMI
+### 8.2 Termika i czytelność HMI (przebudowa 11.11.2026, odtworzona 25.11.2026, O-034, decyzje Pawła)
 
-Straty wewnętrzne ~2,4 W, z czego podświetlenie 1,25 W. **HMI to jedyny element wystawiony bezpośrednio na słońce**: ekran 3,5" (~0,005 m²) w ciemnej obudowie może pochłonąć do ~4 W promieniowania, więcej niż generuje sam.
+**Punkt projektowy (SYS-ENV-003a):** powietrze **+45 °C**, słońce **1000 W/m²** prostopadle do ekranu, postój bez wiatru — **panel ≤ 65 °C w modelu** (5 K zapasu do 70 °C z karty). Dawne „+70 °C otoczenia” było niewykonalne: przy granicy panelu 70 °C nie zostawiało miejsca na słońce ani na własne ciepło.
 
-| Wykonanie obudowy | Temp. wewnątrz przy 40 °C i nasłonecznieniu |
-|---|---|
-| Tworzywo, ciasna obudowa | ~151 °C ❌ |
-| Tworzywo z zapasem | ~107 °C ❌ |
-| Aluminium z odprowadzeniem ciepła | ~76 °C ⚠️ |
+**Model:** `scripts/termika_hmi.py` — sieć cieplna 4 węzłów (szkło LCD, tył modułu, szyba, obudowa), stan ustalony. Geometria i optyka to założenie Z30; model porównuje warianty, temperaturę potwierdza T-ENV-003a. **Karta modułu** (RVT35HHBNWN00 Rev 1.3, ta sama matryca): praca −20…70 °C, przechowywanie −30…80 °C (s. 6), IPS normalnie czarny, transmisyjny, 1000 cd/m², podświetlenie 5 V × 150 mA = **0,75 W** (s. 7) — dawne 1,25 W bez źródła.
 
-**Zagrożenie jest realne:** panele LCD pracują typowo do 70 °C — powyżej ciekły kryształ przechodzi w fazę izotropową i **ekran czernieje**. To znany problem jasnych wyświetlaczy: im mocniejsze podświetlenie, tym więcej ciepła.
+**Bilans na postoju w słońcu:** ekran pochłania ~3 W, nasłoneczniona czarna obudowa ~4,5 W, elektronika ~2,1 W (z tego podświetlenie 0,75 W). **Słońce to ~80 % ciepła.**
 
-Wynikające wymagania: obudowa aluminiowa z kontaktem termicznym; **jasny lub odblaskowy kolor zamiast czarnego** (redukuje pochłanianie z ~4 W do ułamka); czujnik temperatury i zarządzanie jasnością w firmware; daszek przeciwsłoneczny do rozważenia.
+| Wykonanie (postój, bez wiatru) | Panel przy 40 °C | Panel przy 45 °C |
+|---|---|---|
+| Aluminium czarne, kontakt cieplny modułu 2 W/K, szyba PC | 70,6 °C | 75,6 °C ❌ |
+| jw., podświetlenie 30 % | 69,1 °C | 74,1 °C ❌ |
+| Aluminium czarne **bez kontaktu cieplnego** | 87,3 °C | 92,3 °C ❌ |
+| Tworzywo czarne bez kontaktu | 101,8 °C | 106,8 °C ❌ |
+| Aluminium **jasne**, kontakt | 63,5 °C | 68,5 °C ❌ |
+| Jasne, kontakt ≥ 0,65 W/K, **szyba z filtrem podczerwieni** | 57,8 °C | **62,8 °C ✅** |
+| Jasne, kontakt, szkło klejone optycznie z filtrem podczerwieni | 55,9 °C | **60,9 °C ✅** |
+| Jasne, kontakt, **daszek zasłaniający ekran** | 47,3 °C | **52,3 °C ✅** |
+| Czarne, kontakt, jazda 11 km/h | 56,6 °C | 61,6 °C ✅ |
+| Zapłon wyłączony: czarne aluminium z kontaktem / tworzywo czarne | 65,1 / 87,3 °C | 70,1 / **92,3 °C ❌ > 80 °C przechowywania** |
 
-⚠️ **Paradoks do rozwiązania:** na słońcu potrzeba maksymalnej jasności, a właśnie wtedy grozi przegrzanie. Pozycja O-034, wraz z metodą wyznaczenia 76 °C, która nie została podana.
+**Wnioski:**
+1. **Podświetlenie to ~10 % ciepła** — ściemnianie w zakresie pracy daje 1–1,5 K i zabiera jasność w pełnym słońcu. Do 70 °C jasność pełna (HMI-UI-004).
+2. **Kontakt cieplny moduł → obudowa jest warunkiem koniecznym** — bez niego 87–92 °C. Przy czarnej obudowie działa w obie strony: nasłoneczniona obudowa grzeje moduł od tyłu.
+3. **Przy 45 °C sam jasny kolor nie wystarcza** — potrzebny filtr podczerwieni na szybie albo daszek.
+4. **Tworzywo bez kontaktu cieplnego wykluczone** — po zgaszeniu silnika na słońcu przekracza granicę przechowywania panelu (80 °C): trwałe uszkodzenie, na które firmware nie ma wpływu.
+
+**Wymagania funkcjonalne dla obudowy HMI** (konstrukcja i wybór zestawu — Paweł; każdy wariant sprawdzany skryptem):
+- panel ≤ 65 °C w punkcie projektowym;
+- kolor jasny — czarna obudowa nie przechodzi przy żadnym kontakcie cieplnym;
+- kontakt cieplny moduł → obudowa: z filtrem podczerwieni **≥ 0,65 W/K**, z daszkiem wystarczy minimalny;
+- przy 45 °C dodatkowo **filtr podczerwieni albo daszek**;
+- osłona ekranu: **suma odbić lustrzanych ≤ 5 %** (niżej).
+
+**Czytelność (decyzja Pawła 11.11.2026):** o czytelności w słońcu decyduje odbicie jasnego nieba w osłonie, nie jasność panelu. Model: niebo 6000 cd/m² odbite lustrzanie, 80 klx rozproszone (HMI-UI-005), panel 1000 cd/m².
+
+| Osłona ekranu | Suma odbić | Kontrast w słońcu |
+|---|---|---|
+| Szyba PC ze szczeliną powietrzną, bez powłok (3 powierzchnie) | ~15 % | 1,8:1 ❌ |
+| Szyba ze szczeliną, powłoka antyrefleksyjna obustronnie | ~5 % | 3,1:1 ✅ |
+| Szkło klejone optycznie do panelu | ~4 % | 3,5:1 ✅ |
+| Szkło klejone + powłoka antyrefleksyjna na zewnątrz | ~0,5 % | 7:1 ✅ |
+
+**Kryterium projektowe: suma odbić ≤ 5 %, kontrast w modelu ≥ 3:1**; potwierdzenie testem HMI-UI-005. Klejenie optyczne obniża temperaturę panelu tylko o ~3 K — to środek na czytelność, nie na termikę. Daszek pomaga w obu: zasłania słońce i niebo odbijane w ekranie.
+
+**Ograniczenia modelu:** pochłanianie słońca w module (wrażliwość ±3 K), postój bez wiatru jako najgorszy przypadek (pominięte chłodzenie przez zimne niebo), kontakt cieplny jako jedna liczba, odbicia z typowych współczynników — wszystko do zweryfikowania na makiecie (Z30).
 
 ---
 
@@ -707,11 +801,11 @@ Stator w enduro tej klasy oddaje typowo 150–200 W, więc bilans się domyka; s
 | Źródło | Straty |
 |---|---|
 | **Blok AC-CDI** (prostownik, tyrystor, rezystor rozładowujący) | **≤ 1,5 W — szacunek**, do potwierdzenia pomiarem uzwojenia wzbudzającego |
-| PROFET ×3 | 0,27 W |
+| PROFET ×4 (16.11.2026) | 0,36 W — szacunek ×4/3 |
 | PMIC TPS65381A-Q1 (przetwornica 6 V + regulatory liniowe, od 1.11.2026) | **~0,5 W — szacunek** z obciążeń wg Z18 |
 | Logika (MCU, czujniki, CAN) | w PMIC |
 | *Drivery wtryskiwaczy* | *0 W w MVP-A (B/C: ~0,16 W)* |
-| **Razem MVP-A** | **~2,3 W** |
+| **Razem MVP-A** | **~2,4 W** |
 
 Dawna pozycja 4,8 W (driver cewki indukcyjnej VBG08H-E) wypadła razem z zapłonem indukcyjnym.
 
@@ -751,10 +845,10 @@ Dawna pozycja 4,8 W (driver cewki indukcyjnej VBG08H-E) wypadła razem z zapłon
 |---|---|
 | Szczelność | IP67 minimum |
 | Widoczność | Osobna szybka poliwęglanowa lub szklana nad panelem — wyświetlacz nie ma własnej |
-| Odblaski | Warstwa antyrefleksyjna lub daszek — inaczej 1000 cd/m² nie wystarczy przy słońcu pod kątem |
+| Odblaski | **Suma odbić lustrzanych osłony ≤ 5 %** (kontrast w słońcu ≥ 3:1) — szyba z powłoką antyrefleksyjną obustronnie, szkło klejone optycznie albo klejone z powłoką; szyba bez powłok ze szczeliną daje 1,8:1 (rozdz. 8.2, decyzja Pawła 11.11.2026) |
 | Przepusty | DTM04-4P (główne) + DTM04-3P (przyciski) |
 | Wibracje | Mocowanie do kierownicy przez elementy tłumiące — panel LCD jest wrażliwy na wibracje |
-| Temperatura | **−20…+70 °C otoczenia** (SYS-ENV-003a) — ograniczone panelem, nie wyborem. Wymaga aluminium z kontaktem termicznym **oraz jasnego lub odblaskowego koloru**; tworzywo daje 107–151 °C na słońcu. Analiza przy nasłonecznieniu daje 76 °C, czyli **6 °C powyżej granicy panelu** — pozycja O-034 |
+| Temperatura | **Powietrze −20…+45 °C, przy +45 °C słońce 1000 W/m² na postoju — panel ≤ 65 °C** (SYS-ENV-003a, decyzja Pawła 11.11.2026). Warunki: **jasny kolor, kontakt cieplny moduł → obudowa, filtr podczerwieni albo daszek**; czarna obudowa nie przechodzi, tworzywo bez kontaktu wykluczone — rozdz. 8.2 |
 | Widoczność nocna | Regulowana jasność podświetlenia |
 
 ---

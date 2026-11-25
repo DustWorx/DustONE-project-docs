@@ -24,14 +24,14 @@ Generowane przez `scripts/kontrola.py`, nie wpisywane ręcznie.
 
 | Pozycja | Stan |
 |---|---|
-| Wymagania z identyfikatorem | 161 |
-| Pokrycie w tabeli traceability | 161 / 161 |
+| Wymagania z identyfikatorem | 173 |
+| Pokrycie w tabeli traceability | 173 / 173 |
 | Wymagania bez ustalonej wartości — **blokują G0** | **3** |
 | Wymagania bez ustalonej wartości — wariant B/C, poza G0 | 8 |
-| Kody usterek w macierzy | 67 |
-| Identyfikatory testów | 163 |
+| Kody usterek w macierzy | 69 |
+| Identyfikatory testów | 175 |
 | Pozycje otwarte | 66 |
-| Założenia (3 obalone, 2 potwierdzone, 20 niepotwierdzonych) | 25 |
+| Założenia (3 obalone, 2 potwierdzone, 25 niepotwierdzonych) | 30 |
 
 ---
 
@@ -50,7 +50,7 @@ Pięć plików. Każdy odpowiada na jedno pytanie.
 | Plik | Odpowiada na pytanie |
 |---|---|
 | [`produkt.md`](produkt.md) | **Co budujemy i jak to jest zbudowane?** Zakres, warianty, decyzje sprzętowe z uzasadnieniami i odrzuconymi alternatywami, komponenty, zasilanie, złącze, uśpienie, HMI, budżety, obudowy, obwiednia środowiskowa |
-| [`wymagania.md`](wymagania.md) | **Co musi być spełnione i czym to udowodnimy?** 161 wymagań z wartościami i metodą weryfikacji + tabela pokrycia od wymagania do dowodu |
+| [`wymagania.md`](wymagania.md) | **Co musi być spełnione i czym to udowodnimy?** Wymagania (liczba w tabeli stanu wyżej) z wartościami i metodą weryfikacji + tabela pokrycia od wymagania do dowodu |
 | [`firmware.md`](firmware.md) | **Jak firmware ma się zachowywać?** Maszyna stanów, bezpieczeństwo i macierz usterek, trigger i synchronizacja, punkty C.2–J otwarte |
 | [`otwarte.md`](otwarte.md) | **Czego jeszcze nie wiemy i co może być fałszywe?** Jedyny rejestr pozycji otwartych, założenia, ryzyka zaakceptowane świadomie |
 | [`proces.md`](proces.md) | **W jakiej kolejności i kiedy można przejść dalej?** Fazy, bramki, kryteria odbioru wyrobu, plan prac |
@@ -61,7 +61,7 @@ Pięć plików. Każdy odpowiada na jedno pytanie.
 | `diagrams/` | Architektura systemu, łańcuch odcięcia zapłonu, zatrzask K4 — źródło Mermaid i render PNG |
 | `measurements/` | Procedury pomiarowe do wykonania na sprzęcie i ich wyniki |
 | `audit/` | Otrzymane raporty audytowe w formie dostarczonej |
-| `scripts/` | Kontrola spójności i generowanie liczników |
+| `scripts/` | Kontrola spójności i liczniki; modele: kąt zapłonu (`model_kata.py`), termika i czytelność HMI (`termika_hmi.py`), drabinka przycisków HMI, przydział pinów |
 
 
 **Od czego zacząć:** `otwarte.md` rozdz. „Co blokuje bramkę G0" i `proces.md` rozdz. 5. Dają aktualny obraz stanu na dwóch stronach.

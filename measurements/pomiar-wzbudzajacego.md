@@ -95,6 +95,14 @@ Jeśli wysokie napięcie wychodzi poza ekran — zwiększ V/dz na CH1–CH3 i po
 
 **6b. Obroty na kopnięcie.** Kill switch wciśnięty (silnik nie odpali, pick-up dalej widoczny). Tryb Single, 200 ms/dz, wyzwalanie na CH4. Jedno pełne, energiczne kopnięcie — zliczę przejścia wypustu. Powtórzyć 3 razy.
 
+## Krok 7 — Zbocze elektryczne VR z enkoderem (dodane 11.11.2026, odtworzone 25.11.2026; O-005, O-006, ECU-IGN-037) — po zbudowaniu prototypu toru VR
+
+**Sprzęt dodatkowy:** enkoder optyczny ≥ 1000 imp/obr sprzęgnięty z wałem, indeks enkodera ustawiony w GMP czujnikiem zegarowym; prototyp toru wejściowego VR z MAX9926.
+
+**Kanały:** CH1 — enkoder (impulsy), CH2 — indeks (GMP), CH3 — pick-up analogowo, CH4 — wyjście MAX9926. Pomiar przy obracaniu wału ręcznie (krawędzie mechaniczne), rozrusznikiem i — jeśli mocowanie enkodera pozwoli — na pracującym silniku w zakresie obrotów.
+
+**Wynik:** kąt zbocza MAX9926 względem GMP (θ_el) i elektryczna długość wypustu, każde w funkcji obrotów. Dokładność wymagana: θ_el ±0,15°, długość ±0,1°.
+
 ## Co z tego wyliczę
 
 | Wielkość | Z czego | Do czego |
@@ -112,6 +120,8 @@ Jeśli wysokie napięcie wychodzi poza ekran — zwiększ V/dz na CH1–CH3 i po
 | Napięcie jałowe uzwojenia ładującego | Krok 5b | Korekta wartości 35 V w SYS-ENV-009, dobór TVS |
 | Pick-up przy cofnięciu wobec obrotu do przodu | Krok 6a, CH4 | Czy kierunek da się rozpoznać z sygnału (ECU-IGN-019, O-009) |
 | Iskra i ładowanie kondensatora przy cofnięciu | Krok 6a, CH3 i MATH | Czy fabryczne CDI chroni się przed iskrą wsteczną fizyką uzwojenia |
+| **Zbocze elektryczne VR θ_el w funkcji obrotów** | Krok 7 | α_max (ECU-IGN-015), błąd statyczny (ECU-IGN-037), O-005 |
+| **Elektryczna długość wypustu** | Krok 7 | Estymata prędkości (C.1.4), ECU-IGN-037 |
 | Liczba obrotów wału na kopnięcie | Krok 6b | Koszt potwierdzenia kierunku (do jednego obrotu na kopnięcie), kryterium A14 |
 
 **Prześlij:** pliki CSV, zrzuty ekranu, tabelę z kroku 2 i zdjęcie miejsca wpięcia sond.

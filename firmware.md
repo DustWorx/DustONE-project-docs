@@ -46,7 +46,7 @@ Firmware w każdej chwili znajduje się w dokładnie jednym zdefiniowanym stanie
 | GOTOWOŚĆ | **Wykryto obroty bez naciśniętego przycisku** (kopnięcie) | ROZRUCH (bez rozrusznika) |
 | GOTOWOŚĆ | 30 min bez pracy silnika i bez interakcji | UŚPIENIE |
 | GOTOWOŚĆ | 3 min bez interakcji (tylko HMI — ECU pozostaje w GOTOWOŚĆ) | *wygaszenie ekranu* |
-| ROZRUCH | Obroty > próg (600-800 obr/min) i stabilne → **ECU automatycznie wyłącza rozrusznik** | PRACA |
+| ROZRUCH | Obroty > próg (600-800 obr/min) i stabilne → **ECU automatycznie wyłącza rozrusznik**. Iskra z prognozy dopiero po spełnieniu ECU-IGN-036 (> 1000 obr/min, zmiana < 4 % na obrót przez 2 obroty) — do tego czasu na krawędzi spływu | PRACA |
 | ROZRUCH | Zwolnienie przycisku startu | Rozrusznik wyłączony; jeśli wał się zatrzyma → GOTOWOŚĆ |
 | ROZRUCH | **Przekroczenie 5 s ciągłego kręcenia** | Rozrusznik wyłączony, komunikat na HMI |
 | ROZRUCH | Zanik obrotów | GOTOWOŚĆ |
@@ -172,7 +172,7 @@ Uzasadnienie: w enduro silnik pełni również funkcję hamulca silnikowego i st
 
 **Lista jest zamknięta.** Dopisanie do niej kolejnej pozycji wymaga osobnej decyzji zapisanej w tym dokumencie, z uzasadnieniem — inaczej lista rozrośnie się przez drobne kroki do wariantu, który odrzuciliśmy. Pozycja 8 została **wycofana tego samego dnia**, gdy okazało się, że nie da się jej wykryć — to samo kryterium, którym odrzuciliśmy zablokowany rozrusznik (B.2.2).
 
-**Rozstrzygnięcie odrzucone — przegrzanie cieczy chłodzącej:** rozważane jako kandydat do K4, **pozostaje w K3** (ograniczenie obrotów + ostrzeżenie). Trzy powody: (a) czujnik temperatury cieczy jest jednym z najczęściej zawodzących elementów, a przerwa w przewodzie daje odczyt skrajny — fałszywe zgaszenie na podjeździe jest groźniejsze niż zagrożenie, przed którym miało chronić; (b) zgaszenie silnika zatrzymuje pompę cieczy i **pogarsza** przegrzanie lokalnie; (c) podtrzymuje wcześniejszą decyzję L5. Zmiana tej decyzji wymaga wpisu w historii zmian dokumentu.
+**Rozstrzygnięcie odrzucone — przegrzanie cieczy chłodzącej:** rozważane jako kandydat do K4. **Od 16.11.2026 (decyzja Pawła, O-055) wyłącznie ostrzeżenie K1 — DTC-ENG-01, ECU-DIA-005**, zgodnie z `produkt.md` 1.1; wcześniejszy zapis „pozostaje w K3 (ograniczenie obrotów + ostrzeżenie)” był sprzeczny z zakresem produktu. Trzy powody: (a) czujnik temperatury cieczy jest jednym z najczęściej zawodzących elementów, a przerwa w przewodzie daje odczyt skrajny — fałszywe zgaszenie na podjeździe jest groźniejsze niż zagrożenie, przed którym miało chronić; (b) zgaszenie silnika zatrzymuje pompę cieczy i **pogarsza** przegrzanie lokalnie; (c) podtrzymuje wcześniejszą decyzję L5. Zmiana tej decyzji wymaga wpisu w historii zmian dokumentu.
 
 ---
 
@@ -263,6 +263,7 @@ Rozrusznik = **(polecenie procesora × komparator RUN)** po stronie plusa **i (p
 | DTC-SEN-07 | Pozycja biegu — odczyt poza zakresem lub brak odpowiedzi | błąd transmisji SPI lub kąt poza zakresem kalibracji | 200 ms | **K1** | Bez wpływu na sterowanie silnikiem | Wskazanie biegu wygaszone |
 | DTC-SEN-08 | Ciśnienie barometryczne — brak komunikacji lub błąd diagnostyki KP464 | 3 kolejne nieudane odczyty SPI albo kod diagnostyczny czujnika (tor sygnału, komórka, EEPROM) | 3 próby | **K1 w MVP-A, K2 w B/C** | **MVP-A:** tylko kod usterki i brak wartości w logu — ciśnienie nie wpływa na sterowanie. **B/C:** wartość zastępcza 1013 hPa (poziom morza — mieszanka bogatsza, kierunek bezpieczny) | Komunikat |
 | DTC-SEN-09 | Akcelerometr — brak komunikacji | 3 kolejne nieudane odczyty SPI | 3 próby | **K1** | Wykrywanie wywrotki nieczynne | Komunikat „WYKRYWANIE WYWROTKI NIECZYNNE" |
+| **DTC-ENG-01** | **Przegrzanie silnika** (od 16.11.2026, O-055) | temperatura cieczy > 100 °C; ustąpienie < 95 °C | 5 s | **K1** | Ostrzeżenie „PRZEGRZANIE SILNIKA”, **bez ograniczania obrotów** (ECU-DIA-005); log z maksymalną temperaturą |
 
 
 
@@ -302,7 +303,7 @@ Uzasadnienie modelu narastającego: stała wartość jest zawsze błędna w jedn
 | DTC-INJ-02 | Wtryskiwacz — przerwa obciążenia | diagnostyka SPI | 3 kolejne wtryski | **K3** | Ograniczenie obrotów — w wariancie dwuwtryskiwaczowym praca na jednym daje ubogą mieszankę |
 | DTC-INJ-03 | Driver wtrysku — przegrzanie | diagnostyka SPI | natychmiast | **K3** | Ograniczenie obrotów |
 | DTC-PWR-01 | Kanał pompy paliwa — zwarcie lub przeciążenie | diagnostyka BTS7008-2EPA | 3 próby ponownego załączenia | **K3** | Ograniczenie; silnik i tak zgaśnie z braku paliwa |
-| DTC-PWR-02 | Kanał wentylatora — zwarcie lub przeciążenie | jw. | 3 próby | **K3** | Obniżony próg ograniczenia obrotów od temperatury |
+| DTC-PWR-02 | Kanał wentylatora — zwarcie lub przeciążenie | jw. | 3 próby | **K1** | Kanał wyłączony; ostrzeżenie „WENTYLATOR — AWARIA, KONTROLUJ TEMPERATURĘ” (od 16.11.2026 bez ograniczania obrotów — ECU-DIA-005) |
 | DTC-PWR-03 | Kanał świateł — zwarcie lub przeciążenie | jw. | 3 próby | **K1** | Kanał wyłączony |
 | DTC-PWR-04 | Kanał rozrusznika zablokowany załączony | prąd mimo wyłączonego sterowania — *możliwość wykrycia do potwierdzenia w Fazie 4* | 200 ms | **K1** | Komunikat „ODŁĄCZ AKUMULATOR" |
 
@@ -379,6 +380,7 @@ Dawne domknięcie (rejestr okresu HRTIM jako sufit czasu ładowania cewki) **prz
 | **DTC-COM-05** | **HMI nie odpowiada mimo restartów zasilania** | 3 kolejne restarty zasilania HMI (SYS-COM-010) bez odzyskania ramek | — | **K1** | Log; dalej jedna próba restartu co 60 s; praca silnika bez zmian |
 | **DTC-COM-06** | **Przyciski HMI — stan nieprawidłowy lub zwarcie kabla** (od 9.11.2026, O-035) | zgłoszenie z HMI: odczyt drabinki poza oknami albo r < 0,016 przez > 1 s | 1 s | **K1** | Log; przyciski nieaktywne do ustąpienia; odblokowanie K4 kill switchem |
 | **DTC-COM-07** | **Przycisk HMI zablokowany** (od 9.11.2026, O-035) | zgłoszenie z HMI: przycisk trzymany > 30 s | 30 s | **K1** | Log; przycisk ignorowany do zwolnienia |
+| **DTC-COM-08** | **Panel HMI powyżej granicy pracy** (od 11.11.2026, O-034) | zgłoszenie z HMI: temperatura panelu > 70 °C | — | **K0** | Log z maksymalną temperaturą i czasem trwania; HMI ogranicza podświetlenie do 50 % (HMI-UI-004) |
 | DTC-PWR-05 | Napięcie akumulatora niskie przy pracującym silniku | < 11,0 V **przy obrotach > 2000 obr/min** | 5 s | **K1** | Ostrzeżenie „ŁADOWANIE — AWARIA" |
 | DTC-PWR-06 | Napięcie krytycznie niskie | < 9,0 V | 2 s | **K1** | Ostrzeżenie krytyczne; poniżej 9,0 V wychodzimy poza SYS-ENV-001 |
 | DTC-PWR-07 | Przepięcie | > 16,5 V | 200 ms | **K1** | Ostrzeżenie + **załączenie wentylatora jako obciążenia**; wyłączenie po spadku poniżej 15,5 V |
@@ -559,8 +561,8 @@ Problem: przy zwykłym okablowaniu normalnie zamkniętym przerwa w przewodzie i 
 
 | Zakres | Zawartość | Reakcja na uszkodzenie |
 |---|---|---|
-| **Mapy sterowania** (DTC-SYS-03a) | Mapa zapłonu, mapa wtrysku, korekty (temperatura, ciśnienie, napięcie), progi wentylatora, próg i histereza ogranicznika obrotów | **Blokada startu** |
-| **Konfiguracja użytkownika** (DTC-SYS-03b) | Obwód koła, jednostki, układ i wygląd ekranów HMI, jasność podświetlenia, wybrany profil wyglądu | **Wartości domyślne + ostrzeżenie, silnik pracuje** |
+| **Mapy sterowania** (DTC-SYS-03a) | **3 profile** mapy zapłonu (ECU-IGN-039), mapa wtrysku, korekty (temperatura, ciśnienie, napięcie), progi wentylatora, próg i histereza ogranicznika obrotów | **Blokada startu** |
+| **Konfiguracja użytkownika** (DTC-SYS-03b) | Obwód koła, jednostki, **typ i pojemność akumulatora, wybrany profil map** (od 16.11.2026), układ i wygląd ekranów HMI, jasność podświetlenia, wybrany profil wyglądu | **Wartości domyślne + ostrzeżenie, silnik pracuje** |
 
 Kryterium podziału: **czy wartość wpływa na to, co ECU robi z silnikiem.** Progi wentylatora i ogranicznika są po stronie map mimo że wyglądają na ustawienia użytkownika, bo ich uszkodzenie może doprowadzić do przegrzania lub przekroczenia obrotów.
 
@@ -855,21 +857,30 @@ Sesja live tuningu kończy się natychmiast, a mapy wracają do wartości zapisa
 
 **Dwusuw nie wymaga rozpoznania fazy.** Silnik pali co obrót, więc jeden wypust na obrót to jedna iskra na obrót. Nie ma dwuznaczności suwu, nie ma czujnika wałka rozrządu i **nie istnieje pojęcie utraty synchronizacji** w sensie, w jakim występuje w silnikach czterosuwowych. Ma to bezpośrednie konsekwencje dla macierzy usterek — patrz C.1.7.
 
-#### C.1.2 Dlaczego ta geometria jest korzystna — rachunek
+#### C.1.2 Model błędu prognozy kąta (przebudowa 11.11.2026, odtworzona 25.11.2026, O-008)
 
-Dokładność zależy od **odległości kątowej między punktem odniesienia a iskrą**, bo na tym odcinku estymata prędkości zdąży się zestarzeć.
+**Wycofane:** tabela z 0,20° / 0,05° / 0,02° i „pięciokrotnym zapasem powyżej 3000 obr/min”. Wartości były bez równań, nieodtwarzalne i sugerowały zapas tam, gdzie wiążący jest przypadek nagłej zmiany przyspieszenia przy małym wyprzedzeniu.
 
-| Obroty | Przyspieszenie | Prognoza od krawędzi natarcia | Prognoza od poprzedniego GMP |
+**Mechanizm.** Iskra pada po czasie t = Δθ / ω_est od krawędzi natarcia, gdzie **Δθ = 30° − wyprzedzenie**. Błąd kąta ≈ Δθ × względny błąd estymaty prędkości na odcinku Δθ. Estymata E1 (C.1.4) jest dokładna przy stałym przyspieszeniu — błąd powstaje przy **zmianie przyspieszenia** między pomiarem a iskrą. Wielkość wejściowa: **zmiana prędkości na obrót w %** = 60·a / N² (a — przyspieszenie w obr/min/s, N — obroty). **Nie zależy od obrotów** — model daje ten sam błąd przy 1500 i 8000 obr/min.
+
+**Model:** `scripts/model_kata.py` — całkowanie czasu po kącie wału dla trzech profili zmiany prędkości (liniowo w kącie, zmiana skokowa w najgorszej z 24 faz obrotu, 6 kolejnych iskier). Największa zmiana prędkości na obrót, przy której prognoza mieści się w budżecie **0,7° za wcześnie / 1,7° za późno** (podział budżetu ECU-IGN-022 — C.1.9):
+
+| Wyprzedzenie (Δθ) | Hamowanie od stałej prędkości | Odwrócenie: przyspieszanie → hamowanie | Przyspieszanie od stałej prędkości |
 |---|---|---|---|
-| 1500 obr/min | 2000 obr/min/s | 0,80° | — |
-| 3000 obr/min | 3000 obr/min/s | **0,20°** | 6,80° |
-| 6000 obr/min | 3000 obr/min/s | **0,05°** | 1,70° |
-| 8000 obr/min | 2000 obr/min/s | **0,03°** | — |
-| 10 000 obr/min | 1500 obr/min/s | **0,02°** | — |
+| 2° (28°) | **4,6 %** | **2,5 %** | **11,6 %** |
+| 15° (15°) | 8,8 % | 5,1 % | 23,1 % |
 
-Budżet ECU-IGN-002 wynosi 1,0° w 99,9 percentylu. **Powyżej 3000 obr/min zapas jest co najmniej pięciokrotny.**
+Hamowanie i odwrócenie dają iskrę za wcześnie, przyspieszanie — za późno. **Przykład:** 4 % na obrót przy 3000 obr/min to 120 obr/min w ciągu jednego obrotu (20 ms), czyli 6000 obr/min/s; przy 1500 obr/min — 1500 obr/min/s.
 
-**Najtrudniejszy jest zakres niskich obrotów, nie wysokich** — odwrotnie niż przy kole wielozębnym. Przy 1500 obr/min estymata starzeje się o 5,3% w ciągu obrotu. Dlatego korekta przyspieszenia (C.1.4) nie jest ulepszeniem, tylko warunkiem spełnienia wymagania w dolnym zakresie.
+**Wnioski:**
+1. **Wiążące są małe wyprzedzenie (duże Δθ) i nagłe odwrócenie przyspieszenia** — przyspieszanie, a potem lądowanie albo szarpnięcie sprzęgłem. Nie zakres wysokich obrotów.
+2. **Korekta przyspieszenia jest konieczna:** bez niej (E0) obwiednia przy 2° to 2,3 % hamowania i 6,1 % przyspieszania — mniej więcej dwa razy węższa.
+3. **Warunek ECU-IGN-022: zmiana < 4 % na obrót i odwrócenie ≤ 2,5 % na obrót** (decyzje Pawła 11.11 i 25.11.2026). Poza warunkiem granica 100 % zapłonów nie jest gwarantowana — dlatego rozkład zmian prędkości w jeździe zapisuje czarna skrzynka (ECU-LOG-009); w Fazie 8 rozstrzyga on, czy warunek obejmuje rzeczywistą jazdę.
+4. Ta sama metoda — prognoza z czasu poprzedniego obrotu — jest w nocie aplikacyjnej NXP AN4006 dla CDI z jednym wypustem, tam bez korekty przyspieszenia.
+
+**Odtworzenie 25.11.2026:** model z 11.11.2026 przepadł razem ze środowiskiem roboczym; obecny skrypt napisano od nowa. Wobec wartości z 11.11 (4,4 / 2,9 / 12,2 %): hamowanie +0,2, odwrócenie −0,4, przyspieszanie −0,6 punktu procentowego. Próg odwrócenia w ECU-IGN-022 obniżony z 3 % do **2,5 %** (decyzja Pawła 25.11.2026) — przy 3 % nowy model daje iskrę 0,83° za wcześnie.
+
+**Ograniczenia modelu (Z26):** profile liniowe w kącie ze skokową zmianą; bez tętnienia prędkości w obrębie obrotu (pomiar wypustu w tej samej fazie znosi jego część systematyczną, C.1.4); błąd statyczny liczony osobno (C.1.9). Potwierdzenie: T-IGN-022 na symulatorze i rozkład z ECU-LOG-009.
 
 #### C.1.3 Ciągły model kąta wału
 
@@ -895,7 +906,7 @@ W AC-CDI nie ma ładowania cewki sterowanego przez firmware (25.10.2026) — mod
 
 Wypust zajmuje te same 30° wału w każdym obrocie, więc czas jego przejścia daje prędkość chwilową **w dokładnie tej fazie wału, w której nastąpi iskra**. W jednocylindrowym dwusuwie prędkość w obrębie obrotu faluje — sprężanie hamuje wał, rozprężanie przyspiesza — więc średnia z pełnego obrotu jest wobec okolic GMP **systematycznie przesunięta**. Pomiar w tej samej fazie znosi ten błąd, bo powtarza się w tych samych warunkach.
 
-**Korekta: przyspieszenie z dwóch kolejnych okresów obrotu.** Estymata z poprzedniego obrotu jest stara o jeden obrót; korekta liniowa redukuje błąd starzenia do drugiego rzędu. To ona ratuje przypadek 1500 obr/min z tabeli C.1.2.
+**Korekta: przyspieszenie z dwóch kolejnych okresów obrotu.** Estymata z poprzedniego obrotu jest stara o jeden obrót; korekta liniowa redukuje błąd starzenia do drugiego rzędu. **Bez niej dopuszczalna zmiana prędkości na obrót jest mniej więcej dwa razy mniejsza** (C.1.2).
 
 **Odrzucone: średnia z pełnego obrotu jako baza.** Prostsze i niezależne od kalibracji długości wypustu, ale obarczone błędem **systematycznym** od tętnienia prędkości — a błąd systematyczny nie uśrednia się i wchodzi wprost w kąt zapłonu.
 
@@ -965,20 +976,42 @@ Uzasadnienie: kickstarter obraca wał kilkakrotnie w jednym ruchu nogi, więc wy
 
 **Ograniczenie znane:** bardzo słabe lub krótkie kopnięcie dające tylko jeden obrót nie wywoła iskry. Wymaga powtórzenia kopnięcia.
 
-#### C.1.9 Dwa limity wyprzedzenia
+**Przejście z ROZRUCHU na iskrę z prognozy (ECU-IGN-036, decyzja Pawła 11.11.2026):** dopiero przy **> 1000 obr/min** i **zmianie prędkości < 4 % na obrót przez 2 kolejne obroty**; do tego czasu iskra na krawędzi spływu (ECU-IGN-019). Pierwotnie 6 %, obniżone do 4 % dla spójności z warunkiem ECU-IGN-022.
 
-Rozróżnienie istotne dla bezpieczeństwa silnika — jeden limit nie zastępuje drugiego.
+#### C.1.9 Limity wyprzedzenia i budżet od krawędzi do iskry (przebudowa 11.11.2026, odtworzona 25.11.2026, O-006)
 
-| Limit | Wartość | Charakter | Gdzie egzekwowany |
+**Łańcuch od wypustu do iskry:**
+
+| Ogniwo | Wartość | Uwagi |
+|---|---|---|
+| Krawędź mechaniczna wypustu | 30° przed GMP | pomiar tarczą (C.1.1) |
+| **Zbocze elektryczne VR, θ_el** | **prawdopodobnie 25–27°** | MAX9926 przełącza przy przejściu sygnału przez zero, czyli kilka stopni po krawędzi mechanicznej. Wartość z pomiaru enkoderem (`measurements/pomiar-wzbudzajacego.md` krok 7, O-005) |
+| Przechwycenie zbocza (HRTIM, filtr cyfrowy) | stała | w t_op |
+| Obliczenie i zapis zwłoki do rejestru | **≤ 10 µs** (ECU-IGN-038) | timer jednokrotny: zapis spóźniony = iskra pominięta i zliczona, nigdy iskra w przypadkowej chwili; kondensator doładowuje się wtedy do progu ogranicznika (ECU-IGN-034) |
+| Minimalna zwłoka δ_min | **2°** od zbocza elektrycznego (ECU-IGN-023) | iskra nigdy przed zboczem przy błędzie prognozy |
+| Od zbocza do iskry łącznie, t_op | **~5–15 µs** (Z27) | tor wejściowy, impuls bramki, załączenie tyrystora, przebicie — pomiar na stanowisku |
+
+**Największe osiągalne wyprzedzenie: α_max = θ_el − δ_min − ω·t_op.**
+
+| θ_el | 1000 obr/min | 10 000 obr/min (t_op 15 µs = 0,9°) |
+|---|---|---|
+| 30° (zbocze = krawędź mechaniczna) | 27,9° | 27,1° |
+| 27° | 24,9° | 24,1° |
+| 26° | 23,9° | 23,1° |
+
+**Stałe 28° jest nieosiągalne** nawet wtedy, gdy zbocze elektryczne pokrywa się z mechanicznym. **Limit geometryczny (ECU-IGN-015) liczony z kalibracji θ_el i obrotów, z twardym ograniczeniem 28°** (decyzja Pawła 11.11.2026). Wyższa wartość z mapy jest obcinana i zapisywana jako zdarzenie. Poprzednia wersja przyjmowała stałe 28° = 30° − 2° bez łańcucha opóźnień.
+
+**Limit termodynamiczny** — bez zmian: niższy, z mapy, ustalany w Fazie 8 z obserwacją detonacji. **Limit geometryczny nie chroni silnika** przed detonacją, tylko przed błędem mapy.
+
+**Budżet błędu kąta ECU-IGN-022 (+1° / −2°, decyzja Pawła 11.11.2026):**
+
+| Składnik | Za wcześnie | Za późno | Warunek |
 |---|---|---|---|
-| **Geometryczny** | **28° przed GMP** | stały, niekonfigurowalny | firmware odrzuca każdą wyższą wartość z mapy i zgłasza zdarzenie |
-| **Termodynamiczny** | niższy, zależny od punktu pracy | wynik strojenia | mapa, ustalany w Fazie 8 z obserwacją detonacji |
+| Statyczny: kalibracja θ_el, długość wypustu, kwantyzacja timera | 0,3° | 0,3° | enkoder: θ_el ±0,15°, długość wypustu ±0,1° (ECU-IGN-037) |
+| Prognoza (C.1.2) | 0,7° | 1,7° | zmiana < 4 % na obrót, odwrócenie ≤ 2,5 % na obrót |
+| **Razem** | **1,0°** | **2,0°** | |
 
-**Skąd 28°:** iskra musi wypaść **po** krawędzi natarcia (30° przed GMP), żeby można ją było odnieść do świeżego punktu. Dwa stopnie marginesu zapewniają, że zwłoka jest zawsze dodatnia, więc tolerancja mechaniczna wypustu i opóźnienie detekcji nie przesuną iskry przed krawędź — czyli w obszar, którego algorytm nie obsługuje.
-
-**Limit geometryczny nie chroni silnika.** Chroni przed błędem mapy zadającym absurdalną wartość. Detonacja przy dużym obciążeniu może wystąpić znacznie poniżej 28°, i przed nią chroni wyłącznie limit termodynamiczny w mapie.
-
-**Potwierdzenie, że 28° wystarcza:** fabryczne CDI pracuje na tym samym kole, więc jego mapa również musi mieścić się w tej geometrii.
+**Reguła przerwania (ECU-IGN-038):** obsługa zbocza wału ma najwyższy priorytet w systemie; zapis rejestru ≤ 10 µs po zboczu w najgorszym przypadku przy jednoczesnej pracy logowania, CAN i USB.
 
 #### C.1.9a Bezwzględne granice błędu kąta (decyzje Pawła 25.10.2026, O-007)
 
@@ -999,9 +1032,9 @@ Rozróżnienie istotne dla bezpieczeństwa silnika — jeden limit nie zastępuj
 
 | Parametr | Pochodzenie | Uwaga |
 |---|---|---|
-| Długość kątowa wypustu | pomiar, domyślnie 30° | Baza estymaty prędkości — błąd przechodzi wprost do kąta |
-| Położenie krawędzi natarcia względem GMP | pomiar, domyślnie 30° | Offset całej mapy |
-| Opóźnienie detekcji w torze VR | pomiar na stanowisku | Stała czasowa MAX9926 i filtra wejściowego; wchodzi jako offset |
+| Długość kątowa wypustu (elektrycznie) | pomiar enkoderem (krok 7), **±0,1°**; domyślnie 30° | Baza estymaty prędkości — błąd przechodzi wprost do kąta (ECU-IGN-037) |
+| **Zbocze elektryczne VR θ_el** względem GMP | pomiar enkoderem (krok 7), **±0,15°** | Offset całej mapy i α_max (ECU-IGN-015, -037) |
+| **t_op** — od zbocza elektrycznego do iskry | pomiar na stanowisku (Z27) | Wchodzi do α_max (C.1.9) |
 | Szerokość okna bramkowania | Faza 8 | Wartości wstępne w C.1.6 |
 | Próg odchyłki długości wypustu | Faza 8 | Wartość wstępna ±25% |
 
@@ -1019,6 +1052,42 @@ Do zweryfikowania oscyloskopem na pracującym silniku i do uwzględnienia przy p
 *Do opracowania.* Mapa rozruchowa, wzbogacenie przy rozgrzewaniu, mapy zapłonu i wtrysku, korekty (temperatura powietrza i cieczy, ciśnienie atmosferyczne, napięcie akumulatora), odcięcie paliwa przy zamkniętej przepustnicy, ogranicznik obrotów, mapa awaryjna przy utracie TPS (B.3.2).
 
 *(Dawne wymaganie skracania czasu ładowania cewki przy wysokich obrotach usunięte 25.10.2026 — dotyczyło zapłonu indukcyjnego.)*
+
+### C.3 Wentylator, światła, profile map, liczniki i zegar (O-055, decyzje Pawła 11.11 i 16.11.2026)
+
+**Wentylator przy pracy (ECU-AUX-001):** załączenie ≥ 88 °C, wyłączenie ≤ 84 °C. Usterka czujnika cieczy → załączony na stałe (DTC-SEN-01/02). Zwarcie kanału → DTC-PWR-02, tylko ostrzeżenie.
+
+**Praca po zgaszeniu (ECU-AUX-002)** — w czasie czuwania przed uśpieniem (30 min, ECU-PWR-004), te same progi. Kończy się trwale przy pierwszym z warunków:
+
+| Warunek | Wartość | Po co |
+|---|---|---|
+| Brak postępu | temperatura nie spadła o 2 K poniżej szczytu po zgaszeniu w ciągu 3 min od szczytu | **Pompa cieczy stoi** — wentylator chłodzi tylko chłodnicę; bez tego warunku kręciłby się do limitu akumulatora bez efektu |
+| Ładunek | całka prądu IS wentylatora ≥ 10 % pojemności akumulatora (konfiguracja) | **Działa dla każdej chemii** — LiFePO4 trzyma ~13 V prawie do rozładowania, więc samo napięcie go nie chroni |
+| Napięcie | < 12,0 V (ołowiowy/AGM) albo < 12,8 V (LiFePO4) przy pracującym wentylatorze, przez 10 s | Słaby akumulator kończy wcześniej |
+| Czas | 15 min od zatrzymania silnika | Zabezpieczenie przy błędnej konfiguracji lub pomiarze |
+
+Nie startuje po zgaszeniu przez wywrotkę (ECU-SAF-005). Kierowca jej nie przerywa (decyzja Pawła, ryzyko zaakceptowane). Przyczyna zakończenia — zdarzenie w logu.
+
+**Konfiguracja akumulatora** (konfiguracja użytkownika, DTC-SYS-03b): typ (ołowiowy/AGM albo LiFePO4) i pojemność. **Wartość domyślna: ołowiowy, 4 Ah** — zachowawczo, do zmiany na dane akumulatora Bety.
+
+**Profile map (ECU-IGN-039):** 3 profile, wybór z HMI w dowolnej chwili. Przejście: każda wartość wyjściowa (wyprzedzenie po korektach) liczona z obu profili i mieszana liniowo przez 0,5 s; ograniczenie ECU-IGN-015 po zmieszaniu. Ponowny wybór w trakcie przejścia startuje nowe przejście od bieżącej wartości. Wybrany profil w konfiguracji; numer stale na ekranie głównym HMI.
+
+**Światła (ECU-AUX-004, decyzje Pawła 16.11.2026):**
+
+| Zdarzenie | Postojowe | Mijania / drogowe |
+|---|---|---|
+| Uruchomienie silnika po uśpieniu | włączone | wyłączone do wyboru w HMI |
+| Wybór w HMI | — | wyłączone / mijania / drogowe |
+| Zgaśnięcie silnika z dowolnej przyczyny | włączone | wyłączone, stan zapamiętany |
+| Ponowne uruchomienie bez uśpienia | włączone | stan sprzed zgaśnięcia |
+| Uśpienie ECU albo 30 min po zgaśnięciu w stanie AWARIA | wyłączone | wyłączone, stan zapomniany |
+| Utrata HMI | bez zmian | bez zmian |
+
+Pobór postojowych po zgaśnięciu (do 30 min czuwania): LED ~0,2–0,4 A → ≤ 0,2 Ah.
+
+**Liczniki (ECU-LOG-010, ECU-LOG-008):** przebieg 0,1 km z impulsów koła i obwodu koła; motogodziny 0,1 h w stanie PRACA. Część poniżej kroku zapisu trzymana w rejestrach domeny podtrzymywanej, pełny krok zapisywany do W25Q64 w strukturze dziennika z wyrównywaniem zużycia. Bez kasowania.
+
+**Zegar (ECU-LOG-011):** RTC ustawiany z aplikacji (USB) i z HMI. Flaga resetu domeny podtrzymywanej przy starcie = czas nieważny → znaczniki w logu oznaczone, HMI pokazuje kreski zamiast godziny do ponownego ustawienia.
 
 ---
 
@@ -1041,6 +1110,8 @@ Zakres: lista błędów i kodów, klasyfikacja krytyczne/niekrytyczne (potrzebna
 ## F. Czarna skrzynka
 
 *Do opracowania*
+
+**Rozkład zmian prędkości wału (ECU-LOG-009, decyzja Pawła 11.11.2026):** histogram zmiany prędkości na obrót, osobno hamowanie, przyspieszanie i odwrócenie przyspieszenia, oraz licznik obrotów poza warunkiem ECU-IGN-022 (< 4 %, odwrócenie ≤ 2,5 %). Dane do Fazy 8 — czy warunek obejmuje rzeczywistą jazdę (Z26).
 
 Zakres: progi wyzwolenia z IMU, zakres danych, okno czasowe przed/po zdarzeniu, zapewnienie dokończenia zapisu.
 
@@ -1145,7 +1216,7 @@ Zakres: priorytety przerwań, budżet czasowy, obsługa watchdoga okienkowego, r
 - **Timeout wyświetlacza 3 min** bez interakcji (decyzja A.2)
 - **Uśpienie na polecenie ECU po CAN** (sekwencja: `produkt.md` rozdz. 6.4). ECU dyryguje; HMI potwierdza **po fizycznym wysłaniu ramki** i dopiero wtedy przechodzi w Go-to-Sleep; naciśnięcie przycisku w trakcie przerywa usypianie. **Własny timeout awaryjny 30 s** bez ramek z ECU. Obsługa zignorowanego Go-to-Sleep jak w ECU (A.4)
 - **Wybudzanie przyciskiem (od 18.10.2026):** drabinka przycisków jest węzłem WAKE transceivera HMI; naciśnięcie włącza szyny HMI, firmware startuje od zera i dopiero wtedy ADC określa, który przycisk. **Nacisk budzący tylko budzi.** Przy starcie ta sama sekwencja odczytu ERR_N co w ECU (A.4)
-- **Zarządzanie jasnością wg temperatury** (decyzja H.13, analiza w rozdz. 7.2): panel LCD czernieje powyżej ~70°C, a na słońcu potrzeba maksymalnej jasności — firmware musi wyważyć czytelność i ochronę wyświetlacza. Progi i charakterystyka do ustalenia
+- **Jasność wg temperatury (HMI-UI-004, decyzja Pawła 11.11.2026):** pełna jasność do 70 °C panelu; powyżej ograniczenie do 50 % i zgłoszenie DTC-COM-08 do ECU; powrót poniżej 67 °C. Temperatura panelu = czujnik + przesunięcie z T-UI-004. Ściemnianie w zakresie pracy odrzucone — podświetlenie to ~10 % ciepła na słońcu (`produkt.md` 8.2)
 - Przy zasypianiu: zakończenie zapisów, potwierdzenie do ECU, TJA1043 w Go-to-Sleep — szyny HMI gasną przez INH
 
 **Przyciski (O-035, decyzje Pawła 9.11.2026; sprzęt: `produkt.md` 8.3):**
