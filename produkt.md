@@ -454,7 +454,7 @@ Magistrala wymaga dokładnie **dwóch** rezystorów 120 Ω — na fizycznych ko�
 
 | Grupa | Obwody | Styki ≤ 2,5 A | Styki 12 A | Styki 21 A |
 |---|---|---|---|---|
-| Zasilanie ECU | B+ (szczyt ~17,3 A + aux, przeliczone 11.11.2026), masa ECU | — | — | **2–3** (B+ podwójne, jeśli aux duże) |
+| Zasilanie ECU | B+ (szczyt ~18,6 A + aux, przeliczone 26.11.2026), masa ECU | — | — | **2–3** (B+ podwójne, jeśli aux duże) |
 | Zasilanie HMI (ECU-PWR-011) | +12 V przez przełącznik domyślnie załączony, masa HMI | 2 | — | — |
 | Czujnik wału | VR+, VR− | 2 | — | — |
 | Czujniki analogowe | temp. cieczy, temp. powietrza, bieg, TPS *(B/C)* | 4 | — | — |
@@ -481,6 +481,8 @@ Magistrala wymaga dokładnie **dwóch** rezystorów 120 Ω — na fizycznych ko�
 | Lampa | **Podciągnięcie linii PWM do napięcia logiki drivera** (np. 10 kΩ do 5 V albo 3,3 V) — bez niego ECU zgłasza przerwę; filtr RC przed wejściem DIM (kilka kΩ, kilkaset pF); próg stanu niskiego wejścia ~1 V lub wyżej — różnica mas ECU–lampa 0,1–0,3 V przy prądzie lampy 2–3 A; zasilanie 12 V z kanału mijania ECU |
 | Polaryzacja | Ustawiana w aplikacji — ECU dopasowuje wypełnienie do tego, czy driver świeci przy stanie wysokim, czy niskim |
 | Zalecenie (projekt lampy) | Przy braku zmian na linii dłużej niż ~50 ms lampa przechodzi na własny poziom domyślny — np. jasność mijania |
+| Moc lampy | **Cel: 35 W** (decyzja Pawła 26.11.2026) — jak fabryczny halogen, więc mieści się w ładowaniu motocykla (Z33), a LED daje kilka razy więcej światła; ~3 A przy 12 V (driver stałej mocy pobiera więcej przy niskim napięciu). **Granica kanału PROFET: 7,5 A** (prąd nominalny BTS7008-2EPA) |
+| Pojemność wejściowa lampy | **≤ 50 µF** — PROFET włącza się z narastaniem do 0,9 V/µs, więc prąd ładowania ≈ C × 0,9 V/µs ≈ 45 A przy progu przeciążenia 65–85 A (150 °C); większa pojemność wymaga łagodnego startu w lampie |
 
 ⚠️ **Bilans dotyczy obwodów, nie przekrojów** — przekroje, zabezpieczenia i obciążalność styków z deratingiem przy 50 °C (SYS-ENV-003) w O-030.
 
@@ -820,16 +822,16 @@ Szacunki z wartości typowych z kart katalogowych. **Do weryfikacji pomiarem.**
 | Pozycja | Prąd | Moc |
 |---|---|---|
 | ECU — logika i czujniki | ~120 mA | ~1,3 W |
-| HMI — procesor, koprocesor, podświetlenie, LED przycisków | ~200 mA | ~2,2 W |
-| **System sterujący razem** | **~320 mA** | **~3,8 W** |
+| HMI — procesor, koprocesor, podświetlenie, LED przycisków | ~210 mA | ~2,3 W (STM32G474 od 26.11.2026) |
+| **System sterujący razem** | **~330 mA** | **~3,9 W** |
 | Wentylator chłodnicy | ~6 A | 72 W |
 | Pompa paliwa (B/C) | ~4 A | 48 W |
-| Oświetlenie LED | ~2 A | 24 W |
+| Oświetlenie: przód 35 W (halogen fabryczny albo lampa LED — ECU-AUX-005, cel Pawła 26.11.2026), tył ~5 W | ~3,3 A | ~40 W |
 | Przekaźnik rozrusznika (cewka, ≤ 5 s) | **2–5 A** (O-029, do pomiaru) | **24–60 W** |
-| **Szczyt** | **~17,3 A** | **~208 W** |
-| Typowa jazda | ~2,3 A | ~28 W |
+| **Szczyt** | **~18,6 A** | **~224 W** |
+| Typowa jazda (bez wentylatora) | ~3,6 A | ~44 W |
 
-Stator w enduro tej klasy oddaje typowo 150–200 W, więc bilans się domyka; szczyt występuje rzadko i przy wysokich obrotach, gdy stator daje pełną moc. Samo ECU z HMI to <4 W.
+**Moc uzwojenia ładującego — niezmierzona (Z33, korekta 26.11.2026).** Dawny zapis „typowo 150–200 W” nie miał źródła. Fabryczny reflektor Beta 2T to halogen 35 W, a wzmocnione statory do Beta 300 RR 2015 deklarują 100 W DC jako wyraźny wzrost względem fabrycznego — fabryczny daje więc prawdopodobnie < 100 W. Typowa jazda (~44 W) powinna się mieścić; **wentylator (~72 W) razem ze światłami prawdopodobnie przekracza moc ładowania** — różnicę pokrywa akumulator, a niskie napięcie wykrywają DTC-PWR-05/06. Samo ECU z HMI to < 4 W.
 
 ### 9.2 Straty cieplne w obudowie ECU (przebudowa 25.10.2026, MVP-A)
 

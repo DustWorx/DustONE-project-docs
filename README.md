@@ -32,7 +32,7 @@ Wpisywane z wyniku `scripts/kontrola.py`; od 25.11.2026 skrypt sprawdza, że ta 
 | Kody usterek w macierzy | 75 |
 | Identyfikatory testów | 197 |
 | Pozycje otwarte | 67 |
-| Założenia (3 obalone, 3 potwierdzone, 26 niepotwierdzonych) | 32 |
+| Założenia (3 obalone, 3 potwierdzone, 27 niepotwierdzonych) | 33 |
 
 ---
 
