@@ -25,7 +25,7 @@ A_B = 0.50 * 0.60          # podczerwien przechodzi przez polaryzatory, ~60 % po
 H_PB = 50.0                # W/m2K, szklo LCD -> podswietlenie (szczelina + folie + swiatlowod)
 P_MOD_LOGIKA = 0.6         # W, modul: 3,3 V x 180 mA (karta s. 6)
 P_PODSW = 0.75             # W, podswietlenie 5 V x 150 mA przy 100 % (karta s. 7)
-P_PLYTKA = 0.75            # W, STM32G0B1, CAN, straty przetwornic 5/3,3 V, LED przyciskow (razem z modulem ~2,1 W, zgodnie z produkt.md 9.1)
+P_PLYTKA = 0.86            # W, STM32G474RE 170 MHz (~+0,11 W wobec STM32G0B1, 26.11.2026), CAN, straty przetwornic 5/3,3 V, LED przyciskow (razem z modulem ~2,1 W, zgodnie z produkt.md 9.1)
 
 
 def h_zewn(v):

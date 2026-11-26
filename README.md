@@ -24,14 +24,15 @@ Wpisywane z wyniku `scripts/kontrola.py`; od 25.11.2026 skrypt sprawdza, że ta 
 
 | Pozycja | Stan |
 |---|---|
-| Wymagania z identyfikatorem | 186 |
-| Pokrycie w tabeli traceability | 186 / 186 |
-| Wymagania bez ustalonej wartości — **blokują G0** | **3** |
+| Wymagania z identyfikatorem | 194 |
+| Pokrycie w tabeli traceability | 194 / 194 |
+| Wymagania bez ustalonej wartości — **blokują G0** | **1** |
 | Wymagania bez ustalonej wartości — wariant B/C, poza G0 | 8 |
+| Wymagania bez ustalonej wartości — MVP-A, poza G0 (decyzja) | 1 |
 | Kody usterek w macierzy | 74 |
-| Identyfikatory testów | 188 |
-| Pozycje otwarte | 66 |
-| Założenia (3 obalone, 2 potwierdzone, 25 niepotwierdzonych) | 30 |
+| Identyfikatory testów | 196 |
+| Pozycje otwarte | 67 |
+| Założenia (3 obalone, 3 potwierdzone, 26 niepotwierdzonych) | 32 |
 
 ---
 
@@ -55,13 +56,14 @@ Pięć plików. Każdy odpowiada na jedno pytanie.
 | [`otwarte.md`](otwarte.md) | **Czego jeszcze nie wiemy i co może być fałszywe?** Jedyny rejestr pozycji otwartych, założenia, ryzyka zaakceptowane świadomie |
 | [`proces.md`](proces.md) | **W jakiej kolejności i kiedy można przejść dalej?** Fazy, bramki, kryteria odbioru wyrobu, plan prac |
 | [`HISTORIA.md`](HISTORIA.md) | **Co się zmieniło i dlaczego?** Jedna linia na zmianę merytoryczną, najnowsze u góry |
+| [`CLAUDE.md`](CLAUDE.md) | **Jak Claude ma pracować w tym projekcie?** Zasady Pawła, obowiązki po każdej zmianie, konwencje i narzędzia — czytany na starcie każdej sesji Claude |
 
 | Katalog | Zawartość |
 |---|---|
 | `diagrams/` | Architektura systemu, łańcuch odcięcia zapłonu, zatrzask K4 — źródło Mermaid i render PNG |
 | `measurements/` | Procedury pomiarowe do wykonania na sprzęcie i ich wyniki |
 | `audit/` | Otrzymane raporty audytowe w formie dostarczonej |
-| `scripts/` | Kontrola spójności i liczniki; modele: kąt zapłonu (`model_kata.py`), termika i czytelność HMI (`termika_hmi.py`), czarna skrzynka (`bilans_logu.py`), drabinka przycisków HMI, przydział pinów |
+| `scripts/` | Kontrola spójności i liczniki; modele: kąt zapłonu (`model_kata.py`), termika i czytelność HMI (`termika_hmi.py`), czarna skrzynka i podział W25Q128 (`bilans_logu.py`), **budżet wykonalności (`budzet_wykonalnosci.py`) ze szkieletem pomiarowym sterowników (`szkielet/`) i rozmiarem profili map (`bilans_map.py`)**, drabinka przycisków HMI, przydział pinów |
 
 
 **Od czego zacząć:** `otwarte.md` rozdz. „Co blokuje bramkę G0" i `proces.md` rozdz. 5. Dają aktualny obraz stanu na dwóch stronach.

@@ -99,12 +99,20 @@ def liczniki(wymagania, firmware, otwarte):
 
     # Wymagania [B/C] z DO USTALENIA nie blokują G0 MVP-A — blokują bramkę
     # wariantu B/C, realizowanego jako osobna wariacja po MVP-A.
-    otwarte_wymagania, otwarte_bc = set(), set()
+    # Wymagania oznaczone [poza G0] — decyzja Pawła, że wartość ustala się
+    # później (np. przed testem prototypu); liczone osobno, nie blokują G0.
+    otwarte_wymagania, otwarte_bc, otwarte_pozniej = set(), set(), set()
     for linia in czesc_wymagan.split('\n'):
         if 'DO USTALENIA' in linia:
             m = re.match(RE_WYMAGANIE, linia)
             if m:
-                cel = otwarte_bc if '[B/C]' in linia.split('|')[1] else otwarte_wymagania
+                komorka = linia.split('|')[1]
+                if '[B/C]' in komorka:
+                    cel = otwarte_bc
+                elif '[poza G0]' in komorka:
+                    cel = otwarte_pozniej
+                else:
+                    cel = otwarte_wymagania
                 cel.add(m.group(1))
 
     pozycje = unikalne(RE_POZYCJA, otwarte)
@@ -114,11 +122,12 @@ def liczniki(wymagania, firmware, otwarte):
         'wymagania': len(unikalne(RE_WYMAGANIE, czesc_wymagan)),
         'wymagania otwarte MVP-A (blokują G0)': len(otwarte_wymagania),
         'wymagania otwarte B/C (poza G0)': len(otwarte_bc),
+        'wymagania otwarte MVP-A poza G0': len(otwarte_pozniej),
         'kody usterek DTC': len(set(re.findall(r'^\|\s*\*{0,2}(DTC-[A-Z]{3}-\d{2}[a-z]?)\*{0,2}[^|]*\|', firmware, re.M)) - set(WYCOFANE)),  # wiersze macierzy
         'identyfikatory testów': len(unikalne(r'\bT-[A-Z]{2,4}-\d{3}[a-z]?\b', wymagania, 0)),
         'pozycje otwarte': len(pozycje),
         'założenia': len(zalozenia),
-    }, sorted(otwarte_wymagania), pozycje, sorted(otwarte_bc)
+    }, sorted(otwarte_wymagania), pozycje, sorted(otwarte_bc), sorted(otwarte_pozniej)
 
 
 # ------------------------------------------- 3. odwołania do pozycji otwartych
@@ -170,6 +179,9 @@ def readme(licz, pokryte, zdefiniowane):
         'Kody usterek w macierzy': str(licz['kody usterek DTC']),
         'Identyfikatory testów': str(licz['identyfikatory testów']),
         'Pozycje otwarte': str(licz['pozycje otwarte']),
+        'Wymagania bez ustalonej wartości — **blokują G0**': str(licz['wymagania otwarte MVP-A (blokują G0)']),
+        'Wymagania bez ustalonej wartości — wariant B/C, poza G0': str(licz['wymagania otwarte B/C (poza G0)']),
+        'Wymagania bez ustalonej wartości — MVP-A, poza G0 (decyzja)': str(licz['wymagania otwarte MVP-A poza G0']),
     }
     for etykieta, wartosc in oczekiwane.items():
         m = re.search(r'^\|\s*%s\s*\|\s*([^|]+?)\s*\|' % re.escape(etykieta), tekst, re.M)
@@ -199,7 +211,7 @@ def main():
     otwarte = czytaj(OTWARTE)
 
     zdefiniowane, pokryte = pokrycie(wymagania)
-    licz, otwarte_wym, pozycje, otwarte_bc = liczniki(wymagania, firmware, otwarte)
+    licz, otwarte_wym, pozycje, otwarte_bc, otwarte_pozniej = liczniki(wymagania, firmware, otwarte)
     uzyte = odwolania(pozycje)
     osierocone()
     kody_dwukrotnie(firmware)
@@ -215,6 +227,8 @@ def main():
     print('  ' + (', '.join(otwarte_wym) if otwarte_wym else 'brak'))
     print('\nWYMAGANIA OTWARTE B/C (blokują bramkę wariantu B/C, nie G0)')
     print('  ' + (', '.join(otwarte_bc) if otwarte_bc else 'brak'))
+    print('\nWYMAGANIA OTWARTE MVP-A POZA G0 (decyzja — wartość ustalana później)')
+    print('  ' + (', '.join(otwarte_pozniej) if otwarte_pozniej else 'brak'))
 
     if bledy:
         print('\nROZBIEŻNOŚCI — %d' % len(bledy))

@@ -105,7 +105,7 @@ Firmware w każdej chwili znajduje się w dokładnie jednym zdefiniowanym stanie
 1. Transceiver w **Listen-only** → odczyt **Pwon** z ERR_N (zasilanie BAT zanikło — akumulator był odłączony; zegar i dane nie są ciągłe). Odczekanie ok. 8 µs po każdej zmianie trybu (jednostka do potwierdzenia w oryginale karty)
 2. Transceiver w **Normal** → odczyt **źródła wybudzenia** z ERR_N przed czwartym zboczem nadawania (lokalne: przycisk lub USB; brak: magistrala). Flaga jest też ustawiana przy pierwszym zasileniu — interpretacja razem z Pwon
 3. Zapis przyczyny wybudzenia do logu — diagnoza rozładowań akumulatora
-4. Rozpoznanie resetu i odtworzenie zatrzasku K4 z domeny podtrzymywanej (tabela w B.4), potem ustawienie znacznika „ECU pracuje”; motogodziny, przebieg i usterki z W25Q64
+4. Rozpoznanie resetu i odtworzenie zatrzasku K4 z domeny podtrzymywanej (tabela w B.4), potem ustawienie znacznika „ECU pracuje”; motogodziny, przebieg i usterki z W25Q128
 5. **Wybudzenie HMI** — gdy ECU nie śpi, HMI też nie śpi
 6. **PMIC (od 1.11.2026):** odczekanie końca autotestu BIST (~21 ms — w tym czasie PMIC nie odpowiada po SPI); konfiguracja watchdoga i nadzoru; wyczyszczenie flag WD_FAIL i ERROR_PIN_FAIL; **wyjście ze stanu DIAGNOSTIC w ≤ 512 ms**, inaczej PMIC przechodzi w SAFE (ENDRV niski); w ACTIVE pierwsze dobre zdarzenie watchdoga, potem ustawienie ENABLE_DRV
 7. Załączenie zasilania czujników VSOUT1 (bit w PMIC), odczekanie na start czujników (~1–2 ms). MAX9926 pracuje od włączenia VDD5
@@ -415,7 +415,7 @@ Klasa K4 dla DTC-PWR-08b nie narusza zamkniętej listy zdarzeń odcinających z 
 | **VDD5 4,50–4,55 V** | w karcie, ale w niepewności pomiaru | ADC PD14 | DTC-PWR-08b może zadziałać — po stronie bezpiecznej |
 | **VDD5 < 4,50 V** | **MAX9926 i TJA1043 poza kartą**; komparator kill — nieokreślony; PMIC tylko ustawia flagę (tab. 5-2: NRES, ENDRV bez zmian) | ADC PD14 < 4,55 V | **DTC-PWR-08b:** w PRACY K4; w ROZRUCHU i GOTOWOŚCI blokada iskry bez zatrzasku. Ochrona wyłącznie programowa — firmware działa, bo 3,3 V jest w regulacji |
 | **VDD5 5,20–5,45 V** (przepięcie) | — | PMIC sprzętowo | ENDRV niski — zapłon odcięty; DTC-PWR-08b |
-| **3,3 V 3,17–3,43 V** | procesor, W25Q64, AIS2IH, KP464 | ADC (DTC-PWR-09 poza 3,15–3,45 V) | — |
+| **3,3 V 3,17–3,43 V** | procesor, W25Q128, AIS2IH, KP464 | ADC (DTC-PWR-09 poza 3,15–3,45 V) | — |
 | **3,3 V < 3,00–3,17 V** | — | PMIC sprzętowo | RESET: NRES i ENDRV niskie |
 | **3,3 V > 3,43–3,60 V** | — | PMIC sprzętowo | ENDRV niski |
 | **VSOUT1 4,50–5,50 V** | czujniki w wiązce, odczyt stosunkowy | ADC PC2 + flagi PMIC | — |
@@ -493,7 +493,7 @@ Zapis ten zostaje w dokumencie jako ostrzeżenie: rozdz. 6.4 dokumentu procesu *
 | DTC-SYS-03b | **Błędna suma kontrolna konfiguracji użytkownika** (obwód koła, jednostki, akumulator, profil map; wygląd HMI — DTC-HMI-04) | autotest pełny przy starcie | — | **K1** | Podstawienie wartości domyślnych + ostrzeżenie. **Silnik pracuje normalnie** |
 | **DTC-SYS-03c** | **Błędna suma kontrolna profilu granic** (od 25.11.2026, O-021) | autotest pełny przy starcie | — | — | **Blokada startu silnika** + komunikat „KALIBRACJA USZKODZONA — WGRAJ PONOWNIE” (D.1) |
 | DTC-SYS-04 | Błąd testu RAM | autotest pełny przy starcie | — | — | Brak startu, komunikat |
-| DTC-SYS-05 | Brak komunikacji z pamięcią W25Q64 | 3 nieudane odczyty SPI | 3 próby | **K1** | Logowanie i czarna skrzynka nieczynne, silnik pracuje |
+| DTC-SYS-05 | Brak komunikacji z pamięcią W25Q128 | 3 nieudane odczyty SPI | 3 próby | **K1** | Logowanie i czarna skrzynka nieczynne, silnik pracuje |
 | DTC-SYS-06 | Błąd zapisu do pamięci | weryfikacja odczytem po zapisie | 3 próby na różnych sektorach | **K1** | Po wyczerpaniu prób jak DTC-SYS-05 |
 | DTC-SYS-07 | Brak wolnych sektorów lub zużycie pamięci | licznik cykli kasowania sektora | — | **K0** | Nadpisywanie najstarszych wpisów, zapis zdarzenia |
 | DTC-SYS-08 | Zegar utracił czas | domena podtrzymywana nieważna **po odłączeniu akumulatora** dłuższym, niż wytrzyma superkondensator | — | **K0** | Znaczniki czasu względne od startu, **oznaczone w logu jako niepewne**; czas ustawia aplikacja desktop |
@@ -509,7 +509,7 @@ Zapis ten zostaje w dokumencie jako ostrzeżenie: rozdz. 6.4 dokumentu procesu *
 
 **Zakres autotestu pełnego:** DTC-SYS-02, 03a, 03b, 04. Wykonywany po podłączeniu akumulatora i po aktualizacji firmware.
 
-**Zakres autotestu skróconego przy zwykłym wybudzeniu — domyka ECU-PWR-003a:** suma kontrolna map sterowania (DTC-SYS-03a) **oraz** odczyt identyfikatora pamięci W25Q64 (DTC-SYS-05). Pominięte: suma kontrolna firmware i test RAM. Uzasadnienie: firmware i RAM nie zmieniają się między uśpieniem a wybudzeniem — od ostatniego pełnego testu nikt ich nie dotykał. Mapy natomiast mogły zostać nadpisane przez aplikację desktop tuż przed uśpieniem, a to jedyna rzecz w tym zestawie, która potrafi się zmienić bez restartu. Suma kontrolna map to pojedyncze przejście przez kilkadziesiąt kilobajtów — mieści się w budżecie 200 ms (ECU-PWR-003) z zapasem.
+**Zakres autotestu skróconego przy zwykłym wybudzeniu — domyka ECU-PWR-003a:** suma kontrolna map sterowania (DTC-SYS-03a) **oraz** odczyt identyfikatora pamięci W25Q128 (DTC-SYS-05). Pominięte: suma kontrolna firmware i test RAM. Uzasadnienie: firmware i RAM nie zmieniają się między uśpieniem a wybudzeniem — od ostatniego pełnego testu nikt ich nie dotykał. Mapy natomiast mogły zostać nadpisane przez aplikację desktop tuż przed uśpieniem, a to jedyna rzecz w tym zestawie, która potrafi się zmienić bez restartu. Suma kontrolna map to pojedyncze przejście przez kilkadziesiąt kilobajtów — mieści się w budżecie 200 ms (ECU-PWR-003) z zapasem.
 
 ---
 
@@ -611,7 +611,7 @@ Kryterium podziału: **czy wartość wpływa na to, co ECU robi z silnikiem.** P
 | Etap | Gdzie | Kiedy zapis |
 |---|---|---|
 | **Ślad bieżący** | rejestry domeny podtrzymywanej w STM32 (stały stabilizator, przy całkowitym zaniku zasilania superkondensator — od 4.11.2026) | **w trakcie pracy**, przy każdym punkcie kontrolnym — zero zapisów do Flash |
-| **Migawka** | W25Q64 | **raz, po resecie**, w trakcie startu — ślad bieżący przepisywany do pamięci trwałej razem z licznikiem |
+| **Migawka** | W25Q128 | **raz, po resecie**, w trakcie startu — ślad bieżący przepisywany do pamięci trwałej razem z licznikiem |
 
 Zużycie Flash jest z definicji ograniczone: zapis następuje wyłącznie po resecie watchdoga, a trzeci reset przenosi ECU w trwały stan awarii i kończy dalsze próby. **Scenariusz pętli resetów, który licznik ma wykrywać, daje najwyżej trzy zapisy.**
 
@@ -751,7 +751,7 @@ Poza zatrzaskiem pozostają: zdarzenie 1 — naciśnięcie kill switcha, bo jest
 - Zapis zatrzasku (flaga, przyczyna, suma kontrolna) w **rejestrach domeny podtrzymywanej**, natychmiast przy wejściu w K4 — bez Flash. Zerowany przy odblokowaniu. **Przeżywa każdy reset procesora.**
 - **Zapis nieczytelny (zła suma kontrolna) = zatrzask aktywny.**
 - Zapisu przed uśpieniem nie trzeba: ECU w AWARII nie usypia (rozdz. 9 `otwarte.md`).
-- **Odłączenie akumulatora kończy zatrzask:** flaga Pwon z TJA1043 przy starcie kasuje go celowo, z wpisem do logu. Bez tego superkondensator trzymałby zatrzask jeszcze kilka dni i wynik zależałby od czasu odłączenia. Przyczyna zostaje w logu usterek (W25Q64).
+- **Odłączenie akumulatora kończy zatrzask:** flaga Pwon z TJA1043 przy starcie kasuje go celowo, z wpisem do logu. Bez tego superkondensator trzymałby zatrzask jeszcze kilka dni i wynik zależałby od czasu odłączenia. Przyczyna zostaje w logu usterek (W25Q128).
 
 **Rozpoznanie resetu przy starcie — poprawka 4.11.2026.** Flaga BOR procesora **ustawia się przy każdym włączeniu zasilania** (STM32G4: zaniku zasilania i zapaści nie da się rozróżnić flagami — potwierdzenie ST). PMIC wyłącza 3,3 V w uśpieniu, więc wykrywanie zapaści samą flagą BOR (dawne DTC-SAF-04) dawałoby K4 po każdym wybudzeniu. Rozróżnienie daje znacznik **„ECU pracuje”** w domenie podtrzymywanej: ustawiany po starcie, kasowany jako ostatnia czynność przed rozkazem uśpienia i przed planowym resetem programowym.
 
@@ -769,7 +769,7 @@ Uszkodzenie domeny po spadku napięcia bez resetu (errata 2.2.5, I.1) wykrywa su
 
 **Konsekwencja testowa:** wymaganie ECU-SAF-003 weryfikuje się **dwoma wariantami testu** — T-SAF-003a (odblokowanie kill switchem) i T-SAF-003b (odblokowanie z HMI). To dwie różne ścieżki w kodzie i obie muszą przechodzić przez ten sam warunek zatrzymania wału.
 
-**Zachowanie licznika resetów — doprecyzowane 2026-09-22:** licznik i migawka stanu w pamięci nieulotnej W25Q64, mechanizm dwustopniowy opisany w B.2.5.3. Licznik zerowany po 60 s bezawaryjnej pracy silnika (ECU-SAF-006); po trzecim resecie stan AWARIA trwały, kasowany wyłącznie aplikacją desktop.
+**Zachowanie licznika resetów — doprecyzowane 2026-09-22:** licznik i migawka stanu w pamięci nieulotnej W25Q128, mechanizm dwustopniowy opisany w B.2.5.3. Licznik zerowany po 60 s bezawaryjnej pracy silnika (ECU-SAF-006); po trzecim resecie stan AWARIA trwały, kasowany wyłącznie aplikacją desktop.
 
 *Do doprecyzowania: treść komunikatów (punkt J).*
 
@@ -1144,7 +1144,7 @@ Nie startuje po zgaszeniu przez wywrotkę (ECU-SAF-005). Kierowca jej nie przery
 
 Pobór postojowych po zgaśnięciu (do 30 min czuwania): LED ~0,2–0,4 A → ≤ 0,2 Ah.
 
-**Liczniki (ECU-LOG-010, ECU-LOG-008):** przebieg 0,1 km z impulsów koła i obwodu koła; motogodziny 0,1 h w stanie PRACA. Część poniżej kroku zapisu trzymana w rejestrach domeny podtrzymywanej, pełny krok zapisywany do W25Q64 w strukturze dziennika z wyrównywaniem zużycia. Bez kasowania.
+**Liczniki (ECU-LOG-010, ECU-LOG-008):** przebieg 0,1 km z impulsów koła i obwodu koła; motogodziny 0,1 h w stanie PRACA. Część poniżej kroku zapisu trzymana w rejestrach domeny podtrzymywanej, pełny krok zapisywany do W25Q128 w strukturze dziennika z wyrównywaniem zużycia. Bez kasowania.
 
 **Zegar (ECU-LOG-011):** RTC ustawiany z aplikacji (USB) i z HMI. Flaga resetu domeny podtrzymywanej przy starcie = czas nieważny → znaczniki w logu oznaczone, HMI pokazuje kreski zamiast godziny do ponownego ustawienia.
 
@@ -1182,6 +1182,8 @@ W trybie dozwolone: zmiana profilu granic (tylko przy nieruchomym wale) oraz **a
 - **B/C (TCI):** wskaźnik pobierany przy decyzji o początku ładowania cewki; koniec ładowania i iskra z tej samej wersji — zmiana mapy nie rozdzieli decyzji o początku i końcu ładowania.
 - MVP-A: aktywacja przy rozbrojonym silniku (ECU-SAF-011) albo w trybie stanowiskowym (D.2).
 
+**Granica z budżetu wykonalności (O-067, decyzja Pawła 26.11.2026):** **profil map ≤ 8 KB** — MVP-A 0,34 KB, B/C ~6,3 KB przy siatkach 32 × 20 (`scripts/bilans_map.py`). **W RAM trzymane są wszystkie 3 profile i bufor zapisu** (4 × 8 KB = 32 KB w bilansie RAM, SYS-RES-001): zmiana profilu nie czyta W25Q128, a przejście 0,5 s (ECU-IGN-039) ma oba profile w RAM; bufor zapisu służy atomowej aktywacji D.3. Przydział 16 kB na kopię profilu w W25Q128 zostaje.
+
 Zakres pozostały w D: wymiarowość map, interpolacja, organizacja pamięci flash z uwzględnieniem zużycia komórek.
 
 Zakres: wymiarowość map, interpolacja, parametry konfiguracyjne, profile per model motocykla (L10), organizacja pamięci flash z uwzględnieniem zużycia komórek.
@@ -1217,7 +1219,7 @@ Kanały i częstotliwości — propozycja; po zmianie skrypt przelicza bilans.
 
 ### F.2 Pierścień ciągły (ECU-LOG-012)
 
-Strumień zapisywany na bieżąco do pierścienia w W25Q64 — **ostatnie 8 min pracy silnika** (1,7 MB). Okno „przed zdarzeniem” jest więc w pamięci, zanim zdarzenie nastąpi; odcięcie akumulatora zabiera najwyżej dane z bufora stron w RAM (≤ 0,3 s), a przy wykryciu zaniku zasilania bufor jest dopisywany (ECU-LOG-007). Każdy sektor kasowany co ~8 min pracy — 100 000 cykli to ~13 000 h pracy silnika.
+Strumień zapisywany na bieżąco do pierścienia w W25Q128 — **ostatnie 8 min pracy silnika** (1,7 MB). Okno „przed zdarzeniem” jest więc w pamięci, zanim zdarzenie nastąpi; odcięcie akumulatora zabiera najwyżej dane z bufora stron w RAM (≤ 0,3 s), a przy wykryciu zaniku zasilania bufor jest dopisywany (ECU-LOG-007). Każdy sektor kasowany co ~8 min pracy — 100 000 cykli to ~13 000 h pracy silnika.
 
 ### F.3 Zdarzenia z oknem danych (ECU-LOG-006)
 
@@ -1235,7 +1237,7 @@ Strumień zapisywany na bieżąco do pierścienia w W25Q64 — **ostatnie 8 min 
 
 **Każdy kod usterki i każde zdarzenie** (w tym wywrotka i kill switch) — rekord: czas z RTC z flagą ważności (ECU-LOG-011), kod, stan maszyny stanów, **wartość, która przekroczyła próg, i ten próg**, oraz ramka danych z chwili wykrycia: obroty, wyprzedzenie, temperatury, napięcia, bieg, prędkość, przyspieszenie. Rekord ~64 B; dziennik 256 kB (~4000 rekordów), **nadpisywane najstarsze**.
 
-### F.5 Podział W25Q64 (8 MB)
+### F.5 Podział W25Q128 (16 MB; do 26.11.2026 W25Q64, 8 MB)
 
 | Obszar | kB |
 |---|---|
@@ -1246,7 +1248,9 @@ Strumień zapisywany na bieżąco do pierścienia w W25Q64 — **ostatnie 8 min 
 | Profil granic, konfiguracja, rekord transakcji — po 2 kopie | 24 |
 | Liczniki | 64 |
 | Histogram ECU-LOG-009 | 8 |
-| **Razem** | **3024 (37 %)**, rezerwa 5 MB |
+| **Obraz aplikacji ECU *nowy* (H.1, od 26.11.2026)** | 448 |
+| **Obraz aplikacji ECU *poprzedni* (H.1)** | 448 |
+| **Razem** | **3920 (24 %)**, granica 50 % (SYS-RES-002), rezerwa ~12 MB |
 
 **Rozkład zmian prędkości wału (ECU-LOG-009, decyzja Pawła 11.11.2026):** histogram zmiany prędkości na obrót, osobno hamowanie, przyspieszanie i odwrócenie przyspieszenia, oraz licznik obrotów poza warunkiem ECU-IGN-022 (< 4 %, odwrócenie ≤ 2,5 %). Dane do Fazy 8 — czy warunek obejmuje rzeczywistą jazdę (Z26).
 
@@ -1275,11 +1279,26 @@ Zakres: czujnik biegu (pozycje, z uwzględnieniem układu 1-N-2-3-4-5-6 i filtra
 | Bootloader | Zabezpieczony przed zapisem, zmiana tylko przez SWD |
 | HMI | Przez ECU jako pośrednika po CAN (SYS-COM-001a), pakiet ECU+HMI jako jedna transakcja (SYS-COM-005b) |
 
-### H.1 Wybór obrazu przez bootloader (25.11.2026, O-041, ECU-BTL-007)
+### H.1 Instalacja i wybór obrazu przez bootloader (zmiana 26.11.2026 — decyzja Pawła, O-067; wcześniej dwa sloty, 25.11.2026, O-041; ECU-BTL-007)
 
-**Podział Flash STM32G474VET (512 KB, dwa banki po 256 KB):** bootloader ≤ 32 KB na początku banku 1, chroniony przed zapisem (ECU-BTL-006); slot A — reszta banku 1; slot B — bank 2. **Obraz aplikacji ≤ 224 KB** (rozmiar mniejszego slotu) — budżet sprawdzany przy kompilacji. Pakiet zawiera obraz zlinkowany dla każdego slotu; zapis zawsze do banku, z którego nie wykonuje się kod.
+**Podział Flash STM32G474VET (512 KB):** bootloader **≤ 64 KB** na początku, chroniony przed zapisem (ECU-BTL-006); **rekord startowy** — 2 strony po 2 KB na końcu Flash, poza ochroną; **jeden slot aplikacji 444 KB** między nimi — z niego zawsze wykonuje się program. **Obrazy w W25Q128 (F.5):** obszar *nowy* i obszar *poprzedni*, po 448 KB. Pakiet zawiera jeden obraz zlinkowany pod adres slotu.
 
-**Bank wybiera rekord startowy, nie option bytes.** Rekord w dwóch kopiach (numer sekwencji, CRC): slot, wersja, status *próbny* z licznikiem startów albo *zatwierdzony*. Bootloader bierze najnowszą poprawną kopię i obraz z poprawnym CRC. Zmiana banku przez option bytes odpada: zapis option bytes przerwany zanikiem zasilania zostawia procesor w stanie zależnym od mechanizmu ich ładowania — tego kroku nie da się zabezpieczyć kopią.
+**Powód zmiany (O-067):** przy dwóch slotach po 224 KB granica 50 % (SYS-RES-001) dawała 112 KB na aplikację przy szacunku 88–127 KB, a 32 KB bootloadera — 16 KB przy zmierzonych 15,9 KB samej warstwy USB i sterowników.
+
+| Krok | Przerwanie zasilania w tym kroku → stan po ponownym starcie |
+|---|---|
+| 1. Aplikacja zapisuje obraz do obszaru *nowy*, sprawdza CRC (ECU-BTL-004) | stary program w slocie, obszar *nowy* nieważny |
+| 2. Aplikacja zapisuje rekord startowy *do instalacji* (wersja, CRC obrazu) i restartuje | jw. albo bootloader widzi rekord i przechodzi do kroku 3 |
+| 3. Bootloader kopiuje bieżący obraz ze slotu do obszaru *poprzedni* (pomijane, gdy CRC już się zgadza) | rekord bez zmian — bootloader powtarza kopiowanie od początku |
+| 4. Bootloader kopiuje obraz *nowy* do slotu, sprawdza CRC w slocie, zapisuje rekord *próbny* z licznikiem startów | źródło w W25Q128 nienaruszone — kopiowanie od początku; slot bez poprawnego CRC **nigdy nie jest uruchamiany** |
+| 5. Start próbny i zatwierdzenie (H.2) | jak w H.2 |
+| 3 nieudane starty próbne | bootloader kopiuje obszar *poprzedni* do slotu, rekord *przywrócony* |
+
+**HMI (STM32G474RE, 512 KB, dwa banki po 256 KB; do 26.11.2026 STM32G0B1xE):** bootloader ≤ 32 KB na początku banku 1, chroniony przed zapisem; slot A — reszta banku 1 (224 KB), slot B — bank 2; rekord startowy w dwóch kopiach (2 × 2 KB na końcu banku 2); obraz ≤ 224 KB, granica SYS-RES-001 — 112 KB. Zapis zawsze do banku, z którego nie wykonuje się kod (H.2) — HMI zostaje przy dwóch slotach, bo nie ma własnej pamięci zewnętrznej na obrazy.
+
+**Kolejność gwarantuje kompletną kopię *poprzedni*, zanim slot zostanie nadpisany.** Rekord startowy w dwóch kopiach (numer sekwencji, CRC) w Flash procesora — bootloader nie zależy od W25Q128 przy zwykłym starcie: przy niedostępnej W25Q128 uruchamia slot z poprawnym CRC (aplikacja zgłasza DTC-SYS-05). **Option bytes nie są zapisywane** w ścieżce aktualizacji — ich przerwany zapis zostawia procesor w stanie zależnym od mechanizmu ładowania, czego nie da się zabezpieczyć kopią.
+
+**Koszt:** powrót do poprzedniej wersji to kopiowanie (sekundy) zamiast przełączenia; bootloader obsługuje W25Q128 i kopiowanie; przy uszkodzonej W25Q128 nie ma powrotu do wersji poprzedniej, ale odzyskiwanie przez USB zostaje (H.4).
 
 ### H.2 Transakcja pakietu ECU + HMI (O-041, ECU-BTL-009)
 
@@ -1287,21 +1306,21 @@ Zakres: czujnik biegu (pozycje, z uwzględnieniem układu 1-N-2-3-4-5-6 i filtra
 |---|---|
 | 1. Sprawdzenie warunków (ECU-BTL-001) | bez zmian |
 | 2. Zapis obrazu HMI do nieaktywnego banku HMI po CAN, sprawdzenie CRC przez HMI | ECU i HMI na starych wersjach; niedokończony obraz HMI nieważny |
-| 3. Zapis obrazu ECU do nieaktywnego slotu, sprawdzenie CRC | jw. |
+| 3. Zapis obrazu ECU do obszaru *nowy* w W25Q128, sprawdzenie CRC (H.1, kroki 1–2) | jw. |
 | 4. ECU zapisuje rekord startowy *próbny* + znacznik transakcji z oczekiwaną wersją HMI; polecenie dla HMI: rekord *próbny* | po starcie ECU widzi znacznik transakcji: jeśli HMI nie przyjęło rekordu — ECU ponawia polecenie (obraz HMI jest już sprawdzony) |
-| 5. Start próbny obu urządzeń | ECU sprawdza: autotest, **mapy i profil granic czytelne dla nowej wersji**, para wersji ECU/HMI zgodna (ECU-BTL-005) |
+| 5. Instalacja obrazu ECU przez bootloader (H.1, kroki 3–4), start próbny obu urządzeń | ECU sprawdza: autotest, **mapy i profil granic czytelne dla nowej wersji**, para wersji ECU/HMI zgodna (ECU-BTL-005) |
 | 6. Zatwierdzenie: ECU, potem polecenie zatwierdzenia dla HMI | znacznik transakcji usuwany dopiero po potwierdzeniu z HMI; przy przerwie — ECU dokańcza po następnym starcie |
-| Niepowodzenie startu próbnego 3 razy | ECU wraca do poprzedniego slotu i poleca HMI powrót do poprzedniego banku |
+| Niepowodzenie startu próbnego 3 razy | bootloader przywraca obraz *poprzedni* (H.1); ECU poleca HMI powrót do poprzedniego banku |
 
 **Zasada: ECU jest właścicielem transakcji** — po każdym starcie dokańcza albo wycofuje parę, zanim przejdzie do GOTOWOŚCI. Niezgodna para bez znacznika transakcji (np. podmieniony moduł) — DTC-COM-04, jak dotąd.
 
 ### H.3 Atomowe rekordy danych (O-041, ECU-BTL-010)
 
-Mapy (3 profile), profil granic, konfiguracja użytkownika i liczniki zapisywane w W25Q64 jako **dwie kopie** (numer sekwencji, CRC, wersja formatu). Zapis: kasowanie sektora starszej kopii → zapis → odczyt kontrolny; nowa kopia obowiązuje dopiero, gdy jest poprawna. Zanik zasilania w dowolnej chwili zostawia poprzednią poprawną kopię. **Firmware wybiera najnowszą kopię w formacie, który rozumie** — po powrocie do starszej wersji firmware wraca też do kopii w starym formacie. Ten sam schemat w pamięci zasobów HMI (HMI-UI-013).
+Mapy (3 profile), profil granic, konfiguracja użytkownika i liczniki zapisywane w W25Q128 jako **dwie kopie** (numer sekwencji, CRC, wersja formatu). Zapis: kasowanie sektora starszej kopii → zapis → odczyt kontrolny; nowa kopia obowiązuje dopiero, gdy jest poprawna. Zanik zasilania w dowolnej chwili zostawia poprzednią poprawną kopię. **Firmware wybiera najnowszą kopię w formacie, który rozumie** — po powrocie do starszej wersji firmware wraca też do kopii w starym formacie. Ten sam schemat w pamięci zasobów HMI (HMI-UI-013).
 
 ### H.4 Tryb odzyskiwania przez USB (decyzja Pawła 25.11.2026, ECU-BTL-008)
 
-Brak poprawnego obrazu w obu slotach → bootloader zostaje w **trybie odzyskiwania** i przyjmuje obraz z aplikacji desktop przez USB — bez działającej aplikacji ECU. Te same kontrole (CRC, zgodność, warunki ECU-BTL-001); zapłon i rozrusznik zablokowane sprzętowo (ECU-BTL-002). Koszt: stos USB w bootloaderze — budżet 32 KB do potwierdzenia przy kompilacji. HMI: bootloader HMI chroniony przed zapisem przyjmuje obraz po CAN od ECU (SYS-COM-001a), więc HMI odzyskuje się przez ECU.
+Brak poprawnego obrazu w slocie i w obszarze *poprzedni* → bootloader zostaje w **trybie odzyskiwania** i przyjmuje obraz z aplikacji desktop przez USB — bez działającej aplikacji ECU. Te same kontrole (CRC, zgodność, warunki ECU-BTL-001); zapłon i rozrusznik zablokowane sprzętowo (ECU-BTL-002). Obraz z USB trafia do obszaru *nowy* i jest instalowany jak w H.1; przy niedostępnej W25Q128 — wprost do slotu. Koszt: stos USB w bootloaderze — warstwa sterowników zmierzona szkieletem: 15,9 KB (`scripts/szkielet`, O-067). HMI: bootloader HMI chroniony przed zapisem przyjmuje obraz po CAN od ECU (SYS-COM-001a), więc HMI odzyskuje się przez ECU.
 
 Pozostaje do rozpisania w punkcie H: format pakietu i sekwencja komend USB.
 
@@ -1371,6 +1390,29 @@ Zakres: priorytety przerwań, budżet czasowy, obsługa watchdoga okienkowego, r
 ---
 
 ## J. Firmware HMI
+
+### J.1 Wygląd, pamięć zasobów i profile (O-067, decyzje Pawła 26.11.2026)
+
+**Wymaganie jakości (HMI-UI-015):** wygląd na wysokim poziomie — przezroczystości, gradienty, cienie i poświaty, obracane wskazówki, animowane symbole i przejścia, wygładzane czcionki. Realizacja: sterownik graficzny BT817Q (EVE4) rysuje i miesza warstwy sam; **cienie i poświaty jako gotowe obrazy z kanałem przezroczystości** (EVE nie liczy rozmycia na żywo); animowane symbole jako sekwencje klatek z pamięci modułu, odtwarzane przez koprocesor; procesor HMI (STM32G474RE, FPU) liczy co klatkę pozycje, krzywe animacji i formatowanie, buduje listę poleceń i wysyła ją przez Quad-SPI z DMA. **Ekran wzorcowy** sprawdzany na makiecie przed projektem płytki HMI (T-UI-015).
+
+**Animacja startowa:** pełnoekranowe logo odtwarzane przy włączeniu jako wideo MJPEG z pamięci modułu (BT817Q odtwarza je samodzielnie); w zestawie wyglądu użytkownika, z domyślną w zasobach systemowych.
+
+**Wygląd na profil (HMI-UI-016):** każdy z 3 profili map (ECU-IGN-039) ma **własny układ ekranu i własny dobór danych**. Układy korzystają ze **wspólnej biblioteki obrazów użytkownika** — ten sam obraz użyty w kilku profilach zajmuje miejsce raz. Zmiana profilu przełącza układ w ≤ 0,5 s z animowanym przejściem (razem z przejściem map). Elementy stałe HMI-UI-012 (pas usterek, numer profilu) — w każdym układzie.
+
+**Podział pamięci modułu (32 MB, granica 50 % — SYS-RES-002):**
+
+| Obszar | Rozmiar |
+|---|---|
+| Sterownik pamięci flash koprocesora (wymagany przez BT817Q) | 4 KB |
+| Zasoby systemowe: czcionki, ikony, animacje, przejścia, układy domyślne — **2 kopie × 4 MB** (para z wersją firmware HMI) | 8 MB |
+| Zestaw wyglądu użytkownika: 3 układy + biblioteka obrazów — **2 kopie × 3 MB** | 6 MB |
+| Ustawienia HMI (krzywa jasności itp.) — rekordy H.3 | 64 KB |
+| **Razem** | **~14,1 MB (44 %)** |
+
+**Przebieg zmiany wyglądu:** aplikacja (edytor) zamienia obrazy na format EVE (ASTC z przezroczystością) i sprawdza limity HMI-UI-013 → pakiet USB → ECU → CAN do HMI (~20 kB/s, 3 MB ≈ 2,5 min) → zapis do nieaktywnej kopii przez koprocesor, sprawdzenie CRC → przełączenie rekordu. Przerwane wgrywanie zostawia poprzedni zestaw. Zmiana samych układów bez obrazów — HMI przepisuje bibliotekę z aktywnej kopii lokalnie, bez przesyłania po CAN. Zasoby systemowe zmieniają się tylko z firmware HMI (transakcja H.2) — powrót do starszego firmware wraca do pary zasobów.
+
+**W pracy:** przy starcie i zmianie profilu HMI czyta do RAM tylko opis układu (kilka KB); duże obrazy rysowane bezpośrednio z pamięci modułu (ASTC), czcionki i obrazy częste — w pamięci graficznej 1 MB (granica 75 %, decyzja Pawła).
+
 
 *Do opracowania*
 

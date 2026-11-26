@@ -30,7 +30,7 @@ Samodzielna, programowalna jednostka sterująca silnika do motocykli enduro i ad
 | **Blokada rozrusznika na biegu** | Odpowiedzialność po stronie kierowcy, jak w części motocykli sportowych. Czujnik sprzęgła jako warunek rozruchu mógłby przy awarii przełącznika w klamce unieruchomić motocykl w terenie. Wymaga ostrzeżenia w instrukcji |
 | **Automatyczne ograniczenie mocy przy przegrzaniu silnika** | Tylko ostrzeżenie na HMI (> 100 °C, ECU-DIA-005; potwierdzone 16.11.2026). W zawodach automatyczna redukcja mocy może być groźniejsza od przegrzania — decyzja o zatrzymaniu należy do kierowcy, który widzi sytuację |
 | **Regulacja napięcia szyn przez mikrokontroler** | Patrz rozdz. 4.2 — błąd firmware mógłby zniszczyć czujniki i sam procesor |
-| Pełne logowanie sesji jazdy | Zawężone do czarnej skrzynki (zdarzenia krytyczne). Ograniczenie w firmware, nie w sprzęcie — 8 MB daje zapas |
+| Pełne logowanie sesji jazdy | Zawężone do czarnej skrzynki (zdarzenia krytyczne). Ograniczenie w firmware, nie w sprzęcie — 16 MB daje zapas |
 | Sygnalizacja stanu na samym ECU | Brak diody. Diagnostyka wyłącznie przez HMI i aplikację |
 | **Silniki 2-cylindrowe i ride-by-wire** (np. KTM 890 Adventure) | Decyzja 0.2 Fazy 0. Ride-by-wire to osobna kategoria inżynierska — redundantne czujniki i failsafe. **Żaden wariant produktu ich nie obejmuje** |
 | Closed-loop lambda, EGT, czujnik spalania stukowego | Poza MVP |
@@ -76,7 +76,7 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | Driver wtryskiwaczy | **TLE9104SH** | TLE9104SHXUMA1 | ✅ Aktywny, AEC-Q100/101 | Historia doboru: L9960 (błąd — mostek H do silników DC) → TLE8104E (funkcjonalnie dobry, **status NRND**) → TLE9104SH. Dane wtryskiwaczy KTM TPI/TBI: 11,7 Ω nom., prąd ~1,23 A przy 14,4 V = wysokoimpedancyjne, **peak-and-hold niepotrzebne, wystarcza tryb nasycony**. 4 kanały low-side (2 na wtryskiwacze, 2 zapas), 3 A/kanał, SPI z diagnostyką. Pin EN jest punktem sprzętowego bramkowania od kill switcha |
 | Transceiver CAN ×2 | **TJA1043** | ⚠️ do ustalenia | ✅ Aktywny, AEC-Q100 (strona NXP) | TJA1051T/3 odrzucony — nie ma wybudzania przez magistralę. **Od 18.10.2026 steruje zasilaniem: wyjście INH włącza obie przetwornice, w uśpieniu (Sleep) czuwa sam z pinu BAT, 18 µA typ. / 30 µA maks.** Reguły schematu: rozdz. 6.2. Ten sam układ w ECU i HMI. **NXP wskazuje TJA1443A jako następcę** — zgodność do sprawdzenia przy doborze pełnego numeru (Faza 4) |
 | Akcelerometr (dawniej IMU) | **ST AIS2IH** | AIS2IHTR | ✅ **AEC-Q100** (karta DS12421 rev. 4, str. 1); **−40…+115 °C** — warunkowo wobec SYS-ENV-003b (założenie Z17); aktywny, dostępność deklarowana przez ST do 01/2033 | **Decyzja Pawła 25.10.2026: sam akcelerometr, bez żyroskopu** — żyroskopy MEMS są wrażliwe na drgania (przesunięcie zera → dryf kąta), a wywrotka to kąt grawitacji w spoczynku. Zakres **±16 g** (czarna skrzynka), odporność na udar 10 000 g (0,2 ms, bez zasilania), filtr pasma ODR/2…ODR/20 jako antyaliasing, samotest, dryf zera ±0,2 mg/°C, SPI, LGA-12 2×2 mm. Zasilany z szyny 3,3 V — w uśpieniu bez zasilania. **Czego nie robi:** nie liczy kąta (robi to MCU); nie mierzy powyżej ±16 g (wypadek ponad zakres = nasycenie); nie jest elementem bezpieczeństwa funkcjonalnego (ST: zastosowania motoryzacyjne bez funkcji bezpieczeństwa). **Zapasowy:** Murata SCA3300-D01-1 (−40…+125 °C, ±6 g, bez deklaracji AEC-Q). Odrzucone: BMI090L, IAM-20381HT (Grade 2, 105 °C), ADXL317 (I²S, 5 mA), SMA130 (85 °C), AIS3624DQ (wycofany), FXLS8964/67 (105 °C) |
-| Pamięć logów | **W25Q64** (8 MB, SPI NOR) | ⚠️ rodzina, nie numer | ⚠️ klasa przemysłowa | Czarna skrzynka, 8 MB z zapasem; wlutowana, bez slotu. Pełny numer i klasa do ustalenia (O-063) |
+| Pamięć logów i obrazów | **W25Q128JV** (16 MB, SPI NOR) — **zamiast W25Q64 od 26.11.2026** (decyzja Pawła, O-067) | ⚠️ rodzina, nie numer | wersje AEC-Q100: Grade 2 (…AQ, −40…+105 °C) i Grade 1 (…SQ, −40…+125 °C) — wybór przy numerze | Czarna skrzynka, rekordy, obrazy aplikacji *nowy* i *poprzedni* (`firmware.md` H.1, F.5); przydziały ~24 % (SYS-RES-002). Ta sama rodzina, obudowa i zestaw komend co W25Q64JV, adresowanie 3-bajtowe. Wlutowana, bez slotu. Pełny numer, klasa i dostępność u 2 dystrybutorów — przy doborze (O-063, polityka rozdz. 3) |
 | Wyjścia pomocnicze | BTS7008-2EPA **×4** (od 16.11.2026, O-055) | ⚠️ do ustalenia | AEC-Q100 | PROFET+2, **8 kanałów**, diagnostyka, ochrona zwarciowa i odwrotnej polaryzacji. **7,5 A/kanał to wartość nominalna w określonych warunkach, nie dopuszczalny prąd roboczy dowolnego obciążenia** |
 | Kondycjoner VR/Hall | **MAX9926** | MAX9926UAEE/V+ | ✅ Production, −40…+125 °C, automotive | Adaptacyjny próg 33% poprzedniego szczytu, detekcja przejścia przez zero, czułość od 20 mV, odporność na pominięty ząb. **Pobór 4,7 mA typ./10 mA max, brak trybu shutdown** — w uśpieniu odcinany razem z VDD5 PMIC (od 1.11.2026; wcześniej przełącznikiem obciążenia). Wersja dwukanałowa; jednokanałowy MAX9924 jest mniejszy i tańszy. Dostępność wg polityki zaopatrzenia — spełniona (Mouser, Farnell, DigiKey; 25.11.2026); TME nie potwierdzone. Zamienniki odrzucone: TI LM1815 (bez kwalifikacji automotive), onsemi NCV1124 (bez progu adaptacyjnego i przełączania w zerze — inna kalibracja zbocza, słabsza odporność na zakłócenia) — O-033 |
 | Ciśnienie atmosferyczne | **Infineon KP464** | KP464XTMA1 / KP464EXTMA1 — do ustalenia przy zakupie | ✅ **AEC-Q103-002** (karta rev. 1.20, str. 1) — standard AEC dla czujników MEMS; **−40…+125 °C** | **Montowany od początku na PCB MVP-A** (decyzja Pawła 25.10.2026). W MVP-A tylko logowanie ciśnienia i wysokości; korekta dawki w B/C. Zakres 40–115 kPa, ±1,0 kPa (0…85 °C), ±1,5 kPa na krańcach; SPI 16-bit; zasilanie 3,0–5,25 V, 3,5 mA aktywnie, 10 µA w power-down; start 5–10 ms; diagnostyka toru sygnału, komórki i EEPROM. **Uwagi z karty:** czuły na światło > 1 lx (obudowa nieprzezroczysta, membrana nieprzepuszczająca światła); pin VPROG wyłącznie do programowania EEPROM — podłączenie wg angielskiej karty. **Wymaga otworu ciśnieniowego z membraną IP67 w obudowie.** ⚠️ Dostępność: Farnell — 52 tyg. i MOQ 3400 szt. dla KP464E; dostępność w małych ilościach do sprawdzenia (TME → Mouser → Farnell → DigiKey) w Fazie 4. BMP390 odrzucony (bez kwalifikacji, 85 °C) |
@@ -130,9 +130,9 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | PD4 | 86 | Faza wałka — rezerwa 4T | TIM2_CH2 |
 | PD0 | 82 | TJA1043 RXD (FDCAN1; PA11/PA12 zajęte przez USB) | FDCAN1_RX |
 | PD1 | 83 | TJA1043 TXD | FDCAN1_TX |
-| PA6 | 28 | W25Q64 | SPI1_MISO |
-| PA7 | 29 | W25Q64 | SPI1_MOSI |
-| PA5 | 27 | W25Q64 (pamięć logów) | SPI1_SCK |
+| PA6 | 28 | W25Q128 | SPI1_MISO |
+| PA7 | 29 | W25Q128 | SPI1_MOSI |
+| PA5 | 27 | W25Q128 (pamięć logów) | SPI1_SCK |
 | PB14 | 53 | jw. | SPI2_MISO |
 | PB15 | 54 | jw. | SPI2_MOSI |
 | PF10 | 11 | AIS2IH, KP464, TLE9104 (B/C) | SPI2_SCK |
@@ -163,7 +163,7 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | PE0 | 97 | AIS2IH — przerwanie danych | GPIO |
 | PD15 | 62 | Odczyt zwrotny komparatora kill (ECU-SAF-021/024) | GPIO |
 | PD7 | 89 | CS AIS2IH | GPIO |
-| PD5 | 87 | CS W25Q64 | GPIO |
+| PD5 | 87 | CS W25Q128 | GPIO |
 | PF2 | 19 | CS KP464 | GPIO |
 | PD6 | 88 | CS PMIC | GPIO |
 | PD2 | 84 | CS TLE9104 (B/C) | GPIO |
@@ -376,6 +376,14 @@ Magistrala wymaga dokładnie **dwóch** rezystorów 120 Ω — na fizycznych ko�
 **Czujniki jednoprzewodowe z masą na korpusie:** przesunięcie masy silnika względem masy czujników wchodzi w błąd pomiaru — preferowane czujniki dwuprzewodowe.
 
 **Dowód przed G4** (`proces.md` rozdz. 5): stanowisko zakłóceń (SYS-ENV-011) i próby ESD (SYS-ENV-012).
+
+#### 4.4.2 Konstrukcja płytki: warstwy, powłoka, pola testowe (26.11.2026, O-036…038, decyzje Pawła)
+
+**Warstwy (O-036):** **4 warstwy, 1,6 mm, miedź 35 µm** na wszystkich warstwach — sygnał / masa / zasilanie / sygnał. Ciągła płaszczyzna masy pod procesorem i torem VR (podział mas wg 4.4.1). **Pod strefą WN AC-CDI warstwy wewnętrzne wycięte** — odstępy liczone tylko po powierzchni. Miedź 35 µm zamiast 70 µm, bo grubsza utrudnia raster 0,5 mm LQFP100; prądy kanałów PROFET (do 6 A) i zasilania prowadzone szerokimi polami na obu warstwach zewnętrznych z przelotkami równoległymi — szerokości przy schemacie z kalkulatora IPC-2152 dla przyrostu ≤ 20 K.
+
+**Powłoka (O-037):** **lakier akrylowy** po montażu i teście — naprawialny rozpuszczalnikiem, nakładany ręcznie; złącza, pola testowe, footprint SWD, zworka triggera i elementy regulowane maskowane. **Odstępy izolacyjne WN (ECU-IGN-027) liczone jak dla płytki niepokrytej** — IPC-2221B kategoria B2 (przewodniki zewnętrzne bez powłoki, do 3050 m n.p.m.); lakier jest zapasem na kondensację i zabrudzenie, nie warunkiem bezpieczeństwa.
+
+**Pola testowe i znakowanie (O-038):** produkcja małoseryjna — **bez nastawienia na łoże igłowe i programowanie na linii**. Pola testowe ≥ 1 mm na spodzie płytki, opisane na sitodruku: szyny (VBATP, VDD6, VDD5, 3,3 V, VSOUT1, VREF+), sygnały bezpieczeństwa (wyjście MAX9926, wyjście HRTIM zapłonu, bramka tyrystora, ENDRV, NRES, obie ścieżki kill switcha), CAN H/L, masa przy każdej grupie. SWD jako footprint bez gniazda (ECU-BTL-006). **Numer seryjny, rewizja płytki i wariant zapisywane w obszarze OTP procesora przy pierwszym programowaniu** — firmware i aplikacja odczytują je do diagnostyki i kontroli zgodności (wariant porównywany z rezystorem kodującym, ECU-SAF-033); numer i rewizja także na sitodruku.
 
 ### 4.5 Kandydat: PMIC TI TPS65381A-Q1 — arkusz kwalifikacji (1.11.2026, O-018 punkty 2–4)
 
@@ -683,17 +691,17 @@ Kopnięcie i popych przy uśpionym ECU wymagają przycisku — **do zapisania w 
 | # | Decyzja | Wybór | Uzasadnienie |
 |---|---|---|---|
 | H.1 | Własny procesor | Tak | Obsługa CAN, przycisków, wyświetlacza, lokalnej konfiguracji |
-| H.2 | Procesor | STM32G0B1 | Jedyna linia G0 z FDCAN; ten sam producent co ECU |
+| H.2 | Procesor | **STM32G474RET3** — ten sam procesor co ECU w obudowie LQFP-64: Cortex-M4 z FPU 170 MHz, CORDIC, Quad-SPI do EVE4, FDCAN, 512 KB Flash w dwóch bankach, 128 KB RAM; −40…+125 °C (T3, margines SYS-ENV-003b przy panelu do 70 °C). **Zmiana 26.11.2026 (decyzja Pawła 26.11.2026)** — wcześniej STM32G0B1 (64 MHz, bez FPU) | Wymaganie wysokiej jakości wyglądu (HMI-UI-015): animacje, przezroczystości, poświaty — zapas mocy na obliczenia co klatkę; wspólny kompilator, biblioteki, płytka deweloperska i część kodu z ECU. Wolne piny Quad-SPI i FDCAN w LQFP-64 — do sprawdzenia przy przydziale pinów |
 | H.3 | Wyświetlacz | Riverdi **RVT35HHBFWN00** — 3,5", 320×240, IPS, koprocesor EVE4, SPI/QSPI, 1000 cd/m², bez dotyku, metalowa ramka | Koprocesor graficzny daje animacje bez obciążania pamięci procesora |
-| H.4 | Przyciski | 4 szt. (góra, dół, wybór, wstecz), IP67, automotive-grade, 1 M cykli, złocone styki | — |
+| H.4 | Przyciski | 4 szt. (góra, dół, wybór, wstecz), IP6K7 + IP6K9K (SYS-ENV-005), automotive-grade, 1 M cykli, złocone styki | — |
 | H.5 | Lokalizacja | **Na kierownicy**, nie w obudowie | Ergonomia obsługi w jeździe |
 | H.6 | Okablowanie przycisków | Drabinka rezystorowa — 4 przyciski na jednym wejściu analogowym, **masa drabinki wraca kablem przycisków do masy HMI** | Ogranicza liczbę żył. **Analiza najgorszego przypadku: rozdz. 8.3 (O-035, 9.11.2026)** |
 | H.7 | Podświetlenie przycisków | ECU wysyła stan świateł po CAN, HMI włącza podświetlenie | Bez dodatkowego okablowania |
 | H.8 | Złącze główne | Deutsch DTM04-4P: CAN H, CAN L, +12 V **z ECU** (przełącznik domyślnie załączony — 3.11.2026, ECU-PWR-011), GND **do osobnego pinu masy HMI w ECU** | DTM to miniaturowa wersja DT, 13 A/pin |
 | H.9 | Złącze przycisków | Osobne, Deutsch DTM04-3P | Serwisowalność — kierownice wymieniane po upadkach bez ruszania wiązki głównej |
 | H.10 | Transceiver | TJA1043, ten sam co w ECU | Jeden numer katalogowy na oba urządzenia; wybudzanie przez magistralę potrzebne także w HMI |
-| H.11 | Zasilanie | Dwie przetwornice: 5 V (wyświetlacz i koprocesor) i 3,3 V (procesor, flash). **Obie włączane wyjściem INH transceivera HMI; w uśpieniu obie wyłączone** (zmiana 18.10.2026) | Ta sama architektura co ECU (rozdz. 6). TJA1043 HMI zasilany z +12 V stałego ze złącza DTM04 |
-| H.12 | Pamięć zasobów | Zewnętrzna flash SPI NOR, rodzina W25Q | Koprocesor wymaga trwałego przechowywania bitmap, czcionek i animacji — **od 25.11.2026 także układu ekranu i obrazów użytkownika** (HMI-UI-013), więc pojemność dobierana z zapasem na tło 320×240; dwubankowy bootloader zostawia ~256 KB na bank — za mało na firmware i zasoby |
+| H.11 | Zasilanie | Dwie przetwornice: 5 V (wyświetlacz i koprocesor) i 3,3 V (procesor). **Obie włączane wyjściem INH transceivera HMI; w uśpieniu obie wyłączone** (zmiana 18.10.2026) | Ta sama architektura co ECU (rozdz. 6). TJA1043 HMI zasilany z +12 V stałego ze złącza DTM04 |
+| H.12 | Pamięć zasobów | **Pamięć flash 256 Mbit (32 MB) wbudowana w moduł RVT35**, podłączona do BT817Q osobnym QSPI — dostęp przez polecenia koprocesora. **Osobny układ W25Q na płytce HMI usunięty (26.11.2026, decyzja Pawła 26.11.2026)** | Obrazy, czcionki, animacje, układy ekranu i obrazy użytkownika — podział i przebieg w `firmware.md` J.1; przydziały ≤ 50 % (SYS-RES-002). Pojemność 32 MB z karty wersji RVT35HHBNWN00 — **do potwierdzenia w karcie wersji z ramką (…BFWN00)** |
 | H.13 | Czujnik temperatury | Cyfrowy na PCB, blisko wyświetlacza | Ograniczenie jasności dopiero powyżej 70 °C i zapis przekroczeń (HMI-UI-004, 11.11.2026); przesunięcie czujnik–panel wyznaczane w T-UI-004 |
 | H.14 | Nadzór | **Watchdog wewnętrzny procesora HMI** (HMI-SYS-001) + **restart zasilania przez ECU** po 5 s ciszy, 3 próby, potem co 60 s (SYS-COM-010) — decyzja Pawła 4.11.2026 | Zawieszone HMI wraca bez udziału kierowcy; ECU pracuje dalej bez HMI (SYS-COM-008) |
 | H.15 | Czujnik światła (od 25.11.2026, O-055) | Cyfrowy, I²C (wspólna magistrala z czujnikiem temperatury), AEC-Q100 — **do doboru przy schemacie HMI** (arkusz 11 pól); rozdzielczość ≤ 1 lx w dolnym zakresie, nasycenie powyżej ~1000 lx dopuszczalne. Zasilany z szyn HMI — w uśpieniu wyłączony | Automatyczna jasność (HMI-UI-014). **Montaż za szybą ekranu, poza polem aktywnym** — bez dodatkowego otworu; w szybie przezroczyste miejsce nad czujnikiem (konstrukcja obudowy — Paweł) |
@@ -747,19 +755,19 @@ W uśpieniu (od 18.10.2026): **obie szyny HMI wyłączone przez INH transceivera
 
 **Model:** `scripts/termika_hmi.py` — sieć cieplna 4 węzłów (szkło LCD, tył modułu, szyba, obudowa), stan ustalony. Geometria i optyka to założenie Z30; model porównuje warianty, temperaturę potwierdza T-ENV-003a. **Karta modułu** (RVT35HHBNWN00 Rev 1.3, ta sama matryca): praca −20…70 °C, przechowywanie −30…80 °C (s. 6), IPS normalnie czarny, transmisyjny, 1000 cd/m², podświetlenie 5 V × 150 mA = **0,75 W** (s. 7) — dawne 1,25 W bez źródła.
 
-**Bilans na postoju w słońcu:** ekran pochłania ~3 W, nasłoneczniona czarna obudowa ~4,5 W, elektronika ~2,1 W (z tego podświetlenie 0,75 W). **Słońce to ~80 % ciepła.**
+**Bilans na postoju w słońcu:** ekran pochłania ~3 W, nasłoneczniona czarna obudowa ~4,5 W, elektronika ~2,2 W (z tego podświetlenie 0,75 W; procesor STM32G474 od 26.11.2026 +0,11 W). **Słońce to ~80 % ciepła.**
 
 | Wykonanie (postój, bez wiatru) | Panel przy 40 °C | Panel przy 45 °C |
 |---|---|---|
-| Aluminium czarne, kontakt cieplny modułu 2 W/K, szyba PC | 70,6 °C | 75,6 °C ❌ |
-| jw., podświetlenie 30 % | 69,1 °C | 74,1 °C ❌ |
-| Aluminium czarne **bez kontaktu cieplnego** | 87,3 °C | 92,3 °C ❌ |
-| Tworzywo czarne bez kontaktu | 101,8 °C | 106,8 °C ❌ |
-| Aluminium **jasne**, kontakt | 63,5 °C | 68,5 °C ❌ |
-| Jasne, kontakt ≥ 0,65 W/K, **szyba z filtrem podczerwieni** | 57,8 °C | **62,8 °C ✅** |
-| Jasne, kontakt, szkło klejone optycznie z filtrem podczerwieni | 55,9 °C | **60,9 °C ✅** |
-| Jasne, kontakt, **daszek zasłaniający ekran** | 47,3 °C | **52,3 °C ✅** |
-| Czarne, kontakt, jazda 11 km/h | 56,6 °C | 61,6 °C ✅ |
+| Aluminium czarne, kontakt cieplny modułu 2 W/K, szyba PC | 70,9 °C | 75,9 °C ❌ |
+| jw., podświetlenie 30 % | 69,4 °C | 74,4 °C ❌ |
+| Aluminium czarne **bez kontaktu cieplnego** | 87,5 °C | 92,5 °C ❌ |
+| Tworzywo czarne bez kontaktu | 102,2 °C | 107,2 °C ❌ |
+| Aluminium **jasne**, kontakt | 63,8 °C | 68,8 °C ❌ |
+| Jasne, kontakt ≥ 0,70 W/K, **szyba z filtrem podczerwieni** | 58,0 °C | **63,0 °C ✅** |
+| Jasne, kontakt, szkło klejone optycznie z filtrem podczerwieni | 56,1 °C | **61,1 °C ✅** |
+| Jasne, kontakt, **daszek zasłaniający ekran** | 47,5 °C | **52,5 °C ✅** |
+| Czarne, kontakt, jazda 11 km/h | 56,7 °C | 61,7 °C ✅ |
 | Zapłon wyłączony: czarne aluminium z kontaktem / tworzywo czarne | 65,1 / 87,3 °C | 70,1 / **92,3 °C ❌ > 80 °C przechowywania** |
 
 **Wnioski:**
@@ -771,7 +779,7 @@ W uśpieniu (od 18.10.2026): **obie szyny HMI wyłączone przez INH transceivera
 **Wymagania funkcjonalne dla obudowy HMI** (konstrukcja i wybór zestawu — Paweł; każdy wariant sprawdzany skryptem):
 - panel ≤ 65 °C w punkcie projektowym;
 - kolor jasny — czarna obudowa nie przechodzi przy żadnym kontakcie cieplnym;
-- kontakt cieplny moduł → obudowa: z filtrem podczerwieni **≥ 0,65 W/K**, z daszkiem wystarczy minimalny;
+- kontakt cieplny moduł → obudowa: z filtrem podczerwieni **≥ 0,70 W/K** (0,65 W/K przed zmianą procesora HMI, 26.11.2026), z daszkiem wystarczy minimalny;
 - przy 45 °C dodatkowo **filtr podczerwieni albo daszek**;
 - osłona ekranu: **suma odbić lustrzanych ≤ 5 %** (niżej).
 
@@ -834,6 +842,31 @@ Dawna pozycja 4,8 W (driver cewki indukcyjnej VBG08H-E) wypadła razem z zapłon
 ⚠️ **Ograniczenia bilansu:** uproszczona rezystancja cieplna obudowy (wymagany pełny łańcuch złącze→pad→interfejs→obudowa→otoczenie); straty bloku CDI to szacunek do pomiaru.
 
 
+### 9.3 Budżet wykonalności (O-067, 26.11.2026)
+
+Granice SYS-RES-001…003 (decyzje Pawła). Sterowniki HAL + USB **zmierzone** kompilacją szkieletu (`scripts/szkielet`), reszta — szacunek (min–max). Przeliczenie: `python3 scripts/budzet_wykonalnosci.py`.
+
+| Zasób ECU | Zużycie | Granica | Wynik |
+|---|---|---|---|
+| Pamięć programu aplikacji (slot 444 KB) | 37,7 KB sterowniki + 50–89 KB logika = **88–127 KB** | 222 KB | ✅ |
+| Bootloader (obszar 64 KB) | 15,9 KB sterowniki + 7–10 KB logika = **23–26 KB** | 32 KB | ✅ |
+| RAM (128 KB) | **52–63 KB** — w tym 3 profile map + bufor zapisu po 8 KB (`scripts/bilans_map.py`; rzeczywiście MVP-A 1,3 KB, B/C ~25 KB) | 64 KB | ✅ górny szacunek blisko granicy |
+| Procesor przy 10 000 obr/min | **5–11 %** — dominuje pętla 1 kHz; zapłon wykonuje HRTIM sprzętowo | 60 % | ✅ |
+| CAN w pracy | **~5 %** (szacunek z SYS-COM-002a/b; lista ramek — O-043) | 50 % | ✅ |
+| CAN przy aktualizacji | ~20,7 kB/s przy 80 %: firmware HMI ~13 s, zasoby do ~6 MB w 5 min | 80 % | ✅ |
+| W25Q128 | **3920 kB (24 %)** z obrazami *nowy* i *poprzedni* | 50 % | ✅ |
+| **HMI (STM32G474RE)** — pamięć programu (slot 224 KB) | 14,8 KB sterowniki + 41–83 KB logika = **56–98 KB** | 112 KB | ✅ |
+| **HMI** — bootloader (32 KB) | 6,2 KB sterowniki + 3–5 KB logika = **9–11 KB** | 16 KB | ✅ |
+| **HMI** — RAM (128 KB) | **32–59 KB** | 64 KB | ✅ |
+| **HMI** — procesor przy ekranie wzorcowym 60 Hz | **~2–4 %** | 60 % | ✅ |
+| **HMI** — pamięć modułu wyświetlacza (32 MB) | **~14,1 MB (44 %)** — `firmware.md` J.1 | 16 MB | ✅ |
+| **HMI** — pamięć graficzna EVE4 (1 MB) | **250–550 KB** — szacunek z animacją startową, dowód na makiecie (HMI-UI-015) | 768 KB (75 %, decyzja Pawła) | ✅ |
+| **HMI** — lista wyświetlania EVE4 (2048 poleceń) | **600–1000** przy ekranie wzorcowym — szacunek, dowód na makiecie | 1536 (75 %) | ✅ |
+
+**Zmiany wymuszone budżetem (decyzje Pawła 26.11.2026):** HMI na **STM32G474RE** — ten sam procesor co ECU (najpierw STM32G0B1xE z budżetu pamięci, potem zmiana ze względu na wymaganie wyglądu HMI-UI-015); osobna pamięć W25Q na płytce HMI usunięta — zasoby w 32 MB modułu wyświetlacza; jeden slot aplikacji ECU i obrazy w pamięci zewnętrznej zamiast dwóch slotów (`firmware.md` H.1); W25Q128 zamiast W25Q64; CAN do 80 % tylko w trybie aktualizacji. Przy dwóch slotach aplikacja (112 KB granicy) i bootloader (16 KB) przekraczały granice.
+
+⚠️ **Ograniczenia:** logika aplikacji i czasy obsługi to szacunki inżynierskie — dlatego granica 50/60 %; dowód w G3 z raportu kompilacji i pomiaru obciążenia (T-RES-001).
+
 ---
 
 ## 10. Obudowy
@@ -844,12 +877,13 @@ Dawna pozycja 4,8 W (driver cewki indukcyjnej VBG08H-E) wypadła razem z zapłon
 
 | Parametr | Wymaganie |
 |---|---|
-| Szczelność | IP67 minimum — zanurzenie, przeprawy wodne, mycie ciśnieniowe |
+| Szczelność | **IP6K7** (ISO 20653) — zanurzenie, przeprawy wodne. **Miejsce osłonięte: bez myjki ciśnieniowej i bez bezpośredniej strugi wody** (IP6K5 nie wymagane), zakaz w instrukcji (SYS-ENV-005, Z32, decyzja Pawła 26.11.2026) |
+| Próby środowiskowe | 30 cykli −40…+85 °C (próba od −18 °C), zanurzenie nagrzanej obudowy w wodzie lodowej (10 cykli), wilgotne gorąco z kondensacją przez membranę (SYS-ENV-014…016) |
 | Wyrównanie ciśnienia | **Membrana odpowietrzająca obowiązkowa** — czujnik ciśnienia atmosferycznego (KP464) w hermetycznej obudowie byłby bezużyteczny. Zapobiega też kondensacji przy zmianach temperatury. **Membrana i obudowa nieprzepuszczające światła** — KP464 jest czuły na światło powyżej 1 lx |
 | Odprowadzanie ciepła | Aluminium z kontaktem termicznym (pady lub pasta) z blokiem AC-CDI, PROFET-ami i PMIC — duży zapas. Tworzywo graniczne (~96 °C wewnątrz, Z17) — rozdz. 9.2. Wybór obudowy — Paweł |
 | Przepusty | Złącze główne (≥ 29–30 obwodów + zapas, typ do wyboru) i złącze zapłonu 3–4-pinowe (od 3.11.2026), header wlutowany + USB-C uszczelnione lub z zaślepką, IP67 |
 | Wibracje | Mocowanie PCB w kilku punktach, nie tylko na złączu; silikonowe tuleje w punktach montażu do ramy |
-| Temperatura | **−40…+50 °C otoczenia w miejscu montażu** (SYS-ENV-003, zmiana 1.11.2026 — decyzja Pawła; Z20), przechowywanie −40…+105 °C (SYS-ENV-004). Wnętrze ~57 °C (aluminium, dobry kontakt), ~68 °C (aluminium bez padów), ~96 °C (tworzywo) — rozdz. 9.2. Ochrona termiczna: ECU-SAF-020 |
+| Temperatura | **−40…+50 °C otoczenia w miejscu montażu** (SYS-ENV-003, zmiana 1.11.2026 — decyzja Pawła; Z20), przechowywanie −40…+85 °C (SYS-ENV-004, zmiana 26.11.2026). Wnętrze ~57 °C (aluminium, dobry kontakt), ~68 °C (aluminium bez padów), ~96 °C (tworzywo) — rozdz. 9.2. Ochrona termiczna: ECU-SAF-020 |
 | Dostęp serwisowy | Otwarcie bez niszczenia uszczelnienia (uszczelka wymienna, nie klejona) — dostęp do złącza SWD i zworki triggera |
 | Montaż | Odporny na uderzenia; z dala od strumienia błota i gorąca wydechu |
 
@@ -857,12 +891,13 @@ Dawna pozycja 4,8 W (driver cewki indukcyjnej VBG08H-E) wypadła razem z zapłon
 
 | Parametr | Wymaganie |
 |---|---|
-| Szczelność | IP67 minimum |
+| Szczelność | **IP6K7 + IP6K9K** (ISO 20653) — zanurzenie i myjka ciśnieniowa (woda 80 °C, 8–10 MPa). Dotyczy też panelu przycisków i złączy — **DTM04: IP6K9K potwierdzić w karcie** (Deutsch deklaruje IP6K9K tylko dla wybranych serii). SYS-ENV-005, decyzja Pawła 26.11.2026 |
+| Próby środowiskowe | 30 cykli −30…+80 °C (próba od −18 °C), zanurzenie w wodzie lodowej po nagrzaniu do +65 °C (10 cykli), wilgotne gorąco (SYS-ENV-014…016) |
 | Widoczność | Osobna szybka poliwęglanowa lub szklana nad panelem — wyświetlacz nie ma własnej |
 | Odblaski | **Suma odbić lustrzanych osłony ≤ 5 %** (kontrast w słońcu ≥ 3:1) — szyba z powłoką antyrefleksyjną obustronnie, szkło klejone optycznie albo klejone z powłoką; szyba bez powłok ze szczeliną daje 1,8:1 (rozdz. 8.2, decyzja Pawła 11.11.2026) |
 | Przepusty | DTM04-4P (główne) + DTM04-3P (przyciski) |
 | Wibracje | Mocowanie do kierownicy przez elementy tłumiące — panel LCD jest wrażliwy na wibracje |
-| Temperatura | **Powietrze −20…+45 °C, przy +45 °C słońce 1000 W/m² na postoju — panel ≤ 65 °C** (SYS-ENV-003a, decyzja Pawła 11.11.2026). Warunki: **jasny kolor, kontakt cieplny moduł → obudowa, filtr podczerwieni albo daszek**; czarna obudowa nie przechodzi, tworzywo bez kontaktu wykluczone — rozdz. 8.2 |
+| Temperatura | **Powietrze −20…+45 °C, przy +45 °C słońce 1000 W/m² na postoju — panel ≤ 65 °C** (SYS-ENV-003a, decyzja Pawła 11.11.2026). Warunki: **jasny kolor, kontakt cieplny moduł → obudowa, filtr podczerwieni albo daszek**; czarna obudowa nie przechodzi, tworzywo bez kontaktu wykluczone — rozdz. 8.2. Przechowywanie −30…+80 °C (SYS-ENV-004) |
 | Widoczność nocna | Regulowana jasność podświetlenia |
 
 ---
@@ -900,7 +935,8 @@ Homologacja pojazdu nie dotyczy — produkt offroad i motorsport, nie do ruchu d
 | **AEC-Q100 / AEC-Q200** | Siatkę klas temperaturowych jako język doboru: Grade 1 to −40…+125 °C, Grade 2 to −40…+105 °C, Grade 3 to −40…+85 °C. Wymaganie SYS-ENV-003b odwołuje się do tych klas zamiast do luźnych wartości z kart |
 | **ISO 16750-2** | Lista prób elektrycznych: przepięcie, nakładający się przebieg AC, powolny i gwałtowny spadek napięcia, zachowanie przy resecie, profil rozruchu, zrzut obciążenia, odwrotna polaryzacja, przesunięcie masy, rozwarcie, zwarcie |
 | **ISO 16750-3** | Struktura profili wibracji i udarów |
-| **ISO 16750-4** | Struktura wymagań temperaturowych, cykli termicznych, wilgotności i szczelności |
+| **ISO 16750-4** | Struktura wymagań temperaturowych, cykli termicznych, wilgotności i szczelności — przyjęte próby 5.3, 5.4.3 (zanurzenie), 5.6 (SYS-ENV-014…016, O-046) |
+| **ISO 20653** | Kody szczelności pojazdowe: IP6K7 (zanurzenie), IP6K9K (myjka ciśnieniowa, woda 80 °C) — SYS-ENV-005 |
 | **ISO 7637-2** | Zestaw impulsów testowych na linii zasilania |
 
 **Dlaczego wartości nie pochodzą z norm.** Normy są pisane dla samochodów, a **zrzut obciążenia skaluje się z wydajnością alternatora**: stator 150–200 W daje zaburzenie o rząd wielkości mniejsze niż alternator samochodowy 1–2 kW. Przyjęcie wartości samochodowych oznaczałoby przepłacenie za ochronę wejścia zaprojektowaną pod zjawisko, które w tym motocyklu nie wystąpi.

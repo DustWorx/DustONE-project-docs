@@ -22,11 +22,11 @@ Analiza wspierana modelem językowym nie jest niezależnym przeglądem ludzkim. 
 
 | Faza | Zakres | Status |
 |---|---|---|
-| 0 | Wymagania (ECU + HMI + aplikacja) | ⬜ **otwarta** — bramka G0 zablokowana |
+| 0 | Wymagania (ECU + HMI + aplikacja) | ⬜ **otwarta** — bramka G0 zablokowana: ECU-IGN-019 (pomiar, krok 6); obwiednia środowiskowa (O-046) i budżet wykonalności (O-067) zamknięte 26.11.2026 |
 | 1 | Architektura systemu | ⚠️ warunkowo — brak diagramu elektrycznego |
 | 2-ECU | Projekt szczegółowy sprzętu ECU | ⚠️ warunkowo — elementy wokół PMIC (przyjęty 1.11.2026), komparator i próg tranzystorowy, potwierdzenie BOM |
 | 2-HMI | Projekt szczegółowy sprzętu HMI | ⚠️ warunkowo — drzewo zasilania, drabinka przycisków, pełny numer pamięci |
-| **2-FW** | **Specyfikacja funkcjonalna firmware** | 🔶 **w toku** — A i B zamknięte, C.1 do ponownego przeglądu, C.2–J otwarte |
+| **2-FW** | **Specyfikacja funkcjonalna firmware** | 🔶 **w toku** (stan 26.11.2026) — zapisane: A, B, C.1 (przebudowa 25.11.2026), C.3, D.1–D.3, F, H, I.1–I.2, J (częściowo). Otwarte: C.2 (mapy i korekty), E, G, I (architektura zadań i budżet czasowy), reszta J — etap 5 planu |
 | 2-Desktop | Aplikacja desktop i protokoły komunikacji | ⬜ |
 | 3 | Prototyp funkcjonalny — **wyłącznie płytki dev, sygnały symulowane** | ⬜ |
 | 4 | Projekt PCB i wytyczne EMI | ⬜ |
@@ -131,7 +131,11 @@ Kolejność wynika z jednej reguły: **dane wejściowe przed decyzjami, które o
 | **Miernik nasłonecznienia (W/m²), luksomierz do ≥ 100 klx, termopara K** (O-034, 11.11.2026) | Makieta HMI w słońcu: temperatura szkła panelu (SYS-ENV-003a), czytelność przy 80 klx (HMI-UI-005) | do kupienia (Paweł) |
 | Adapter USB-CAN (typu CANable) | Podgląd i wstrzykiwanie ramek — **niezależny od ECU** | do kupienia |
 | STEVAL-MKI218V1 + STEVAL-MKI109D | Drgania w miejscu montażu (O-047) | do kupienia |
-| Własna komora grzewcza (+50 °C, SYS-ENV-003 od 1.11.2026) | A8, SYS-ENV-003 strona gorąca, progi ECU-SAF-020 | do zbudowania |
+| Własna komora grzewcza **do +85 °C, z nawilżaniem** (od 26.11.2026) | A8, SYS-ENV-003 strona gorąca (+50 °C), progi ECU-SAF-020; cykle +85/+80 °C (SYS-ENV-014), nagrzewanie przed zanurzeniem (SYS-ENV-015), +55 °C / 93 % (SYS-ENV-016) | do zbudowania |
+| Zamrażarka ≤ −18 °C | Strona zimna cykli SYS-ENV-014 (poniżej −18 °C bez próby — ryzyko przyjęte 26.11.2026) | do zapewnienia (Paweł) |
+| Rejestrator temperatury i wilgotności do 100 % RH, wiadro wody z lodem z termometrem | SYS-ENV-015, SYS-ENV-016 | do kupienia (Paweł) |
+| Myjka ciśnieniowa z podgrzewaniem ≥ 8 MPa / 80 °C (wypożyczenie) albo laboratorium | IPX9K HMI (SYS-ENV-005) | do zapewnienia (Paweł) |
+| **Moduł RVT35HHBFWN00 + przejściówka do płytki Nucleo z STM32G474RE** (tej samej co dla ECU) | Makieta HMI: ekran wzorcowy HMI-UI-015 przed projektem płytki HMI (T-UI-015), termika SYS-ENV-003a | do kupienia (Paweł) |
 | Termopary z rejestratorem, luksomierz | A8, A9 | do kupienia |
 
 **Pomiar kąta zapłonu (wymóg O-051):** na stanowisku odniesieniem jest **wyjście kąta z symulatora VR**, które nie przechodzi przez kondycjoner ECU. Przy 10 000 obr/min 1° to 16,7 µs, a oscyloskop i timery dają rozdzielczość w nanosekundach, więc niepewność toru jest o rzędy wielkości mniejsza od granicy ECU-IGN-022. **Na silniku** niezależne odniesienie to lampa stroboskopowa z tarczą kątową (niepewność rzędu 0,5–1°). Wystarcza do porównania z fabrycznym CDI, **nie** do dowodu granicy 1°. Granicę dowodzi stanowisko.
