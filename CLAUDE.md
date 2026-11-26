@@ -62,7 +62,7 @@ Katalogi: `measurements/` (procedury pomiarowe), `diagrams/`, `audit/`, `scripts
 |---|---|
 | `kontrola.py` | Spójność dokumentów i liczniki — po każdej zmianie |
 | `budzet_wykonalnosci.py` | Budżet ECU i HMI: pamięć, RAM, procesor, CAN, pamięci zewnętrzne |
-| `szkielet/build.sh` | Pomiar rozmiaru bibliotek ST kompilacją szkieletu (pobiera kompilator xPack i biblioteki ST) |
+| `szkielet/build.sh` (uruchamiać przez `bash`) | Pomiar rozmiaru bibliotek ST kompilacją szkieletu (pobiera kompilator xPack i biblioteki ST) |
 | `bilans_logu.py` | Czarna skrzynka i podział W25Q128 |
 | `bilans_map.py` | Rozmiar profilu map i RAM na 3 profile |
 | `model_kata.py` | Model błędu kąta zapłonu |
