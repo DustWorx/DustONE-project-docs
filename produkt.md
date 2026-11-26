@@ -92,13 +92,13 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | ~~Watchdog zewnętrzny TPS3430-Q1~~ | — | — | — | **Usunięty 1.11.2026** razem z przetwornicami i przełącznikiem obciążenia — watchdog i nadzór szyn w PMIC. TPS3430 nie nadzorował napięcia i odcinał wyjścia tylko przez reset procesora (`firmware.md` B.1.3) |
 | Podtrzymanie domeny podtrzymywanej przy całkowitym zaniku zasilania | Superkondensator 0,1–0,47 F na pinie VBAT procesora | do doboru | **upływ ≤ 5 µA przy 3 V** — kryterium doboru (rozdz. 6.1) | **Zmiana roli 4.11.2026.** Na co dzień domenę zasila stały stabilizator (wiersz niżej). Superkondensator przejmuje ją przy **całkowitym zaniku zasilania** (wtyczka, bezpiecznik, klema, odłączony akumulator) na kilka dni — szacunek. Zachowuje RTC i rejestry: ślad bieżący (B.2.5.3), zatrzask K4, znacznik „ECU pracuje” (`firmware.md` B.4). **Nie zasila procesora ani pamięci — nie daje czasu na żaden zapis**; dlatego zapis migawki odbywa się dopiero przy następnym starcie. Ładowany przez **diodę blokującą i rezystor szeregowy**: stabilizator nie ma określonej ochrony przed prądem wstecznym, a jest stabilny tylko do 200 µF na wyjściu. Rozładowany superkondensator przy pierwszym podłączeniu zachowuje się jak zwarcie — rezystor ogranicza prąd |
 | **Stały stabilizator domeny podtrzymywanej** | TI TPS7B81-Q1, 3,3 V | **TPS7B8133QDRVRQ1** (WSON-6 2×2) | AEC-Q100 Grade 1; TJ −40…150 °C | **Decyzja Pawła 4.11.2026.** PMIC w uśpieniu wyłącza 3,3 V, a stanu „3,3 V przy małym poborze” nie ma (STANDBY: wszystko wyłączone; ACTIVE: przetwornica, monitory i watchdog pracują). Stabilizator zasila z akumulatora wyłącznie pin VBAT procesora: RTC ciągły, póki akumulator jest podłączony. Pobór ≤ 4,5 µA. Arkusz: rozdz. 4.6 |
-| Złącze główne | **do wyboru przez Pawła — większe niż 28 obwodów** (decyzja 3.11.2026) | — | IP67, −40…+125 °C | Bilans z 3.11.2026 (rozdz. 5): **≥ 22 styki sygnałowe (≤ 2,5 A), ≥ 5 średnie (12 A), 2–3 duże (21 A)**, razem 29–30, plus zapas. Molex CMC 28 (18× 0,635 + 5× 1,50 + 5× 2,80 mm) nie mieści styków sygnałowych. NTSEAL 26 odrzucony wcześniej — zero rezerwy |
+| Złącze główne | **do wyboru przez Pawła — większe niż 28 obwodów** (decyzja 3.11.2026) | — | IP67, −40…+125 °C | Bilans (rozdz. 5, ostatnio 26.11.2026): **22 styki sygnałowe (≤ 2,5 A), 9 średnich (12 A), 2–3 duże (21 A)**, razem 33–34, plus zapas. Molex CMC 28 (18× 0,635 + 5× 1,50 + 5× 2,80 mm) nie mieści styków sygnałowych. NTSEAL 26 odrzucony wcześniej — zero rezerwy |
 | **Złącze zapłonu** | do wyboru, 3–4 piny | — | IP67, odstępy WN (ECU-IGN-027) | **Decyzja Pawła 3.11.2026:** wysokie napięcie i impulsy prądu zapłonu fizycznie oddzielone od sygnałów. Wyjście na cewkę (CDI w A, TCI w B/C), uzwojenie wzbudzające (A, 1–2 piny), masa mocy zapłonu |
 | **Przełącznik zasilania HMI** | do doboru | — | — | **Domyślnie załączony** (decyzja Pawła 3.11.2026, ECU-PWR-011): HMI zasilane także w uśpieniu, więc jego przyciski budzą system; pracujące ECU może odłączyć HMI (restart, zwarcie w kablu). Ochrona zwarciowa. Pobór w uśpieniu ≤ 5 µA (przydział, rozdz. 6.1) |
 | Złącze USB | USB-C | — | — | Uszczelnione lub standardowe z zaślepką IP67. Wymaga rezystorów 5,1 kΩ na liniach CC (tryb urządzenia) |
 | Ochrona wejścia | TVS, ochrona odwrotnej polaryzacji, filtr LC, PTC | do doboru | — | Patrz rozdz. 4.4 |
 
-**8 kanałów PROFET** (od 16.11.2026, O-055 — światła na trzech kanałach): wentylator, przekaźnik rozrusznika, światła postojowe, światła mijania, światła drogowe, pompa paliwa, aux ×2.
+**8 kanałów PROFET** (od 16.11.2026, O-055 — światła na trzech kanałach): wentylator, przekaźnik rozrusznika, światła postojowe, światła mijania, światła drogowe, pompa paliwa, aux ×2. W trybie świateł *LED z PWM* (ECU-AUX-005, 26.11.2026) kanał mijania zasila przednią lampę LED, a jasność ustawia osobne wyjście PWM; kanał drogowych jest wtedy wolny.
 
 ### 3.1 Przydział pinów procesora STM32G474VET3 (O-028, 3.11.2026)
 
@@ -183,6 +183,8 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | PC5 | 31 | PROFET — aux 2 | GPIO |
 | PB5 | 92 | PROFET — światła mijania (16.11.2026) | GPIO |
 | PB9 | 96 | PROFET — światła drogowe (16.11.2026) | GPIO |
+| PA2 | 22 | Wyjście PWM jasności lampy LED (26.11.2026, ECU-AUX-005) | TIM5_CH3 / TIM15_CH1 |
+| PA3 | 25 | Odczyt zwrotny linii PWM lampy (26.11.2026) | ADC1_IN4 |
 | PE3 | 2 | Przycisk START | GPIO |
 | PE6 | 5 | Odczyt zwrotny progu tranzystorowego | GPIO |
 | PE2 | 1 | TJA1043 EN | GPIO |
@@ -191,7 +193,7 @@ Kolumna **Kwalifikacja** jest polem arkusza kwalifikacji komponentu. Pozycje bez
 | PD11 | 58 | TLE9104 EN — żądanie MCU (× komparator × ENDRV) | GPIO |
 | PB4 | 91 | Prędkość koła — przełączany podciągacz | GPIO |
 
-**Wolne (8, po 25.11.2026):** PA1, PA15, PA2, PA3, PA9, PB10, PB3, PC13. Numery wyprowadzeń z bazy CubeMX (`STM32_open_pin_data`).
+**Wolne (6, po 26.11.2026):** PA1, PA15, PA9, PB10, PB3, PC13. Numery wyprowadzeń z bazy CubeMX (`STM32_open_pin_data`).
 
 
 **Do zrobienia przy schemacie:** odtworzenie przydziału w projekcie CubeMX (konfiguracja zegarów, DMA, wyzwalaczy ADC z HRTIM) i potwierdzenie rewizji krzemu (Z, Y albo X) przy zakupie — od niej zależy lista obowiązujących obejść (`firmware.md` I).
@@ -463,12 +465,22 @@ Magistrala wymaga dokładnie **dwóch** rezystorów 120 Ω — na fizycznych ko�
 | CAN | H, L | 2 | — | — |
 | Rezerwa B/C | czujnik ciśnienia (O-060) | 1 | — | — |
 | Rezerwa — opcja | czujnik prądu akumulatora (ECU-AUX-003, O-055) | 1 | — | — |
+| Światła — tryb *LED z PWM* | wyjście PWM jasności przedniej lampy (ECU-AUX-005, 26.11.2026) | 1 | — | — |
 | Wyjścia PROFET | wentylator (~6 A), pompa *(B/C, ~4 A)*, światła postojowe (~0,5 A), mijania (~1,5–3 A), drogowe (~2–3 A), aux ×2 | — | 7 | — |
-| **Razem** | **32–33** + zapas | **21** | **9** | **2–3** |
+| **Razem** | **33–34** + zapas | **22** | **9** | **2–3** |
 
 **Złącze zapłonu (3–4 piny, odstępy izolacyjne wg ECU-IGN-027):** wyjście na cewkę — wspólny pin, obsadzenie zależne od wariantu (impuls CDI w A, dolny klucz TCI ~6–8 A w B/C); uzwojenie wzbudzające (A; 1 pin, jeśli ma koniec na masie, 2 — jeśli pływające; pomiar krok 2); **masa mocy zapłonu** — wyładowanie CDI to impuls rzędu dziesiątek amperów (typowo, do potwierdzenia pomiarem), w B/C wraca nią prąd cewki; nie może iść przez masę logiki.
 
 **Identyfikacja wariantu HMI — po CAN, bez pinu** (decyzja Pawła 3.11.2026, SYS-COM-009).
+
+**Interfejs ECU – przednia lampa LED z wejściem PWM (ECU-AUX-005, decyzje Pawła 26.11.2026)** — wytyczne do projektu lampy:
+
+| Strona | Wymaganie |
+|---|---|
+| ECU | N-MOSFET, otwarty dren do masy ECU, **bez podciągania**; ochrona sprzętowa przed trwałym zwarciem do masy i do +B do 18 V; odczyt zwrotny poziomu linii (PA3) przez dzielnik ze słabym ściąganiem do masy — przerwa czytana jako stan niski; PWM z timera (PA2) 100 Hz – 5 kHz, domyślnie 1 kHz |
+| Lampa | **Podciągnięcie linii PWM do napięcia logiki drivera** (np. 10 kΩ do 5 V albo 3,3 V) — bez niego ECU zgłasza przerwę; filtr RC przed wejściem DIM (kilka kΩ, kilkaset pF); próg stanu niskiego wejścia ~1 V lub wyżej — różnica mas ECU–lampa 0,1–0,3 V przy prądzie lampy 2–3 A; zasilanie 12 V z kanału mijania ECU |
+| Polaryzacja | Ustawiana w aplikacji — ECU dopasowuje wypełnienie do tego, czy driver świeci przy stanie wysokim, czy niskim |
+| Zalecenie (projekt lampy) | Przy braku zmian na linii dłużej niż ~50 ms lampa przechodzi na własny poziom domyślny — np. jasność mijania |
 
 ⚠️ **Bilans dotyczy obwodów, nie przekrojów** — przekroje, zabezpieczenia i obciążalność styków z deratingiem przy 50 °C (SYS-ENV-003) w O-030.
 
@@ -667,6 +679,7 @@ Kopnięcie i popych przy uśpionym ECU wymagają przycisku — **do zapisania w 
 | **Wentylator** | wyłączony | rezystor ściągający na wejściu PROFET | wyłączony | wyłączony; silnik gaśnie, więc nie ma źródła ciepła. Strategie programowe — stałe załączenie przy usterce czujnika (DTC-SEN-01), obciążenie przy przepięciu (ECU-PWR-009) — działają tylko przy sprawnym firmware | ECU-SAF-007 |
 | **Światła** (postojowe, mijania, drogowe) | wyłączone | rezystor ściągający na każdym wejściu | wyłączone | **wyłączone** — ryzyko zaakceptowane (`otwarte.md` rozdz. 9, decyzja Pawła 1.11.2026) | ECU-SAF-007 |
 | **Aux ×2** | wyłączone | rezystor ściągający | wyłączone | wyłączone | ECU-SAF-007 |
+| **Wyjście PWM jasności lampy LED** | tranzystor wyłączony | rezystor ściągający na bramce | wyłączone; lampa bez zasilania (kanał mijania wyłączony) | wyłączone; lampa gaśnie razem z kanałem mijania | ECU-AUX-005 |
 | **Zasilanie czujników VSOUT1** (PMIC) | wyłączone | domyślnie wyłączone (bit VSOUT1_EN) | wyłączone | bez zmian; kondycjoner wału i komparator są na VDD5 i od niego nie zależą | ECU-PWR-010 |
 | Pompa paliwa **[B/C]** | wyłączona | rezystor ściągający; wejście PROFET × **ENDRV** (1.11.2026) | wyłączona | wyłączona | ECU-SAF-007, ECU-INJ-006 |
 | Wtryskiwacze **[B/C]** | zamknięte | **EN TLE9104: komparator × ENDRV; RESN: próg tranzystorowy** (1.11.2026); rezystory ściągające | wyłączone | wyłączone | ECU-SAF-016 |
@@ -881,7 +894,7 @@ Granice SYS-RES-001…003 (decyzje Pawła). Sterowniki HAL + USB **zmierzone** k
 | Próby środowiskowe | 30 cykli −40…+85 °C (próba od −18 °C), zanurzenie nagrzanej obudowy w wodzie lodowej (10 cykli), wilgotne gorąco z kondensacją przez membranę (SYS-ENV-014…016) |
 | Wyrównanie ciśnienia | **Membrana odpowietrzająca obowiązkowa** — czujnik ciśnienia atmosferycznego (KP464) w hermetycznej obudowie byłby bezużyteczny. Zapobiega też kondensacji przy zmianach temperatury. **Membrana i obudowa nieprzepuszczające światła** — KP464 jest czuły na światło powyżej 1 lx |
 | Odprowadzanie ciepła | Aluminium z kontaktem termicznym (pady lub pasta) z blokiem AC-CDI, PROFET-ami i PMIC — duży zapas. Tworzywo graniczne (~96 °C wewnątrz, Z17) — rozdz. 9.2. Wybór obudowy — Paweł |
-| Przepusty | Złącze główne (≥ 29–30 obwodów + zapas, typ do wyboru) i złącze zapłonu 3–4-pinowe (od 3.11.2026), header wlutowany + USB-C uszczelnione lub z zaślepką, IP67 |
+| Przepusty | Złącze główne (≥ 33–34 obwodów + zapas, typ do wyboru) i złącze zapłonu 3–4-pinowe (od 3.11.2026), header wlutowany + USB-C uszczelnione lub z zaślepką, IP67 |
 | Wibracje | Mocowanie PCB w kilku punktach, nie tylko na złączu; silikonowe tuleje w punktach montażu do ramy |
 | Temperatura | **−40…+50 °C otoczenia w miejscu montażu** (SYS-ENV-003, zmiana 1.11.2026 — decyzja Pawła; Z20), przechowywanie −40…+85 °C (SYS-ENV-004, zmiana 26.11.2026). Wnętrze ~57 °C (aluminium, dobry kontakt), ~68 °C (aluminium bez padów), ~96 °C (tworzywo) — rozdz. 9.2. Ochrona termiczna: ECU-SAF-020 |
 | Dostęp serwisowy | Otwarcie bez niszczenia uszczelnienia (uszczelka wymienna, nie klejona) — dostęp do złącza SWD i zworki triggera |

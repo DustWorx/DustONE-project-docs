@@ -310,6 +310,7 @@ Uzasadnienie modelu narastającego: stała wartość jest zawsze błędna w jedn
 | DTC-OUT-04 | Kanał rozrusznika zablokowany załączony | prąd mimo wyłączonego sterowania — *możliwość wykrycia do potwierdzenia w Fazie 4* | 200 ms | **K1** | Komunikat „ODŁĄCZ AKUMULATOR" |
 | **DTC-OUT-05** | **Rozrusznik pracuje bez polecenia — sklejone styki przekaźnika** (od 11.11.2026, O-029) | obroty 100–800 obr/min > 3 s bez polecenia rozrusznika **i** napięcie akumulatora niższe o > 1,5 V od ostatniego spoczynkowego | 3 s | — | **Blokada startu (zapłon zablokowany)** + komunikat „ROZRUSZNIK PRACUJE BEZ POLECENIA — ODŁĄCZ AKUMULATOR”; ustępuje po zatrzymaniu wału |
 | **DTC-OUT-06** | **Kanał aux — zwarcie lub przeciążenie, osobno dla aux 1 i aux 2** (od 25.11.2026) | diagnostyka BTS7008-2EPA | 3 próby | **K1** | Wyłączony tylko uszkodzony kanał; komunikat wskazuje kanał |
+| **DTC-OUT-07** | **Wyjście PWM jasności lampy LED — przerwa linii, zwarcie do masy albo do plusa** (od 26.11.2026, ECU-AUX-005) | odczyt zwrotny poziomu linii (PA3) niezgodny ze stanem tranzystora, w fazie włączenia albo wyłączenia | 200 ms | **K1** | Komunikat „ŚWIATŁA — STEROWANIE JASNOŚCIĄ NIESPRAWNE”; przy zwarciu do plusa wyjście wyłączone; lampa dalej zasilana — jasność według jej ustawienia domyślnego |
 
 **Przebudowa DTC-IGN-02 i 03 — korekta 2026-10-11 po pomiarach koła impulsowego.** Dotychczasowe brzmienie mówiło o wzorze zębów i zgubionym zębie, czyli opisywało detekcję właściwą dla koła 60-2. **Beta 300 RR ma jeden wypust na obrót**, więc nie ma wzoru zębów ani zgubionego zęba — oba zapisy opisywały mechanizm, którego nie da się zrealizować.
 
@@ -1143,6 +1144,8 @@ Nie startuje po zgaszeniu przez wywrotkę (ECU-SAF-005). Kierowca jej nie przery
 | Utrata HMI | bez zmian | bez zmian |
 
 Pobór postojowych po zgaśnięciu (do 30 min czuwania): LED ~0,2–0,4 A → ≤ 0,2 Ah.
+
+**Tryb *LED z PWM* (ECU-AUX-005, decyzje Pawła 26.11.2026):** te same zdarzenia, ale stany są poziomami jasności jednej przedniej lampy. Kanał mijania zasila ją zawsze, gdy świeci przód; pozycyjne 15 %, mijania 60 %, drogowe 100 % (ustawiane w aplikacji), przejście 0,3 s. Tył na kanale postojowych, kanał drogowych wolny. PWM z timera (PA2); odczyt zwrotny (PA3) przez ADC wyzwalany tym samym timerem w środku fazy włączenia i wyłączenia — faza krótsza od czasu ustalenia sygnału jest pomijana, więc przy 0 % i 100 % diagnozowana jest tylko faza, która występuje. Po uśpieniu i przy resecie tranzystor wyłączony, a lampa bez zasilania (kanał mijania wyłączony).
 
 **Liczniki (ECU-LOG-010, ECU-LOG-008):** przebieg 0,1 km z impulsów koła i obwodu koła; motogodziny 0,1 h w stanie PRACA. Część poniżej kroku zapisu trzymana w rejestrach domeny podtrzymywanej, pełny krok zapisywany do W25Q128 w strukturze dziennika z wyrównywaniem zużycia. Bez kasowania.
 

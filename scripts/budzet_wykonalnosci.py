@@ -69,7 +69,7 @@ EVE_DL_WZOR = (600, 1000)  # polecen na klatke ekranu wzorcowego, szacunek
 # --- logika aplikacji ECU: (modul, KB min, KB max) - szacunek
 LOGIKA = [
     ('A  maszyna stanow, rozrusznik, usypianie', 3, 5),
-    ('B  macierz 74 DTC z progami, limp-home, zatrzask, interlocki', 8, 14),
+    ('B  macierz 75 DTC z progami, limp-home, zatrzask, interlocki', 8, 14),
     ('C.1 synchronizacja, estymator E1, alfa_max, ogranicznik', 6, 10),
     ('C.2 mapy i korekty (interpolacja)', 3, 6),
     ('C.3 wentylator, swiatla, profile, liczniki, RTC', 3, 5),
@@ -91,7 +91,7 @@ RAM = [
     ('3 profile map + bufor zapisu, profil <= 8 KB (bilans_map.py)', 32, 32),
     ('bufory stron czarnej skrzynki (bilans_logu.py)', 2, 2),
     ('bufory CAN, kolejki ramek', 1, 2),
-    ('stan 74 DTC, liczniki potwierdzen', 2, 3),
+    ('stan 75 DTC, liczniki potwierdzen', 2, 3),
     ('rekord usterki w budowie, kopiowanie zdarzen', 1, 2),
     ('zmienne sterowania, kalibracja, konfiguracja', 4, 8),
     ('dodatkowe stosy (przerwania, ewentualny RTOS)', 0, 4),
@@ -102,7 +102,7 @@ CPU = [
     ('zbocza VR (2 na obrot): przechwyt, estymator', 2 * OBR_S, 3, 6),
     ('planowanie iskry: mapa, alfa_max, HRTIM', OBR_S, 3, 6),
     ('ADC wstrzykiwane: kondensator, wzbudzajacy', 2 * OBR_S, 2, 3),
-    ('petla 1 kHz: stany, wyjscia, 74 kontrole DTC', 1000, 30, 80),
+    ('petla 1 kHz: stany, wyjscia, 75 kontroli DTC', 1000, 30, 80),
     ('czarna skrzynka: rekord 100 Hz', 100, 20, 40),
     ('akcelerometr 200 Hz, wywrotka', 200, 5, 10),
     ('CAN: ramki nadawane i odbierane', 200, 3, 6),

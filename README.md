@@ -24,13 +24,13 @@ Wpisywane z wyniku `scripts/kontrola.py`; od 25.11.2026 skrypt sprawdza, że ta 
 
 | Pozycja | Stan |
 |---|---|
-| Wymagania z identyfikatorem | 194 |
-| Pokrycie w tabeli traceability | 194 / 194 |
+| Wymagania z identyfikatorem | 195 |
+| Pokrycie w tabeli traceability | 195 / 195 |
 | Wymagania bez ustalonej wartości — **blokują G0** | **1** |
 | Wymagania bez ustalonej wartości — wariant B/C, poza G0 | 8 |
 | Wymagania bez ustalonej wartości — MVP-A, poza G0 (decyzja) | 1 |
-| Kody usterek w macierzy | 74 |
-| Identyfikatory testów | 196 |
+| Kody usterek w macierzy | 75 |
+| Identyfikatory testów | 197 |
 | Pozycje otwarte | 67 |
 | Założenia (3 obalone, 3 potwierdzone, 26 niepotwierdzonych) | 32 |
 
