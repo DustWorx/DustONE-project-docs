@@ -64,7 +64,7 @@ Katalogi: `measurements/` (procedury pomiarowe), `diagrams/`, `audit/`, `scripts
 | `budzet_wykonalnosci.py` | Budżet ECU i HMI: pamięć, RAM, procesor, CAN, pamięci zewnętrzne |
 | `szkielet/build.sh` (uruchamiać przez `bash`) | Pomiar rozmiaru bibliotek ST kompilacją szkieletu (pobiera kompilator xPack i biblioteki ST) |
 | `bilans_logu.py` | Czarna skrzynka i podział W25Q128 |
-| `bilans_map.py` | Rozmiar profilu map i RAM na 3 profile |
+| `bilans_map.py` | Rozmiar profilu map i RAM na mapy (profil aktywny + „następny”) |
 | `model_kata.py` | Model błędu kąta zapłonu |
 | `termika_hmi.py` | Termika i czytelność HMI w słońcu |
 | `drabinka_hmi.py`, `piny_mcu.py` | Drabinka przycisków HMI, przydział pinów procesora |

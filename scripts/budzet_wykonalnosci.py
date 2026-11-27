@@ -10,6 +10,7 @@ pamiec modulu wyswietlacza 32 MB i pamiec graficzna EVE4 1 MB (firmware.md J.1).
 """
 import sys
 from bilans_logu import podzial, PAMIEC, GRANICA as GRANICA_W25Q
+from bilans_map import MIEJSCA as MIEJSCA_MAP, LIMIT_KB as PROFIL_KB
 
 KB = 1024
 # --- granice (SYS-RES-001..003)
@@ -33,6 +34,7 @@ HMI_LOGIKA = [
     ('ekrany systemowe: menu, DTC, K4, komunikaty, przejscia', 10, 20),
     ('teksty, formatowanie liczb', 3, 6),
     ('protokol CAN, swiezosc danych, wygladzanie wskazan', 4, 8),
+    ('dostep do pamieci HMI z trybu deweloperskiego (D.4)', 1, 2),
     ('aktualizacja, rekordy, zarzadzanie pamiecia modulu (J.1)', 4, 8),
     ('przyciski, czujniki swiatla i temperatury, jasnosc', 2, 4),
     ('usypianie, watchdog, zgloszenia DTC', 1, 3),
@@ -42,7 +44,7 @@ HMI_RAM = [
     ('opis aktywnego ukladu + nastepny przy zmianie profilu', 8, 16),
     ('bufor listy polecen przed DMA do EVE4 (podwojny)', 8, 16),
     ('stan animacji, model danych, swiezosc', 2, 4),
-    ('bufory CAN', 1, 2),
+    ('bufory CAN i ISO-TP', 1, 2),
     ('aktualizacja: strona Flash 2 KB + bufor zasobow', 6, 8),
     ('menu, teksty, stan', 2, 4),
     ('dodatkowe stosy', 0, 4),
@@ -78,7 +80,8 @@ LOGIKA = [
     ('F  czarna skrzynka (pierscien, zdarzenia)', 4, 7),
     ('H  aktualizacja w aplikacji, transakcja ECU+HMI', 4, 7),
     ('I.2 nadzor PMIC pytanie-odpowiedz', 2, 4),
-    ('protokoly CAN i USB (O-043)', 6, 12),
+    ('XCP (DAQ, kalibracja, PGM, USER_CMD), SxI, transakcje, ramki z CRC, ISO-TP (K)', 6, 12),
+    ('tryb deweloperski: haslo (wyzwanie-odpowiedz), dostep do pamieci, CAN przez USB (D.4)', 4, 10),
     ('sterowniki: W25Q128, AIS2IH, KP464, PMIC, PROFET, NTC', 4, 7),
 ]
 BOOT_LOGIKA = [
@@ -88,13 +91,14 @@ BOOT_LOGIKA = [
 ]
 # --- RAM ECU: (pozycja, KB min, KB max) - szacunek
 RAM = [
-    ('3 profile map + bufor zapisu, profil <= 8 KB (bilans_map.py)', 32, 32),
+    ('mapy: profil aktywny + nastepny, profil <= 8 KB (bilans_map.py, D.3)', MIEJSCA_MAP * PROFIL_KB, MIEJSCA_MAP * PROFIL_KB),
     ('bufory stron czarnej skrzynki (bilans_logu.py)', 2, 2),
     ('bufory CAN, kolejki ramek', 1, 2),
     ('stan 75 DTC, liczniki potwierdzen', 2, 3),
     ('rekord usterki w budowie, kopiowanie zdarzen', 1, 2),
     ('zmienne sterowania, kalibracja, konfiguracja', 4, 8),
-    ('dodatkowe stosy (przerwania, ewentualny RTOS)', 0, 4),
+    ('FreeRTOS-MPU (ECU-SAF-023): jadro i stosy ~7 zadan', 5, 9),  # do 27.11.2026 blednie 0-4 KB
+    ('XCP: pakiety, listy i kolejka DAQ; ISO-TP (bloki w miejscu "nastepny")', 2.5, 4.5),
 ]
 # --- procesor ECU przy 10 000 obr/min: (zrodlo, zdarzen/s, us min, us max) - szacunek
 OBR_S = 10_000 / 60

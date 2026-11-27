@@ -865,7 +865,7 @@ Granice SYS-RES-001…003 (decyzje Pawła). Sterowniki HAL + USB **zmierzone** k
 |---|---|---|---|
 | Pamięć programu aplikacji (slot 444 KB) | 37,7 KB sterowniki + 50–89 KB logika = **88–127 KB** | 222 KB | ✅ |
 | Bootloader (obszar 64 KB) | 15,9 KB sterowniki + 7–10 KB logika = **23–26 KB** | 32 KB | ✅ |
-| RAM (128 KB) | **52–63 KB** — w tym 3 profile map + bufor zapisu po 8 KB (`scripts/bilans_map.py`; rzeczywiście MVP-A 1,3 KB, B/C ~25 KB) | 64 KB | ✅ górny szacunek blisko granicy |
+| RAM (128 KB) | **43–56 KB** — w tym mapy: profil aktywny + „następny” po 8 KB (`scripts/bilans_map.py`; rzeczywiście MVP-A 0,7 KB, B/C ~13 KB), FreeRTOS-MPU 5–9 KB, XCP i ISO-TP 2,5–4,5 KB (zmiana 27.11.2026, decyzja Pawła; wcześniej 3 profile + bufor zapisu i błędnie 0–4 KB stosów) | 64 KB | ✅ |
 | Procesor przy 10 000 obr/min | **5–11 %** — dominuje pętla 1 kHz; zapłon wykonuje HRTIM sprzętowo | 60 % | ✅ |
 | CAN w pracy | **~5 %** (szacunek z SYS-COM-002a/b; lista ramek — O-043) | 50 % | ✅ |
 | CAN przy aktualizacji | ~20,7 kB/s przy 80 %: firmware HMI ~13 s, zasoby do ~6 MB w 5 min | 80 % | ✅ |

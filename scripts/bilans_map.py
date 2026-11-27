@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bilans rozmiaru profilu map i RAM na 3 profile (O-067, pytanie Pawla 26.11.2026).
+"""Bilans rozmiaru profilu map i RAM na mapy (O-067, pytanie Pawla 26.11.2026; zmiana 27.11.2026).
 
 Profil = komplet map jednego trybu jazdy (np. STD, RACE, WET; ECU-IGN-039, maks. 3).
 Komorki map int16 (zaplon 0,1 deg, dawka 0,01 ms / VE 0,1 %), cele AFR i pompa oleju uint8;
@@ -41,9 +41,11 @@ def profil_bc(nx=32, ny=20):
         ('naglowek, CRC', NAGLOWEK),
     ]
 
-# RAM ECU z budzetu (scripts/budzet_wykonalnosci.py) bez pozycji map
-RAM_BEZ_MAP = (19.5, 30.5)   # KB min, max
-GRANICA_RAM = 64.0           # KB, SYS-RES-001
+# W RAM dwa miejsca: profil aktywny + "nastepny" - wspolne dla zmiany profilu z HMI
+# (wczytanie z W25Q128) i zapisu z aplikacji (firmware.md D.3, decyzja Pawla 27.11.2026).
+# Do 27.11.2026: 3 profile + bufor zapisu (4 miejsca).
+MIEJSCA = 2
+LIMIT_KB = 8                 # KB, limit profilu
 
 def pokaz(nazwa, pozycje):
     print(nazwa)
@@ -56,15 +58,19 @@ def pokaz(nazwa, pozycje):
 def main():
     a = pokaz('Profil MVP-A', profil_a())
     bc = pokaz('\nProfil B/C (siatka 32 x 20)', profil_bc())
-    limit = 8 * 1024
+    limit = LIMIT_KB * 1024
     print(f'\nLimit profilu {limit//1024} KB: MVP-A {100*a/limit:.0f} %, B/C {100*bc/limit:.0f} %')
     ok = bc <= limit
-    print('\nRAM ECU - 3 profile + bufor zapisu (4 bufory po limicie profilu):')
-    mapy = 4 * limit / 1024
-    lo, hi = RAM_BEZ_MAP[0] + mapy, RAM_BEZ_MAP[1] + mapy
-    print(f'  pozostaly RAM {RAM_BEZ_MAP[0]:.1f}-{RAM_BEZ_MAP[1]:.1f} KB + mapy {mapy:.0f} KB = {lo:.1f}-{hi:.1f} KB, granica {GRANICA_RAM:.0f} KB')
-    ok &= hi <= GRANICA_RAM
-    print(f'  rzeczywiste zuzycie map: MVP-A {4*a/1024:.1f} KB, B/C {4*bc/1024:.1f} KB')
+    from budzet_wykonalnosci import RAM, SZK_APP_RAM, G_RAM, RAM_KB  # pozostaly RAM z budzetu
+    bez = [(lo, hi) for n, lo, hi in RAM if not n.startswith('mapy')]
+    b_lo, b_hi = SZK_APP_RAM + sum(x for x, _ in bez), SZK_APP_RAM + sum(y for _, y in bez)
+    granica = G_RAM * RAM_KB
+    print(f'\nRAM ECU - {MIEJSCA} miejsca po limicie profilu (aktywny + nastepny):')
+    mapy = MIEJSCA * LIMIT_KB
+    lo, hi = b_lo + mapy, b_hi + mapy
+    print(f'  pozostaly RAM {b_lo:.1f}-{b_hi:.1f} KB + mapy {mapy:.0f} KB = {lo:.1f}-{hi:.1f} KB, granica {granica:.0f} KB')
+    ok &= hi <= granica
+    print(f'  rzeczywiste zuzycie map: MVP-A {MIEJSCA*a/1024:.1f} KB, B/C {MIEJSCA*bc/1024:.1f} KB')
     print('\nOK' if ok else '\nPRZEKROCZENIE')
     return 0 if ok else 1
 

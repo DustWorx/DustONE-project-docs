@@ -1,6 +1,6 @@
 # Firmware — specyfikacja funkcjonalna
 
-Specyfikacja zachowania firmware ECU. Punkt A (maszyna stanów) i B (bezpieczeństwo, macierz usterek) zamknięte; C.1 (trigger) zamknięty i **wymaga ponownego przeglądu** po rozstrzygnięciu pozycji O-001 i O-005. Punkty C.2–J otwarte.
+Specyfikacja zachowania firmware ECU. Punkt A (maszyna stanów) i B (bezpieczeństwo, macierz usterek) zamknięte; C.1 (trigger) zamknięty i **wymaga ponownego przeglądu** po rozstrzygnięciu pozycji O-001 i O-005. Punkty C.2–J otwarte; K (znaczenie komend USB i CAN) rozpisany 27.11.2026.
 
 Wymagania w `wymagania.md`, sprzęt w `produkt.md`, pozycje nierozstrzygnięte w `otwarte.md`.
 
@@ -1130,7 +1130,7 @@ Nie startuje po zgaszeniu przez wywrotkę (ECU-SAF-005). Kierowca jej nie przery
 
 **Konfiguracja akumulatora** (konfiguracja użytkownika, DTC-SYS-03b): typ (ołowiowy/AGM albo LiFePO4) i pojemność. **Wartość domyślna: ołowiowy, 4 Ah** — zachowawczo, do zmiany na dane akumulatora Bety.
 
-**Profile map (ECU-IGN-039):** 3 profile, wybór z HMI w dowolnej chwili. Przejście: każda wartość wyjściowa (wyprzedzenie po korektach) liczona z obu profili i mieszana liniowo przez 0,5 s; ograniczenie ECU-IGN-015 po zmieszaniu. Ponowny wybór w trakcie przejścia startuje nowe przejście od bieżącej wartości. Wybrany profil w konfiguracji; numer stale na ekranie głównym HMI.
+**Profile map (ECU-IGN-039):** 3 profile, wybór z HMI w dowolnej chwili. Przejście: każda wartość wyjściowa (wyprzedzenie po korektach) liczona z obu profili i mieszana liniowo przez 0,5 s; ograniczenie ECU-IGN-015 po zmieszaniu. **Ponowny wybór w trakcie przejścia jest zapamiętywany (obowiązuje ostatni) i wykonywany po zakończeniu bieżącego przejścia** — w RAM są dwa miejsca na mapy (D.3), trzeci profil nie zmieści się w trakcie mieszania (zmiana 27.11.2026; wcześniej: nowe przejście od bieżącej wartości). Zmiana profilu przy otwartej sesji strojenia lub transakcji zapisu map — **odrzucona z komunikatem na HMI** (K.6); przy usterce W25Q128 — odrzucona, aktywny profil działa dalej. Wybrany profil w konfiguracji; numer stale na ekranie głównym HMI.
 
 **Światła (ECU-AUX-004, decyzje Pawła 16.11.2026):**
 
@@ -1174,7 +1174,7 @@ Pobór postojowych po zgaśnięciu (do 30 min czuwania): LED ~0,2–0,4 A → �
 
 ### D.2 Tryb kalibracji i tryb stanowiskowy — fizyczne zezwolenie (O-021)
 
-**Wejście:** wał nieruchomy, **kill switch i START wciśnięte jednocześnie przez 3 s**, potem **potwierdzenie w aplikacji**. Rozrusznik przy wciśniętym kill switchu i tak jest zablokowany (ECU-SAF-019), więc gest jest bezpieczny i wymaga obecności przy motocyklu. Tryb trwa do uśpienia ECU albo wyjścia z aplikacji; **na HMI stały napis „TRYB KALIBRACJI”**.
+**Wejście:** wał nieruchomy, **kill switch i START wciśnięte jednocześnie przez 3 s**, potem **potwierdzenie w aplikacji w ciągu 30 s** (decyzja Pawła 27.11.2026, K.3); później gest jest nieważny. Rozrusznik przy wciśniętym kill switchu i tak jest zablokowany (ECU-SAF-019), więc gest jest bezpieczny i wymaga obecności przy motocyklu. Tryb trwa do uśpienia ECU albo wyjścia z aplikacji; **na HMI stały napis „TRYB KALIBRACJI”**.
 
 W trybie dozwolone: zmiana profilu granic (tylko przy nieruchomym wale) oraz **aktywacja map przy pracującym silniku na hamowni** — „tryb stanowiskowy” z ECU-SAF-011, z limitami szybkości zmian z B.5.3. **Testy negatywne:** sam kill switch 3 s — brak wejścia; gest przy obracającym się wale — brak wejścia; zmiana θ_el zwykłą drogą strojenia — odrzucona.
 
@@ -1185,13 +1185,21 @@ W trybie dozwolone: zmiana profilu granic (tylko przy nieruchomym wale) oraz **a
 - **B/C (TCI):** wskaźnik pobierany przy decyzji o początku ładowania cewki; koniec ładowania i iskra z tej samej wersji — zmiana mapy nie rozdzieli decyzji o początku i końcu ładowania.
 - MVP-A: aktywacja przy rozbrojonym silniku (ECU-SAF-011) albo w trybie stanowiskowym (D.2).
 
-**Granica z budżetu wykonalności (O-067, decyzja Pawła 26.11.2026):** **profil map ≤ 8 KB** — MVP-A 0,34 KB, B/C ~6,3 KB przy siatkach 32 × 20 (`scripts/bilans_map.py`). **W RAM trzymane są wszystkie 3 profile i bufor zapisu** (4 × 8 KB = 32 KB w bilansie RAM, SYS-RES-001): zmiana profilu nie czyta W25Q128, a przejście 0,5 s (ECU-IGN-039) ma oba profile w RAM; bufor zapisu służy atomowej aktywacji D.3. Przydział 16 kB na kopię profilu w W25Q128 zostaje.
+**Granica z budżetu wykonalności (O-067, decyzja Pawła 26.11.2026):** **profil map ≤ 8 KB** — MVP-A 0,34 KB, B/C ~6,3 KB przy siatkach 32 × 20 (`scripts/bilans_map.py`). **W RAM dwa miejsca na mapy: profil aktywny i „następny”** (2 × 8 KB = 16 KB w bilansie RAM, SYS-RES-001; decyzja Pawła 27.11.2026). „Następny” jest wspólny dla dwóch zastosowań, które nigdy nie występują jednocześnie: **zmiana profilu z HMI** — profil wczytywany z W25Q128 (~2 ms przy 8 KB i SPI 42,5 MHz, sprawdzenie CRC), potem przejście 0,5 s (ECU-IGN-039) z obu miejsc i zamiana ról; **zapis z aplikacji** — strojenie i transakcje (K.5), aktywacja zamianą wskaźnika. Konsekwencje — C.3: zmiana profilu w trakcie strojenia lub zapisu odrzucana, ponowny wybór w trakcie przejścia wykonywany po jego końcu. **Powód zmiany:** do 27.11.2026 w RAM były 3 profile i bufor zapisu (32 KB); po dopisaniu buforów XCP (O-043) i poprawieniu błędnej pozycji stosów systemu czasu rzeczywistego (FreeRTOS-MPU wymagany przez ECU-SAF-023: 5–9 KB, w budżecie było 0–4 KB) RAM wynosił 59–72 KB przy granicy 64 KB. Teraz 43–56 KB (`scripts/budzet_wykonalnosci.py`). Przydział 16 kB na kopię profilu w W25Q128 zostaje.
 
 Zakres pozostały w D: wymiarowość map, interpolacja, organizacja pamięci flash z uwzględnieniem zużycia komórek.
 
 Zakres: wymiarowość map, interpolacja, parametry konfiguracyjne, profile per model motocykla (L10), organizacja pamięci flash z uwzględnieniem zużycia komórek.
 
 ---
+
+### D.4 Tryb deweloperski — pełny dostęp (ECU-SAF-035, APP-DEV-001, 27.11.2026)
+
+**Zakres (decyzja Pawła):** odczyt i zapis dowolnych zmiennych, flag i rejestrów procesora ECU, a przez ECU (CAN) także HMI; surowe sygnały i ślad zdarzeń z wysoką częstotliwością; monitor i nadawanie ramek CAN przez USB; testy wyjść; wstrzykiwanie usterek; pełna konfiguracja.
+
+**Warunki (ECU-SAF-035, decyzje Pawła 27.11.2026):** hasło dewelopera wpisywane w aplikacji i sprawdzane przez ECU metodą wyzwanie–odpowiedź (ECU trzyma tylko skrót hasła; hasło nie płynie jawnie, odpowiedź z innej sesji nie działa); **czerwona ramka dookoła ekranu HMI z napisem „DEV MODE”** rysowana przez HMI nad każdym ekranem przez cały czas trwania trybu; wyjście z trybu przy uśpieniu, a każda nowa sesja USB odblokowuje tryb ponownie wyzwaniem–odpowiedzią (K.2); zapisy nie są rejestrowane w czarnej skrzynce. Obsługa zapisów działa w trybie uprzywilejowanym, z pominięciem ochrony MPU rejestrów zapłonu, ale **blokady sprzętowe zostają**: iskra wymaga kill switcha w RUN (bramka AND, komparator, ENDRV), rozrusznik — wciśniętego START (klucz masy sterowany przyciskiem).
+
+**Koszt:** wyzwanie–odpowiedź (funkcja skrótu) i obsługa trybu ~4–10 KB pamięci programu — w budżecie (`scripts/budzet_wykonalnosci.py`); przekazywanie CAN przez USB do ~3700 ramek/s mieści się w łączu USB i w obciążeniu procesora.
 
 ## E. Diagnostyka
 
@@ -1325,7 +1333,7 @@ Mapy (3 profile), profil granic, konfiguracja użytkownika i liczniki zapisywane
 
 Brak poprawnego obrazu w slocie i w obszarze *poprzedni* → bootloader zostaje w **trybie odzyskiwania** i przyjmuje obraz z aplikacji desktop przez USB — bez działającej aplikacji ECU. Te same kontrole (CRC, zgodność, warunki ECU-BTL-001); zapłon i rozrusznik zablokowane sprzętowo (ECU-BTL-002). Obraz z USB trafia do obszaru *nowy* i jest instalowany jak w H.1; przy niedostępnej W25Q128 — wprost do slotu. Koszt: stos USB w bootloaderze — warstwa sterowników zmierzona szkieletem: 15,9 KB (`scripts/szkielet`, O-067). HMI: bootloader HMI chroniony przed zapisem przyjmuje obraz po CAN od ECU (SYS-COM-001a), więc HMI odzyskuje się przez ECU.
 
-Pozostaje do rozpisania w punkcie H: format pakietu i sekwencja komend USB.
+Sekwencja komend USB — K.4 (podzbiór PGM z XCP). Pozostaje do rozpisania w punkcie H: format pakietu.
 
 ---
 
@@ -1448,3 +1456,94 @@ Zakres: priorytety przerwań, budżet czasowy, obsługa watchdoga okienkowego, r
 **Jasność (HMI-UI-014, HMI-UI-004):** poziom = min(krzywa z czujnika światła, ograniczenie temperaturowe). Krzywa domyślna: < 10 lx → 5 %, 10–1000 lx → rampa logarytmiczna, > 1000 lx → 100 %; średnia z 2 s, zmiana przy różnicy ≥ 5 %. Usterka czujnika → 100 % + DTC-HMI-05.
 
 Zakres do rozpisania: maszyna stanów HMI, struktura menu, format pliku układu i obrazów, obsługa heartbeat z ECU.
+
+---
+
+## K. Protokoły USB i CAN — znaczenie komend (O-043, decyzje Pawła 27.11.2026)
+
+**Zasada nadrzędna: ECU sprawdza każdą komendę samo** — rolę, stan, zakres wartości — niezależnie od nadawcy. Aplikacja desktop, pyXCP, CANape i własny skrypt mają przy tej samej roli te same uprawnienia. **Każdy skutek ma w firmware jedną funkcję wykonawczą z kontrolą warunków** (aktywacja map, zapis profilu granic, kasowanie, zapis pamięci). Wszystkie komendy prowadzące do tego skutku przechodzą przez nią, np. aktywacja zestawu map komendą własną i standardowym `SET_CAL_PAGE`. Bez tego druga droga do tego samego skutku omija blokadę.
+
+### K.1 Wybór protokołów
+
+| Łącze | Protokół | Powód |
+|---|---|---|
+| USB (aplikacja, narzędzia) | **XCP** (ASAM MCD-1 XCP), transport szeregowy SxI przez **USB CDC**; opis zmiennych i map w pliku **A2L** generowanym przy budowaniu z pliku ELF | Standard pomiaru i kalibracji ECU — dane na żywo (DAQ), kalibracja stronami, programowanie (PGM), dostęp do pamięci, ochrona zasobów wyzwaniem–odpowiedzią. Działa z gotowymi narzędziami: **pyXCP** (LGPLv3+) do testów, CANape i INCA opcjonalnie. USB CDC — bez sterowników (APP-PLT-001) |
+| CAN ECU ↔ HMI | **Ramki cykliczne** opisane w pliku **DBC**, z licznikiem i sumą kontrolną; **ISO-TP** (ISO 15765-2) do dużych transferów | Klasyczny CAN 500 kbit/s (SYS-COM-001). DBC czytają analizatory, ISO-TP to standardowa segmentacja przy ramkach 8 B |
+
+**Podzbiór, nie całość:** z XCP używamy komend wymienionych w K.4; komendy własne (transakcje, kasowanie, tryby) idą przez `USER_CMD`. Bootloader (H.4) obsługuje tylko połączenie, identyfikację i PGM.
+
+### K.2 Zasady wspólne
+
+| Temat | Zasada |
+|---|---|
+| **Kolejność bajtów** | Little-endian na USB i CAN; XCP zgłasza ją w `CONNECT` |
+| **Jednostki i skalowanie** | Wartości całkowite ze skalą i przesunięciem. **Jedno źródło definicji sygnałów w repozytorium**, z którego generowane są nagłówki C, A2L i DBC — ręczna edycja A2L lub DBC jest niedozwolona |
+| **Zgodność opisu z firmware** | Identyfikator wersji (EPK) w pamięci ECU i w A2L; aplikacja porównuje je przy połączeniu i z niezgodnym A2L nie pracuje. Wersja protokołu `major.minor.patch` — SYS-COM-005, APP-COM-001 |
+| **Świeżość** | CAN: licznik w ramce i timeout 3 okresy (SYS-COM-004, HMI-UI-011). USB: pakiety DAQ ze znacznikiem czasu ECU; aplikacja oznacza wartość jako nieaktualną po 3 okresach listy DAQ — ta sama reguła |
+| **Własność sesji** | Jedno połączenie USB naraz (jeden master XCP). `CONNECT` przy otwartej transakcji z poprzedniej sesji wycofuje ją. Utrata USB (odłączenie, brak VBUS, zawieszenie hosta) kończy sesję: wycofanie transakcji, koniec sesji strojenia (ECU-SAF-011a), koniec trybu kalibracji (D.2). Tryb deweloperski trwa do uśpienia (D.4), ale **każda nowa sesja USB odblokowuje go ponownie** wyzwaniem–odpowiedzią — aplikacja robi to sama hasłem zapamiętanym na czas działania programu |
+| **Powtórzenia — USB** | XCP to pytanie–odpowiedź, jedna komenda naraz. Nagłówek SxI z licznikiem pakietów i sumą kontrolną: pakiet z błędną sumą lub powtórzonym licznikiem ECU odrzuca. **Zapisy danych niosą adres** — po błędzie aplikacja ustawia adres na nowo (`SET_MTA`) i ponawia zapis, który daje ten sam stan. **Komendy o skutku jednorazowym** (zatwierdzenie transakcji, aktywacja, wejście w kalibrację, reset) niosą numer; ECU pamięta ostatni wykonany numer i na powtórzenie odpowiada wynikiem pierwszego wykonania, bez ponownego wykonania |
+| **Powtórzenia — CAN** | Licznik i suma kontrolna (SYS-COM-002, -003). **Żądania z HMI niosą stan docelowy, nie przełączenie** („ustaw mijania”, nie „przełącz światła”) — powtórzona ramka nie zmienia wyniku |
+| **Odmowa** | Kod błędu XCP (`ERR_ACCESS_DENIED`, `ERR_ACCESS_LOCKED`, `ERR_OUT_OF_RANGE`, `ERR_SEQUENCE`, `ERR_WRITE_PROTECTED`, `ERR_CMD_BUSY`) **i kod przyczyny Dust ONE** (np. wał się obraca, silnik uzbrojony, brak trybu kalibracji, poza profilem granic, VBAT < 12,0 V, kill switch w RUN). Odmowa nie zmienia stanu ECU; aplikacja pokazuje przyczynę (APP-UI-003) |
+| **Czas odpowiedzi** | Limit odpowiedzi na komendę (T1 w A2L) — ustalany w implementacji z pomiaru najdłuższej zwykłej komendy. Operacje dłuższe (kasowanie sektorów, kopiowanie) ECU zgłasza zdarzeniem „trwa” (`EV_CMD_PENDING`), więc aplikacja nie uznaje ich za zerwanie |
+| **Bezczynność transakcji** | **5 s** bez komendy dotyczącej otwartej transakcji → ECU ją wycofuje (stan sprzed zapisu, APP-COM-006). Czas operacji zgłoszonej jako „trwa” się nie wlicza. Decyzja Pawła 27.11.2026 |
+
+### K.3 Role
+
+| Rola | Wejście | Dostęp | Koniec |
+|---|---|---|---|
+| **Użytkownik** | `CONNECT` | DAQ i odczyt **wyłącznie zmiennych i obszarów opisanych w A2L** (mapy, konfiguracja, kody usterek, liczniki, czarna skrzynka); zapis map i konfiguracji użytkownika w transakcji; aktywacja map (ECU-SAF-011); kasowanie kodów i AWARII; aktualizacja (ECU-BTL-001); zasoby HMI | rozłączenie, utrata USB, uśpienie |
+| **Kalibracja** | Użytkownik + gest kill switch i START razem 3 s przy nieruchomym wale + potwierdzenie w aplikacji **w ciągu 30 s** (D.2, decyzja Pawła 27.11.2026) | Dodatkowo: profil granic i konfiguracja sprzętowa (wał nieruchomy), tryb stanowiskowy (ECU-SAF-011) | rozłączenie, utrata USB, uśpienie |
+| **Deweloper** | Wyzwanie–odpowiedź z hasłem (`GET_SEED` / `UNLOCK`, ECU-SAF-035) | Wszystko powyżej oraz odczyt i zapis dowolnego adresu, `MODIFY_BITS` na rejestrach, DAQ dowolnych adresów, monitor i nadawanie CAN, testy wyjść, wstrzykiwanie usterek, pamięć HMI przez ISO-TP (D.4) | uśpienie (D.4) |
+
+**Dlaczego użytkownik czyta tylko obszary z A2L:** odczyt niektórych rejestrów peryferiów kasuje flagi (dane odbiornika, flagi statusu). Przypadkowy odczyt z narzędzia pomiarowego mógłby zaburzyć pracę ECU. Deweloper wie, co czyta, a blokady sprzętowe — kill switch, bramka AND zapłonu, ENDRV, klucz masy rozrusznika — działają w każdej roli.
+
+### K.4 Katalog operacji USB
+
+| Operacja | Komendy XCP | Rola | Warunki sprawdzane przez ECU | Powtórzenie, przerwanie |
+|---|---|---|---|---|
+| Połączenie, identyfikacja | `CONNECT`, `GET_STATUS`, `GET_ID`, odczyt EPK i wersji | — | — | Bez skutku |
+| Dane na żywo | `FREE_DAQ`, `ALLOC_*`, `WRITE_DAQ`, `SET_DAQ_LIST_MODE`, `START_STOP_*` | U: z A2L; D: dowolne | Konfiguracja ponad przepustowość USB lub budżet procesora — odmowa (`ERR_DAQ_CONFIG`) | Konfiguracja nadpisywana |
+| Odczyt map, konfiguracji, kodów, liczników, czarnej skrzynki | `SET_MTA` + `UPLOAD`, `BUILD_CHECKSUM` | U | Obszar z A2L | Bez skutku |
+| Strojenie — zapis komórek | `SET_MTA` + `DOWNLOAD` do kopii roboczej w RAM | U | Zakres zmian (B.5.1), limity skoku (B.5.3), blokada obszaru (B.5.2), profil granic (D.1) — przy każdym zapisie | Zapis z adresem — ten sam stan |
+| Aktywacja zestawu map | `USER_CMD` „aktywuj” albo `SET_CAL_PAGE` w trybie ECU | U (stanowiskowo: K) | ECU-SAF-011, D.3: komplet, suma, zgodność z granicami; MVP-A — rozbrojony silnik | Numer żądania |
+| Zapis trwały map, konfiguracji użytkownika | Transakcja K.5 | U | Zapis atomowy (H.3) | Transakcja |
+| Profil granic, konfiguracja sprzętowa | Transakcja K.5 | K | Wał nieruchomy, tryb kalibracji (D.2) | Transakcja |
+| Potwierdzenie trybu kalibracji | `USER_CMD` | U | Gest w ostatnich 30 s, wał nieruchomy | Numer żądania |
+| **Kasowanie kodów usterek** | `USER_CMD` | U | **Wał zatrzymany: ≥ 2 s bez zbocza z czujnika wału** (jak ECU-SAF-029). Jeden krok (decyzja Pawła 27.11.2026) | Powtórzenie nieszkodliwe. Przyczyna trwająca — kod wraca |
+| **Kasowanie stanu AWARIA** (DTC-SAF-03) | `USER_CMD` | U | Jw. Kasowanie **zeruje licznik resetów watchdoga** (ECU-SAF-006) i jest **zapisywane w dzienniku**; migawki zostają | Powtórzenie nieszkodliwe |
+| Zegar | `USER_CMD` — czas docelowy | U | — | Wartość docelowa |
+| Aktualizacja ECU + HMI | `PROGRAM_START`, `PROGRAM_CLEAR`, `PROGRAM`, `PROGRAM_VERIFY`, `PROGRAM_RESET` | U | ECU-BTL-001 przed rozpoczęciem i w trakcie; transakcja pakietu H.2 | Bezczynność 5 s → obraz *nowy* nieważny, praca na dotychczasowym |
+| Zasoby wyglądu HMI | Transakcja K.5, ECU przekazuje do HMI przez ISO-TP | U | Warunki trybu aktualizacji (SYS-COM-001a); HMI sprawdza zasoby (HMI-UI-013) | Transakcja |
+| Wejście w tryb deweloperski | `GET_SEED`, `UNLOCK` | U → D | ECU-SAF-035; wyzwanie jednorazowe | Odpowiedź z innej sesji nie działa |
+| Pamięć, rejestry ECU | `SET_MTA` + `UPLOAD` / `DOWNLOAD`, `SHORT_*`, `MODIFY_BITS` | D | Rejestry zapłonu przez obsługę uprzywilejowaną (D.4); blokady sprzętowe zostają | `MODIFY_BITS` nie jest idempotentne — aplikacja nie ponawia go sama |
+| Monitor i nadawanie CAN, testy wyjść, wstrzykiwanie usterek, pamięć HMI | `USER_CMD`; HMI przez ISO-TP | D | Blokady sprzętowe zostają | Numer żądania |
+
+### K.5 Transakcje (APP-COM-006)
+
+`BEGIN` (numer transakcji, obiekt, rozmiar, wersja formatu) → zapis danych → `VERIFY` (CRC-32 całości) → `COMMIT` albo `ABORT`.
+
+- **Jedna otwarta transakcja naraz** — korzysta z miejsca „następny” z D.3, wspólnego ze zmianą profilu z HMI. `BEGIN` przy otwartej transakcji: odmowa (`ERR_CMD_BUSY`). Duże obiekty (obraz firmware, zasoby HMI) idą strumieniowo do W25Q128 albo do HMI, blokami nie większymi niż bufor.
+- **Numer transakcji** (32 bity, losowany przez aplikację). `COMMIT` powtórzony z tym samym numerem: odpowiedź „zatwierdzono”, bez drugiego zapisu. `COMMIT` lub dane z innym numerem: odmowa (`ERR_SEQUENCE`).
+- **Wycofanie:** `ABORT`; bezczynność 5 s; `CONNECT` nowej sesji; utrata USB; utrata warunku (np. kill switch w RUN podczas aktualizacji — ECU-BTL-001). Po wycofaniu obowiązuje stan sprzed `BEGIN`.
+- **Po `COMMIT`** zapis atomowy (H.3) — zanik zasilania zostawia poprzednią poprawną kopię.
+
+### K.6 CAN: ECU ↔ HMI
+
+**Ramki cykliczne:** licznik 4-bitowy i CRC-8 (SAE J1850) liczone razem z identyfikatorem ramki — na wzór zabezpieczeń AUTOSAR E2E dla klasycznego CAN. Odbiór: zła suma — ramka odrzucona; licznik bez zmiany — powtórzenie, odrzucona; skok licznika o więcej niż 1 — ramka przyjęta, zgubione zliczone; brak ramki przez 3 okresy — timeout (SYS-COM-004).
+
+**Priorytety (niższy identyfikator wygrywa arbitraż):**
+1. Stan ECU: maszyna stanów, zatrzask, komunikat K4.
+2. Żądania i życie HMI, odpowiedzi ECU na żądania.
+3. Dane szybkozmienne (SYS-COM-002a).
+4. Dane wolnozmienne (SYS-COM-002b).
+5. ISO-TP: aktualizacja, zasoby, dostęp deweloperski. Ramki cykliczne zawsze wygrywają (SYS-COM-001a).
+
+**Żądania HMI → ECU:** ECU jest właścicielem stanu. Żądanie niesie stan docelowy i numer. ECU sprawdza warunki, odpowiada numerem żądania i wynikiem (przyjęte albo odmowa z przyczyną). **HMI pokazuje stan z ramki stanu ECU, nie z własnego żądania.** Żądania: światła (ECU-AUX-004), profil map (ECU-IGN-039), zmiana konfiguracji użytkownika z menu, potwierdzenie K4 z identyfikatorem komunikatu (B.4, HMI-UI-010), zgłoszenia DTC z HMI.
+
+**ISO-TP:** aktualizacja HMI (H.2), zasoby wyglądu (HMI-UI-013), dostęp deweloperski do pamięci HMI (D.4). Zasady transakcji jak w K.5, z tym samym progiem bezczynności 5 s. Parametry przepływu ISO-TP (rozmiar bloku, odstęp ramek) dobrane tak, by obciążenie wynosiło ≤ 80 % w trybie aktualizacji i ≤ 50 % poza nim (SYS-RES-003).
+
+### K.7 Zostaje
+
+- Lista ramek z identyfikatorami i okresami (DBC) oraz lista zmiennych A2L — z jednego źródła definicji, przy implementacji (Faza 5).
+- Format pakietu aktualizacji (H.4).
+- Wartość T1 — z pomiaru.

@@ -26,8 +26,8 @@ Analiza wspierana modelem językowym nie jest niezależnym przeglądem ludzkim. 
 | 1 | Architektura systemu | ⚠️ warunkowo — brak diagramu elektrycznego |
 | 2-ECU | Projekt szczegółowy sprzętu ECU | ⚠️ warunkowo — elementy wokół PMIC (przyjęty 1.11.2026), komparator i próg tranzystorowy, potwierdzenie BOM |
 | 2-HMI | Projekt szczegółowy sprzętu HMI | ⚠️ warunkowo — drzewo zasilania, drabinka przycisków, pełny numer pamięci |
-| **2-FW** | **Specyfikacja funkcjonalna firmware** | 🔶 **w toku** (stan 26.11.2026) — zapisane: A, B, C.1 (przebudowa 25.11.2026), C.3, D.1–D.3, F, H, I.1–I.2, J (częściowo). Otwarte: C.2 (mapy i korekty), E, G, I (architektura zadań i budżet czasowy), reszta J — etap 5 planu |
-| 2-Desktop | Aplikacja desktop i protokoły komunikacji | ⬜ |
+| **2-FW** | **Specyfikacja funkcjonalna firmware** | 🔶 **w toku** (stan 26.11.2026) — zapisane: A, B, C.1 (przebudowa 25.11.2026), C.3, D.1–D.4, F, H, I.1–I.2, J (częściowo), K (27.11.2026). Otwarte: C.2 (mapy i korekty), E, G, I (architektura zadań i budżet czasowy), reszta J — etap 5 planu |
+| 2-Desktop | Aplikacja desktop i protokoły komunikacji | 🔶 **w toku** (stan 27.11.2026) — przypadki użycia i wymagania aplikacji (O-052), znaczenie komend USB i CAN (O-043, `firmware.md` K). Zostaje: lista ramek DBC i zmiennych A2L, format pakietu aktualizacji, projekt aplikacji |
 | 3 | Prototyp funkcjonalny — **wyłącznie płytki dev, sygnały symulowane** | ⬜ |
 | 4 | Projekt PCB i wytyczne EMI | ⬜ |
 | 5 | Firmware produkcyjny | ⬜ |
